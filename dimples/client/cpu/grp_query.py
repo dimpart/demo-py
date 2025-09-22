@@ -40,7 +40,8 @@ from typing import List
 
 from dimsdk import ReliableMessage
 from dimsdk import Content
-from dimsdk import QueryCommand
+
+from ...common import QueryCommand
 
 from .group import GroupCommandProcessor
 

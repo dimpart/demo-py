@@ -31,7 +31,7 @@
 from typing import Optional
 
 from dimsdk import Meta
-from dimsdk.plugins import SharedAccountExtensions
+from dimplugins import SharedAccountExtensions
 from dimplugins import DefaultMeta, BTCMeta, ETHMeta
 from dimplugins import BaseMetaFactory
 

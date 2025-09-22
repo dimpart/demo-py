@@ -34,11 +34,11 @@ from dimsdk import ID
 from dimsdk import ReliableMessage
 from dimsdk import ContentType, Content
 from dimsdk import CustomizedContent
-from dimsdk import GroupCommand, QueryCommand
 from dimsdk import Facebook, Messenger
 from dimsdk.cpu import CustomizedContentHandler, BaseCustomizedHandler
 from dimsdk.cpu import CustomizedContentProcessor
 
+from ...common import QueryCommand
 from ...common import GroupHistory
 
 
@@ -81,7 +81,7 @@ class GroupHistoryHandler(BaseCustomizedHandler):
             # return []
         info = content.copy_dictionary()
         info['type'] = ContentType.COMMAND
-        info['command'] = GroupCommand.QUERY
+        info['command'] = QueryCommand.QUERY
         query = Content.parse(content=info)
         if isinstance(query, QueryCommand):
             return await messenger.process_content(content=query, r_msg=msg)
@@ -106,7 +106,7 @@ class AppCustomizedProcessor(CustomizedContentProcessor):
         key = '%s:%s' % (app, mod)
         self.__handlers[key] = handler
 
-    # private
+    # protected
     def get_handler(self, app: str, mod: str) -> Optional[CustomizedContentHandler]:
         key = '%s:%s' % (app, mod)
         return self.__handlers.get(key)

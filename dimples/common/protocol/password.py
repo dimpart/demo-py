@@ -24,10 +24,12 @@
 # ==============================================================================
 
 from dimsdk import utf8_encode, base64_encode
-from dimsdk import sha256, md5
+from dimsdk import sha256
 from dimsdk import SymmetricKey
 from dimsdk import SymmetricAlgorithms
 from dimplugins import PlainKey
+
+from ...utils import md5
 
 
 class Password:

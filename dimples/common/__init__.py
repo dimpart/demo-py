@@ -67,6 +67,7 @@ __all__ = [
 
     'ReportCommand',
 
+    'QueryCommand', 'QueryGroupCommand',
     'GroupHistory', 'GroupKeys',
 
     #

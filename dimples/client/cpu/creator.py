@@ -38,6 +38,7 @@ from dimsdk import Facebook, Messenger
 from dimsdk.cpu import BaseContentProcessorCreator
 
 from ...common import HandshakeCommand, LoginCommand, AnsCommand
+from ...common import QueryCommand
 from ...common import GroupHistory
 
 from .handshake import HandshakeCommandProcessor
@@ -104,7 +105,7 @@ class ClientContentProcessorCreator(BaseContentProcessorCreator):
             return JoinCommandProcessor(facebook=self.facebook, messenger=self.messenger)
         elif cmd == GroupCommand.QUIT:
             return QuitCommandProcessor(facebook=self.facebook, messenger=self.messenger)
-        elif cmd == GroupCommand.QUERY:
+        elif cmd == QueryCommand.QUERY:
             return QueryCommandProcessor(facebook=self.facebook, messenger=self.messenger)
         elif cmd == GroupCommand.RESET:
             return ResetCommandProcessor(facebook=self.facebook, messenger=self.messenger)

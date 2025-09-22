@@ -35,7 +35,7 @@
 
 from typing import Optional, List, Dict
 
-from dimsdk import md5, sha1, sha256, keccak256, ripemd160
+from dimsdk import sha256, keccak256, ripemd160
 from dimsdk import base64_encode, base64_decode, base58_encode, base58_decode
 from dimsdk import hex_encode, hex_decode
 from dimsdk import utf8_encode, utf8_decode
@@ -54,6 +54,8 @@ from startrek.fsm import Delegate as StateDelegate
 from startrek.net.socket import get_remote_address, get_local_address
 
 from aiou import Path, File, TextFile, JSONFile
+
+from .digest import md5, sha1
 
 from .checker import FrequencyChecker
 from .checker import RecentTimeChecker

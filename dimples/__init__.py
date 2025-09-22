@@ -32,6 +32,8 @@ from dimsdk import *
 from dimsdk.cpu import *
 from dimplugins import *
 
+from .utils import md5, sha1
+
 from .common import *
 from .conn import *
 from .database import *
@@ -72,7 +74,6 @@ __all__ = [
     'DataCoder', 'Hex', 'Base58', 'Base64',
     'ObjectCoder', 'JSON',
     'MapCoder', 'JSONMap',
-    'ListCoder', 'JSONList',
     'StringCoder', 'UTF8',
 
     'hex_encode', 'hex_decode',
@@ -88,9 +89,11 @@ __all__ = [
     #   Data Digest
     #
 
-    'DataDigester',
-    'MD5', 'SHA1', 'SHA256', 'KECCAK256', 'RIPEMD160',
-    'md5', 'sha1', 'sha256', 'keccak256', 'ripemd160',
+    'MessageDigester',
+    'SHA256', 'KECCAK256', 'RIPEMD160',
+    # 'MD5', 'SHA1',
+    'sha256', 'keccak256', 'ripemd160',
+    'md5', 'sha1',
 
     #
     #   Crypto Keys
@@ -298,8 +301,8 @@ __all__ = [
     #   Digest
     #
 
-    'MD5Digester', 'SHA1Digester', 'SHA256Digester',
-    'Keccak256Digester', 'RipeMD160Digester',
+    'SHA256Digester', 'KECCAK256Digester', 'RIPEMD160Digester',
+    # 'MD5Digester', 'SHA1Digester',
 
     #
     #   Crypto
@@ -358,6 +361,7 @@ __all__ = [
 
     'ReportCommand',
 
+    'QueryCommand', 'QueryGroupCommand',
     'GroupHistory', 'GroupKeys',
 
     #

@@ -28,11 +28,48 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import List, Dict
+from abc import ABC, abstractmethod
+from typing import Optional, List, Dict
 
 from dimsdk import DateTime
 from dimsdk import ID
 from dimsdk import CustomizedContent
+from dimsdk import GroupCommand, BaseGroupCommand
+
+
+class QueryCommand(GroupCommand, ABC):
+    """
+    NOTICE:
+        This command is just for querying group info,
+        should not be saved in group history
+    """
+    QUERY = "query"
+
+    @property
+    @abstractmethod
+    def last_time(self) -> Optional[DateTime]:
+        """ Last group history time for querying """
+        raise NotImplemented
+
+    #
+    #   Factory
+    #
+    @classmethod
+    def query(cls, group: ID, last_time: DateTime = None):
+        return QueryGroupCommand(group=group, last_time=last_time)
+
+
+class QueryGroupCommand(BaseGroupCommand, QueryCommand):
+
+    def __init__(self, content: Dict = None, group: ID = None, last_time: DateTime = None):
+        cmd = QueryCommand.QUERY if content is None else None
+        super().__init__(content, cmd=cmd, group=group)
+        if last_time is not None:
+            self.set_datetime(key='last_time', value=last_time)
+
+    @property  # Override
+    def last_time(self) -> Optional[DateTime]:
+        return self.get_datetime(key='last_time')
 
 
 class GroupHistory:

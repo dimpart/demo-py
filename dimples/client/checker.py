@@ -32,11 +32,12 @@ import weakref
 from typing import Optional, List
 
 from dimsdk import ID, Document, Visa
+from dimsdk import Content
 from dimsdk import MetaCommand, DocumentCommand
-from dimsdk import GroupCommand, QueryCommand
 from dimsdk import Station
 
 from ..utils import Logging
+from ..common import QueryCommand
 from ..common import EntityChecker
 from ..common import AccountDBI
 from ..common import CommonFacebook, CommonMessenger
@@ -113,7 +114,8 @@ class ClientChecker(EntityChecker, Logging):
         last_time = await self.get_last_group_history_time(group=group)
         self.info(msg='querying members for group: %s, last time: %s' % (group, last_time))
         # build query command for group members
-        command = GroupCommand.query(group=group, last_time=last_time)
+        # TODO: use 'GroupHistory.queryGroupHistory(group, lastTime)' instead
+        command = QueryCommand.query(group=group, last_time=last_time)
         # 1. check group bots
         ok = await self.query_members_from_assistants(command=command, sender=me, group=group)
         if ok:
@@ -137,7 +139,7 @@ class ClientChecker(EntityChecker, Logging):
         return r_msg is not None
 
     # protected
-    async def query_members_from_assistants(self, command: QueryCommand, sender: ID, group: ID) -> bool:
+    async def query_members_from_assistants(self, command: Content, sender: ID, group: ID) -> bool:
         facebook = self.facebook
         messenger = self.messenger
         if facebook is None or messenger is None:
@@ -170,7 +172,7 @@ class ClientChecker(EntityChecker, Logging):
         return True
 
     # protected
-    async def query_members_from_administrators(self, command: QueryCommand, sender: ID, group: ID) -> bool:
+    async def query_members_from_administrators(self, command: Content, sender: ID, group: ID) -> bool:
         facebook = self.facebook
         messenger = self.messenger
         if facebook is None or messenger is None:
@@ -203,7 +205,7 @@ class ClientChecker(EntityChecker, Logging):
         return True
 
     # protected
-    async def query_members_from_owner(self, command: QueryCommand, sender: ID, group: ID) -> bool:
+    async def query_members_from_owner(self, command: Content, sender: ID, group: ID) -> bool:
         facebook = self.facebook
         messenger = self.messenger
         if facebook is None or messenger is None:

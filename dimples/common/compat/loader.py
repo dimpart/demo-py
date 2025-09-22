@@ -31,14 +31,18 @@ from dimsdk import ID, Address, Meta
 from dimsdk import ContentType
 from dimsdk import MetaType
 from dimsdk import AppCustomizedContent
-from dimsdk.plugins import ExtensionLoader
+from dimplugins import ExtensionLoader
 from dimplugins import PluginLoader
+
+from ...utils.digest import MD5, MD5Digester
+from ...utils.digest import SHA1, SHA1Digester
 
 from ..protocol import HandshakeCommand, BaseHandshakeCommand
 from ..protocol import LoginCommand
 from ..protocol import ReportCommand
 from ..protocol import AnsCommand
 from ..protocol import MuteCommand, BlockCommand
+from ..protocol import QueryCommand, QueryGroupCommand
 
 from ..ans import AddressNameServer, ANSFactory
 from ..facebook import CommonFacebook
@@ -54,10 +58,21 @@ class LibraryLoader:
         super().__init__()
         self.__extensions = CommonExtensionLoader() if extensions is None else extensions
         self.__plugins = CommonPluginLoader() if plugins is None else plugins
+        self.__loaded = False
 
     def run(self):
-        self.__extensions.run()
-        self.__plugins.run()
+        if self.__loaded:
+            # no need to load it again
+            return
+        else:
+            # mark it to loaded
+            self.__loaded = True
+        # try to load all plugins
+        self.load()
+
+    def load(self):
+        self.__extensions.load()
+        self.__plugins.load()
 
 
 class CommonExtensionLoader(ExtensionLoader):
@@ -83,15 +98,30 @@ class CommonExtensionLoader(ExtensionLoader):
         self._set_command_factory(cmd=MuteCommand.MUTE, command_class=MuteCommand)
         # Block
         self._set_command_factory(cmd=BlockCommand.BLOCK, command_class=BlockCommand)
+        # Group command (deprecated)
+        self._set_command_factory(cmd=QueryCommand.QUERY, command_class=QueryGroupCommand)
 
 
+# noinspection PyMethodMayBeStatic
 class CommonPluginLoader(PluginLoader):
     """ Plugin Loader """
 
     # Override
-    def _load(self):
+    def load(self):
         Converter.converter = _SafeConverter()
-        super()._load()
+        super().load()
+
+    # Override
+    def _register_digesters(self):
+        super()._register_digesters()
+        self._register_md5_digesters()
+        self._register_sha1_digesters()
+
+    def _register_md5_digesters(self):
+        MD5.digester = MD5Digester()
+
+    def _register_sha1_digesters(self):
+        SHA1.digester = SHA1Digester()
 
     # Override
     def _register_id_factory(self):

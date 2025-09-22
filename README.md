@@ -15,6 +15,17 @@
 
 ## Dependencies
 
+* Latest Versions
+
+| Name | Version | Description |
+|------|---------|-------------|
+| [Ming Ke Ming (名可名)](https://github.com/dimchat/mkm-py) | [![Version](https://img.shields.io/pypi/v/mkm)](https://pypi.org/project/mkm) | Decentralized User Identity Authentication |
+| [Dao Ke Dao (道可道)](https://github.com/dimchat/dkd-py) | [![Version](https://img.shields.io/pypi/v/dkd)](https://pypi.org/project/dkd) | Universal Message Module |
+| [DIMP (去中心化通讯协议)](https://github.com/dimchat/core-py) | [![Version](https://img.shields.io/pypi/v/dimp)](https://pypi.org/project/dimp) | Decentralized Instant Messaging Protocol |
+| [DIM SDK](https://github.com/dimchat/sdk-py) | [![Version](https://img.shields.io/pypi/v/dimsdk)](https://pypi.org/project/dimsdk) | Software Development Kit |
+| [DIM Plugins](https://github.com/dimchat/sdk-py) | [![Version](https://img.shields.io/pypi/v/dimplugins)](https://pypi.org/project/dimplugins) | Cryptography & Account Plugins |
+| [Star Trek](https://github.com/moky/wormhole) | [![Version](https://img.shields.io/pypi/v/startrek)](https://pypi.org/project/startrek) | Network Connection Module |
+
 * setup.py
 
 ```
@@ -36,21 +47,6 @@
         'aiou>=1.1.0',
     ]
 ```
-
-* Latest Versions
-
-| Name | Version | Description |
-|------|---------|-------------|
-| [Ming Ke Ming (名可名)](https://github.com/dimchat/mkm-py) | [![Version](https://img.shields.io/pypi/v/mkm)](https://pypi.org/project/mkm) | Decentralized User Identity Authentication |
-| [Dao Ke Dao (道可道)](https://github.com/dimchat/dkd-py) | [![Version](https://img.shields.io/pypi/v/dkd)](https://pypi.org/project/dkd) | Universal Message Module |
-| [DIMP (去中心化通讯协议)](https://github.com/dimchat/core-py) | [![Version](https://img.shields.io/pypi/v/dimp)](https://pypi.org/project/dimp) | Decentralized Instant Messaging Protocol |
-| [DIM SDK](https://github.com/dimchat/sdk-py) | [![Version](https://img.shields.io/pypi/v/dimsdk)](https://pypi.org/project/dimsdk) | Software Development Kit |
-| [DIM Plugins](https://github.com/dimchat/sdk-py) | [![Version](https://img.shields.io/pypi/v/dimplugins)](https://pypi.org/project/dimplugins) | Cryptography & Account Plugins |
-| [Star Trek](https://github.com/moky/wormhole) | [![Version](https://img.shields.io/pypi/v/startrek)](https://pypi.org/project/startrek) | Network Connection Module |
-
-Talk is cheap, [read my codes](https://github.com/dimchat/demo-py).
-
-----
 
 Copyright &copy; 2018-2025 Albert Moky
 [![Followers](https://img.shields.io/github/followers/moky)](https://github.com/moky?tab=followers)

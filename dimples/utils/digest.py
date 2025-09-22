@@ -23,45 +23,62 @@
 # SOFTWARE.
 # ==============================================================================
 
-from .version import MetaVersion
-from .password import Password
-from .utils import BroadcastUtils
+"""
+    Message Digest
+    ~~~~~~~~~~~~~~
 
-from .ans import AnsCommand
+    MD5, SHA1, SHA-256, Keccak256, RipeMD-160, ...
+"""
 
-from .handshake import HandshakeState, HandshakeCommand, BaseHandshakeCommand
-from .login import LoginCommand
+import hashlib
 
-from .mute import MuteCommand
-from .block import BlockCommand
-
-from .report import ReportCommand
-
-from .groups import QueryCommand, QueryGroupCommand
-from .groups import GroupHistory, GroupKeys
+from dimsdk import MessageDigester
 
 
-__all__ = [
+class MD5:
+    digester: MessageDigester = None
 
-    'MetaVersion',
-    'Password',
-    'BroadcastUtils',
+    @classmethod
+    def digest(cls, data: bytes) -> bytes:
+        # assert MD5.digester is not None, 'MD5 coder not set yet'
+        return cls.digester.digest(data=data)
 
-    #
-    #   Commands
-    #
 
-    'AnsCommand',
+class SHA1:
+    digester: MessageDigester = None
 
-    'HandshakeState', 'HandshakeCommand', 'BaseHandshakeCommand',
-    'LoginCommand',
+    @classmethod
+    def digest(cls, data: bytes) -> bytes:
+        # assert SHA1.digester is not None, 'SHA1 coder not set yet'
+        return cls.digester.digest(data=data)
 
-    'BlockCommand',
-    'MuteCommand',
 
-    'ReportCommand',
+class MD5Digester(MessageDigester):
 
-    'QueryCommand', 'QueryGroupCommand',
-    'GroupHistory', 'GroupKeys',
+    # Override
+    def digest(self, data: bytes) -> bytes:
+        """ MD5 digest """
+        hash_obj = hashlib.md5()
+        hash_obj.update(data)
+        return hash_obj.digest()
 
-]
+
+class SHA1Digester(MessageDigester):
+
+    # Override
+    def digest(self, data: bytes) -> bytes:
+        """ SHA1 Digest """
+        return hashlib.sha1(data).digest()
+
+
+#
+#   Interfaces
+#
+
+
+def md5(data: bytes) -> bytes:
+    return MD5.digest(data=data)
+
+
+def sha1(data: bytes) -> bytes:
+    return SHA1.digest(data=data)
