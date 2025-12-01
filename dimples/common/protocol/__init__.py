@@ -37,6 +37,9 @@ from .block import BlockCommand
 
 from .report import ReportCommand
 
+from .grp_admin import HireCommand, FireCommand, ResignCommand
+from .grp_admin import HireGroupCommand, FireGroupCommand, ResignGroupCommand
+
 from .groups import QueryCommand, QueryGroupCommand
 from .groups import GroupHistory, GroupKeys
 
@@ -60,6 +63,9 @@ __all__ = [
     'MuteCommand',
 
     'ReportCommand',
+
+    'HireCommand', 'FireCommand', 'ResignCommand',
+    'HireGroupCommand', 'FireGroupCommand', 'ResignGroupCommand',
 
     'QueryCommand', 'QueryGroupCommand',
     'GroupHistory', 'GroupKeys',

@@ -80,6 +80,7 @@ class DocTask(DbTask[ID, List[Document]]):
         else:
             identifier = new_doc.identifier
             doc_type = DocumentUtils.get_document_type(document=new_doc)
+            created_time = new_doc.get_property(name='created_time')
         #
         #   0. check old documents
         #
@@ -93,6 +94,9 @@ class DocTask(DbTask[ID, List[Document]]):
                 continue
             elif item.get('type') != doc_type:
                 self.info(msg='skip document: %s, type=%s, %s' % (identifier, doc_type, item))
+                continue
+            elif item.get_property(name='created_time') != created_time:
+                self.info(msg='skip document: %s, created=%s, %s' % (identifier, created_time, item))
                 continue
             elif item == new_doc:
                 self.warning(msg='same document, no need to update: %s' % identifier)

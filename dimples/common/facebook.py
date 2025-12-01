@@ -169,7 +169,7 @@ class CommonFacebook(Facebook, Logging, ABC):
         # get name from document
         doc = await self.get_document(identifier=identifier, doc_type=doc_type)
         if doc is not None:
-            name = doc.name
+            name = doc.get_property(name='name')
             if name is not None and len(name) > 0:
                 return name
         # get name from ID

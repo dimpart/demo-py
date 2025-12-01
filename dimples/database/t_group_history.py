@@ -30,10 +30,11 @@ from aiou.mem import CachePool
 
 from dimsdk import ID
 from dimsdk import ReliableMessage
-from dimsdk import GroupCommand, ResetCommand, ResignCommand
+from dimsdk import GroupCommand, ResetCommand
 
 from ..utils import Config
 from ..common import GroupHistoryDBI
+from ..common import ResignCommand
 
 from .dos import GroupHistoryStorage
 from .redis import GroupHistoryCache

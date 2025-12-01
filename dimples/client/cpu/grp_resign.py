@@ -40,7 +40,8 @@ from typing import List
 
 from dimsdk import ReliableMessage
 from dimsdk import Content
-from dimsdk import ResignCommand
+
+from ...common import ResignCommand
 
 from .group import GroupCommandProcessor
 

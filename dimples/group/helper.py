@@ -33,8 +33,10 @@ from typing import Optional, Tuple, List
 from dimsdk import DateTime
 from dimsdk import ID
 from dimsdk import ReliableMessage
-from dimsdk import GroupCommand, ResetCommand, ResignCommand
+from dimsdk import GroupCommand, ResetCommand
 from dimsdk import DocumentUtils
+
+from ..common import ResignCommand
 
 from .delegate import TripletsHelper
 
@@ -109,6 +111,7 @@ class GroupCommandHelper(TripletsHelper):
         members = content.members
         if members is None:
             # get from 'member
-            single = content.member
-            members = [] if single is None else [single]
+            # single = content.member
+            # members = [] if single is None else [single]
+            pass
         return members

@@ -30,6 +30,7 @@ from dimsdk import DateTime
 from dimsdk import ID, Address, Meta
 from dimsdk import ContentType
 from dimsdk import MetaType
+from dimsdk import GroupCommand
 from dimsdk import AppCustomizedContent
 from dimplugins import ExtensionLoader
 from dimplugins import PluginLoader
@@ -42,6 +43,7 @@ from ..protocol import LoginCommand
 from ..protocol import ReportCommand
 from ..protocol import AnsCommand
 from ..protocol import MuteCommand, BlockCommand
+from ..protocol import HireGroupCommand, FireGroupCommand, ResignGroupCommand
 from ..protocol import QueryCommand, QueryGroupCommand
 
 from ..ans import AddressNameServer, ANSFactory
@@ -86,6 +88,10 @@ class CommonExtensionLoader(ExtensionLoader):
     # Override
     def _register_command_factories(self):
         super()._register_command_factories()
+        # Group Admin Commands
+        self._set_command_factory(cmd=GroupCommand.HIRE, command_class=HireGroupCommand)
+        self._set_command_factory(cmd=GroupCommand.FIRE, command_class=FireGroupCommand)
+        self._set_command_factory(cmd=GroupCommand.RESIGN, command_class=ResignGroupCommand)
         # Handshake
         self._set_command_factory(cmd=HandshakeCommand.HANDSHAKE, command_class=BaseHandshakeCommand)
         # Login

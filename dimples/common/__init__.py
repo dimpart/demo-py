@@ -67,6 +67,9 @@ __all__ = [
 
     'ReportCommand',
 
+    'HireCommand', 'FireCommand', 'ResignCommand',
+    'HireGroupCommand', 'FireGroupCommand', 'ResignGroupCommand',
+
     'QueryCommand', 'QueryGroupCommand',
     'GroupHistory', 'GroupKeys',
 

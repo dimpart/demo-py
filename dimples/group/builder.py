@@ -34,8 +34,10 @@ from dimsdk import ANYONE
 from dimsdk import ID, Document
 from dimsdk import InstantMessage, ReliableMessage
 from dimsdk import Envelope, Content, DocumentCommand
-from dimsdk import GroupCommand, ResetCommand, ResignCommand
+from dimsdk import GroupCommand, ResetCommand
 from dimsdk import DocumentUtils
+
+from ..common import ResignCommand
 
 from .delegate import TripletsHelper
 from .delegate import GroupDelegate
