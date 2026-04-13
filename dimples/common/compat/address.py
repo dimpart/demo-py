@@ -34,12 +34,12 @@ from dimsdk import ConstantString
 from dimsdk import Address, ANYWHERE, EVERYWHERE
 from dimplugins import BTCAddress, ETHAddress
 from dimplugins import BaseAddressFactory
-
-from ...utils.thanos import thanos
+from dimplugins import MemoryCache, shared_account_extensions
 
 
 class CompatibleAddressFactory(BaseAddressFactory):
 
+    # noinspection PyMethodMayBeStatic
     def reduce_memory(self) -> int:
         """
         Call it when received 'UIApplicationDidReceiveMemoryWarningNotification',
@@ -47,9 +47,8 @@ class CompatibleAddressFactory(BaseAddressFactory):
 
         :return: number of survivors
         """
-        finger = 0
-        finger = thanos(self._addresses, finger)
-        return finger >> 1
+        cache = address_cache()
+        return cache.reduce_memory()
 
     # Override
     def _parse(self, address: str) -> Optional[Address]:
@@ -95,3 +94,9 @@ class UnknownAddress(ConstantString, Address):
     @property  # Override
     def network(self) -> int:
         return 0  # EntityType.USER.value
+
+
+def address_cache() -> MemoryCache[str, Address]:
+    cache = shared_account_extensions.address_cache
+    assert isinstance(cache, MemoryCache), 'address cache error: %s' % cache
+    return cache

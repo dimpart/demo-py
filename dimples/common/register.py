@@ -138,7 +138,8 @@ class Register:
                      name: str, avatar: Optional[PortableNetworkFile]) -> Visa:
         """ create user document """
         assert user.is_user, 'user ID error: %s' % user
-        doc = BaseVisa(identifier=user)
+        doc = BaseVisa()
+        doc.set_string(key='did', value=user)
         # App ID
         doc.set_property(name='app_id', value='chat.dim.tarsier')
         # nickname
@@ -158,7 +159,8 @@ class Register:
                          name: str, founder: ID) -> Bulletin:
         """ create group document """
         assert group.is_group, 'group ID error: %s' % group
-        doc = BaseBulletin(identifier=group)
+        doc = BaseBulletin()
+        doc.set_string(key='did', value=group)
         # App ID
         doc.set_property(name='app_id', value='chat.dim.tarsier')
         # group founder

@@ -31,8 +31,8 @@ from dimsdk import Content
 from dimsdk import ReliableMessage
 from dimsdk import MessageProcessor
 from dimsdk import Facebook, Messenger
-from dimsdk import ContentProcessorCreator
-from dimsdk import GeneralContentProcessorFactory
+from dimsdk.cpu import ContentProcessorCreator
+from dimsdk.cpu import GeneralContentProcessorFactory
 
 from ..utils import Logging
 

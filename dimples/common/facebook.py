@@ -42,12 +42,12 @@ from dimsdk import SignKey, DecryptKey
 from dimsdk import ID, User
 from dimsdk import Meta, Document, Visa, Bulletin
 from dimsdk import Facebook
-from dimsdk import DocumentUtils
 from dimsdk import DocumentType
 
 from ..utils import Logging
 from ..utils import Runner
 
+from .mkm import DocumentUtils
 from .dbi import AccountDBI
 
 from .ans import AddressNameServer
@@ -115,7 +115,7 @@ class CommonFacebook(Facebook, Logging, ABC):
         self.__current = user
 
     # Override
-    async def select_local_user(self, receiver: ID) -> Optional[ID]:
+    async def select_user(self, receiver: ID) -> Optional[ID]:
         user = self.__current
         if user is not None:
             me = user.identifier
@@ -123,21 +123,23 @@ class CommonFacebook(Facebook, Logging, ABC):
                 # broadcast message can be decrypted by anyone, so
                 # just return current user here
                 return me
-            elif receiver.is_group:
-                # group message (recipient not designated)
-                #
-                # the messenger will check group info before decrypting message,
-                # so we can trust that the group's meta & members MUST exist here.
-                members = await self.get_members(identifier=receiver)
-                if members is None or len(members) == 0:
-                    self.warning(msg='members not found: %s' % receiver)
-                    return None
-                elif me in members:
-                    return me
             elif receiver == me:
                 return me
         # check local users
-        return await super().select_local_user(receiver=receiver)
+        return await super().select_user(receiver=receiver)
+
+    # Override
+    async def select_member(self, members: List[ID]) -> Optional[ID]:
+        assert len(members) > 0, 'group members not found'
+        user = self.__current
+        if user is not None:
+            me = user.identifier
+            # the messenger will check group info before decrypting message,
+            # so we can trust that the group's meta & members MUST exist here.
+            if me in members:
+                return me
+        # check local users
+        return await super().select_member(members=members)
 
     #
     #   Documents

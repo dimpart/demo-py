@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+#
+#   DIM-SDK : Decentralized Instant Messaging Software Development Kit
+#
+#                                Written in 2019 by Moky <albert.moky@gmail.com>
+#
 # ==============================================================================
 # MIT License
 #
-# Copyright (c) 2020 Albert Moky
+# Copyright (c) 2019 Albert Moky
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,61 +28,45 @@
 # SOFTWARE.
 # ==============================================================================
 
-from .version import MetaVersion
-from .password import Password
-from .utils import BroadcastUtils, MessageUtils
+from dimsdk.mkm import *
 
-from .app import AppContent, CustomizedContent
-from .app import AppCustomizedContent
+from .bot import Bot
+from .station import Station
+from .station import ServiceProvider
 
-from .ans import AnsCommand
-
-from .handshake import HandshakeState, HandshakeCommand, BaseHandshakeCommand
-from .login import LoginCommand
-
-from .mute import MuteCommand
-from .block import BlockCommand
-
-from .report import ReportCommand
-
-from .grp_admin import HireCommand, FireCommand, ResignCommand
-from .grp_admin import HireGroupCommand, FireGroupCommand, ResignGroupCommand
-
-from .groups import QueryCommand, QueryGroupCommand
-from .groups import GroupHistory, GroupKeys
+from .utils import MetaUtils
+from .utils import DocumentUtils
 
 
 __all__ = [
 
-    'MetaVersion',
-    'Password',
-    'BroadcastUtils', 'MessageUtils',
-
     #
-    #   Contents
+    #   Entities (MingKeMing)
     #
 
-    'AppContent', 'CustomizedContent',
-    'AppCustomizedContent',
+    'EntityDelegate',
+    'EntityDataSource',
+    'Entity', 'BaseEntity',
+
+    'GroupDataSource',
+    'Group', 'BaseGroup',
+
+    'UserDataSource',
+    'User', 'BaseUser',
 
     #
-    #   Commands
+    #   Extends
     #
 
-    'AnsCommand',
+    'Bot',
+    'Station',
+    'ServiceProvider',
 
-    'HandshakeState', 'HandshakeCommand', 'BaseHandshakeCommand',
-    'LoginCommand',
+    #
+    #   Utils
+    #
 
-    'BlockCommand',
-    'MuteCommand',
-
-    'ReportCommand',
-
-    'HireCommand', 'FireCommand', 'ResignCommand',
-    'HireGroupCommand', 'FireGroupCommand', 'ResignGroupCommand',
-
-    'QueryCommand', 'QueryGroupCommand',
-    'GroupHistory', 'GroupKeys',
+    'MetaUtils',
+    'DocumentUtils',
 
 ]

@@ -28,9 +28,13 @@
 # SOFTWARE.
 # ==============================================================================
 
+from abc import ABC
 from typing import Optional, List
 
 from dimsdk import ID, ANYONE, FOUNDER
+
+from dimsdk import Meta, Visa, Document
+from dimsdk import Message
 
 
 class BroadcastUtils:
@@ -80,3 +84,39 @@ class BroadcastUtils:
             owner = ID.parse(identifier=name + '.owner@anywhere')
             member = ID.parse(identifier=name + '.member@anywhere')
             return [owner, member]
+
+
+class MessageUtils(ABC):
+
+    """
+        Sender's Meta
+        ~~~~~~~~~~~~~
+        Extends for the first message package of 'Handshake' protocol.
+    """
+
+    @classmethod
+    def get_meta(cls, msg: Message) -> Optional[Meta]:
+        meta = msg.get('meta')
+        return Meta.parse(meta=meta)
+
+    @classmethod
+    def set_meta(cls, meta: Optional[Meta], msg: Message):
+        msg.set_map(key='meta', value=meta)
+
+    """
+        Sender's Visa
+        ~~~~~~~~~~~~~
+        Extends for the first message package of 'Handshake' protocol.
+    """
+
+    @classmethod
+    def get_visa(cls, msg: Message) -> Optional[Visa]:
+        visa = msg.get('visa')
+        doc = Document.parse(document=visa)
+        if isinstance(doc, Visa):
+            return doc
+        assert doc is None, 'visa document error: %s' % visa
+
+    @classmethod
+    def set_visa(cls, visa: Optional[Visa], msg: Message):
+        msg.set_map(key='visa', value=visa)

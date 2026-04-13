@@ -27,17 +27,17 @@ from typing import Optional, Any
 
 from dimsdk import Converter, BaseConverter
 from dimsdk import DateTime
-from dimsdk import ID, Address, Meta
-from dimsdk import ContentType
-from dimsdk import MetaType
+
+from dimsdk import ID, Address, Meta, MetaType
+from dimsdk import ContentType, Content
 from dimsdk import GroupCommand
-from dimsdk import AppCustomizedContent
 from dimplugins import ExtensionLoader
 from dimplugins import PluginLoader
 
 from ...utils.digest import MD5, MD5Digester
 from ...utils.digest import SHA1, SHA1Digester
 
+from ..protocol import AppCustomizedContent
 from ..protocol import HandshakeCommand, BaseHandshakeCommand
 from ..protocol import LoginCommand
 from ..protocol import ReportCommand
@@ -77,17 +77,104 @@ class LibraryLoader:
         self.__plugins.load()
 
 
+# noinspection PyMethodMayBeStatic
 class CommonExtensionLoader(ExtensionLoader):
     """ Extensions Loader """
 
     # Override
-    def _register_customized_factories(self):
-        self._set_content_factory(ContentType.APPLICATION, alias='application', content_class=AppCustomizedContent)
-        self._set_content_factory(ContentType.CUSTOMIZED, alias='customized', content_class=AppCustomizedContent)
+    def register_id_factory(self):
+        ans = AddressNameServer()
+        factory = EntityIDFactory()
+        ID.set_factory(factory=ANSFactory(factory=factory, ans=ans))
+        CommonFacebook.ans = ans
 
     # Override
-    def _register_command_factories(self):
-        super()._register_command_factories()
+    def register_address_factory(self):
+        Address.set_factory(factory=CompatibleAddressFactory())
+
+    # Override
+    def register_meta_factories(self):
+        mkm = CompatibleMetaFactory(version=MetaType.MKM)
+        btc = CompatibleMetaFactory(version=MetaType.BTC)
+        eth = CompatibleMetaFactory(version=MetaType.ETH)
+        Meta.set_factory(version='1', factory=mkm)
+        Meta.set_factory(version='2', factory=btc)
+        Meta.set_factory(version='4', factory=eth)
+        Meta.set_factory(version='mkm', factory=mkm)
+        Meta.set_factory(version='btc', factory=btc)
+        Meta.set_factory(version='eth', factory=eth)
+        Meta.set_factory(version='MKM', factory=mkm)
+        Meta.set_factory(version='BTC', factory=btc)
+        Meta.set_factory(version='ETH', factory=eth)
+
+    # protected
+    def _copy_content_factory(self, msg_type: str, alias: str):
+        factory = Content.get_factory(msg_type=msg_type)
+        if factory is not None:
+            Content.set_factory(msg_type=alias, factory=factory)
+        else:
+            assert False, 'content factory not exists: %s -> %s' % (msg_type, alias)
+
+    # Override
+    def register_content_factories(self):
+        super().register_content_factories()
+        # Text
+        self._copy_content_factory(msg_type=ContentType.TEXT, alias='text')
+
+        # File
+        self._copy_content_factory(msg_type=ContentType.FILE, alias='file')
+        # Image
+        self._copy_content_factory(msg_type=ContentType.IMAGE, alias='image')
+        # Audio
+        self._copy_content_factory(msg_type=ContentType.AUDIO, alias='audio')
+        # Video
+        self._copy_content_factory(msg_type=ContentType.VIDEO, alias='video')
+
+        # Web Page
+        self._copy_content_factory(msg_type=ContentType.PAGE, alias='page')
+
+        # Name Card
+        self._copy_content_factory(msg_type=ContentType.NAME_CARD, alias='card')
+
+        # Quote
+        self._copy_content_factory(msg_type=ContentType.QUOTE, alias='quote')
+
+        # Money
+        self._copy_content_factory(msg_type=ContentType.MONEY, alias='money')
+        self._copy_content_factory(msg_type=ContentType.TRANSFER, alias='transfer')
+        # ...
+
+        # Command
+        self._copy_content_factory(msg_type=ContentType.COMMAND, alias='command')
+
+        # History Command
+        self._copy_content_factory(msg_type=ContentType.HISTORY, alias='history')
+
+        # Content Array
+        self._copy_content_factory(msg_type=ContentType.ARRAY, alias='array')
+
+        # Combine and Forward
+        self._copy_content_factory(msg_type=ContentType.COMBINE_FORWARD, alias='combine')
+
+        # Top-Secret
+        self._copy_content_factory(msg_type=ContentType.FORWARD, alias='forward')
+
+        # Unknown Content Type
+        self._copy_content_factory(msg_type=ContentType.ANY, alias='*')
+
+        self.register_customized_factories()
+
+    # protected
+    def register_customized_factories(self):
+        self._set_content_factory(msg_type=ContentType.APPLICATION, content_class=AppCustomizedContent)
+
+        self._copy_content_factory(msg_type=ContentType.APPLICATION, alias=ContentType.CUSTOMIZED)
+        self._copy_content_factory(msg_type=ContentType.APPLICATION, alias='application')
+        self._copy_content_factory(msg_type=ContentType.APPLICATION, alias='customized')
+
+    # Override
+    def register_command_factories(self):
+        super().register_command_factories()
         # Group Admin Commands
         self._set_command_factory(cmd=GroupCommand.HIRE, command_class=HireGroupCommand)
         self._set_command_factory(cmd=GroupCommand.FIRE, command_class=FireGroupCommand)
@@ -118,42 +205,18 @@ class CommonPluginLoader(PluginLoader):
         super().load()
 
     # Override
-    def _register_digesters(self):
-        super()._register_digesters()
-        self._register_md5_digesters()
-        self._register_sha1_digesters()
+    def _load_message_digesters(self):
+        super()._load_message_digesters()
+        self.register_md5_digesters()
+        self.register_sha1_digesters()
 
-    def _register_md5_digesters(self):
+    # protected
+    def register_md5_digesters(self):
         MD5.digester = MD5Digester()
 
-    def _register_sha1_digesters(self):
+    # protected
+    def register_sha1_digesters(self):
         SHA1.digester = SHA1Digester()
-
-    # Override
-    def _register_id_factory(self):
-        ans = AddressNameServer()
-        factory = EntityIDFactory()
-        ID.set_factory(factory=ANSFactory(factory=factory, ans=ans))
-        CommonFacebook.ans = ans
-
-    # Override
-    def _register_address_factory(self):
-        Address.set_factory(factory=CompatibleAddressFactory())
-
-    # Override
-    def _register_meta_factories(self):
-        mkm = CompatibleMetaFactory(version=MetaType.MKM)
-        btc = CompatibleMetaFactory(version=MetaType.BTC)
-        eth = CompatibleMetaFactory(version=MetaType.ETH)
-        Meta.set_factory(version='1', factory=mkm)
-        Meta.set_factory(version='2', factory=btc)
-        Meta.set_factory(version='4', factory=eth)
-        Meta.set_factory(version='mkm', factory=mkm)
-        Meta.set_factory(version='btc', factory=btc)
-        Meta.set_factory(version='eth', factory=eth)
-        Meta.set_factory(version='MKM', factory=mkm)
-        Meta.set_factory(version='BTC', factory=btc)
-        Meta.set_factory(version='ETH', factory=eth)
 
     # TODO: RSA keys with created time
 

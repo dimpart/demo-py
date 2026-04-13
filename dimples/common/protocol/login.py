@@ -39,7 +39,8 @@ from typing import Optional, Union, Dict
 
 from dimsdk import ID
 from dimsdk import BaseCommand
-from dimsdk import Station, ServiceProvider
+
+from ..mkm import Station, ServiceProvider
 
 
 class LoginCommand(BaseCommand):

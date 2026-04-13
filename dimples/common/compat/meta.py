@@ -31,7 +31,7 @@
 from typing import Optional
 
 from dimsdk import Meta
-from dimplugins import SharedAccountExtensions
+from dimplugins import GeneralAccountHelper, shared_account_extensions
 from dimplugins import DefaultMeta, BTCMeta, ETHMeta
 from dimplugins import BaseMetaFactory
 
@@ -43,8 +43,8 @@ class CompatibleMetaFactory(BaseMetaFactory):
 
     # Override
     def parse_meta(self, meta: dict) -> Optional[Meta]:
-        ext = SharedAccountExtensions()
-        version = ext.helper.get_meta_type(meta=meta)
+        helper = account_helper()
+        version = helper.get_meta_type(meta=meta)
         if version == 'MKM' or version == 'mkm' or version == '1':
             # MKM
             out = DefaultMeta(meta=meta)
@@ -59,3 +59,9 @@ class CompatibleMetaFactory(BaseMetaFactory):
             raise TypeError('unknown meta type: %s' % version)
         if out.valid:
             return out
+
+
+def account_helper() -> GeneralAccountHelper:
+    helper = shared_account_extensions.helper
+    assert isinstance(helper, GeneralAccountHelper), 'account helper error: %s' % helper
+    return helper

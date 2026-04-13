@@ -28,59 +28,35 @@
 # SOFTWARE.
 # ==============================================================================
 
-from abc import ABC, abstractmethod
-from typing import TypeVar, Generic
+"""
+    Bot User
+    ~~~~~~~~
+"""
+
 from typing import Optional
 
+from dimsdk import ID, EntityType
+from dimsdk import Document
+from dimsdk import BaseUser
 
-K = TypeVar('K')
-V = TypeVar('V')
-
-
-class MemoryCache(Generic[K, V], ABC):
-
-    @abstractmethod
-    def get(self, key: K) -> Optional[V]:
-        raise NotImplemented
-
-    @abstractmethod
-    def put(self, key: K, value: Optional[V]):
-        raise NotImplemented
-
-    def reduce_memory(self) -> int:
-        """ Garbage Collection """
-        pass
+from .utils import DocumentUtils
 
 
-class ThanosCache(MemoryCache[K, V]):
+class Bot(BaseUser):
 
-    def __init__(self):
-        super().__init__()
-        self.__caches = {}
+    def __init__(self, identifier: ID):
+        super().__init__(identifier=identifier)
+        assert identifier.type == EntityType.BOT, 'Bot ID type error: %s' % identifier
 
-    # Override
-    def get(self, key: K) -> Optional[V]:
-        return self.__caches.get(key)
+    @property
+    async def profile(self) -> Optional[Document]:
+        """ Bot Document """
+        docs = await self.documents
+        return DocumentUtils.last_visa(documents=docs)
 
-    # Override
-    def put(self, key: K, value: Optional[V]):
-        if value is None:
-            self.__caches.pop(key, None)
-        else:
-            self.__caches[key] = value
-
-    # Override
-    def reduce_memory(self) -> int:
-        finger = 0
-        finger = thanos(self.__caches, finger)
-        return finger >> 1
-
-
-def thanos(planet: dict, finger: int) -> int:
-    """ Thanos can kill half lives of a world with a snap of the finger """
-    people = planet.keys()
-    for anybody in people:
-        if (++finger & 1) == 1:
-            # kill it
-            planet.pop(anybody)
-    return finger
+    @property
+    async def provider(self) -> Optional[ID]:
+        doc = await self.profile
+        if doc is not None:
+            icp = doc.get_property(name='provider')
+            return ID.parse(identifier=icp)

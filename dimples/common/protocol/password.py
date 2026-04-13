@@ -75,7 +75,7 @@ class Password:
     @classmethod
     def digest(cls, password: SymmetricKey) -> str:
         """ Get key digest """
-        key = password.data             # 32 bytes
+        key = password.data.binary      # 32 bytes
         dig = md5(data=key)             # 16 bytes
         pre = dig[:6]                   # 6 bytes
         return base64_encode(data=pre)  # 8 chars
@@ -89,4 +89,4 @@ class Password:
 
     PLAIN = SymmetricAlgorithms.PLAIN
 
-    kPlainKey = PlainKey()
+    kPlainKey = PlainKey.new_key()

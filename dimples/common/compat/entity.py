@@ -35,15 +35,15 @@ from dimsdk import ID, Identifier
 from dimsdk import ANYONE, EVERYONE, FOUNDER
 from dimsdk import Address
 
+from dimplugins import MemoryCache, shared_account_extensions
 from dimplugins import GeneralIdentifierFactory
-
-from ...utils.thanos import thanos
 
 from .network import network_to_type
 
 
 class EntityIDFactory(GeneralIdentifierFactory):
 
+    # noinspection PyMethodMayBeStatic
     def reduce_memory(self) -> int:
         """
         Call it when received 'UIApplicationDidReceiveMemoryWarningNotification',
@@ -51,9 +51,8 @@ class EntityIDFactory(GeneralIdentifierFactory):
 
         :return: number of survivors
         """
-        finger = 0
-        finger = thanos(self._identifiers, finger)
-        return finger >> 1
+        cache = id_cache()
+        return cache.reduce_memory()
 
     # Override
     def _new_id(self, identifier: str, name: Optional[str], address: Address, terminal: Optional[str]):
@@ -94,3 +93,9 @@ class EntityID(Identifier):
         # compatible with MKM 0.9.*
         address = self.address
         return network_to_type(network=address.network)
+
+
+def id_cache() -> MemoryCache[str, ID]:
+    cache = shared_account_extensions.id_cache
+    assert isinstance(cache, MemoryCache), 'ID cache error: %s' % cache
+    return cache

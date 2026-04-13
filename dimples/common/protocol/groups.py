@@ -33,8 +33,9 @@ from typing import Optional, List, Dict
 
 from dimsdk import DateTime
 from dimsdk import ID
-from dimsdk import CustomizedContent
 from dimsdk import GroupCommand, BaseGroupCommand
+
+from .app import CustomizedContent
 
 
 class QueryCommand(GroupCommand, ABC):

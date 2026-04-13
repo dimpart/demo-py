@@ -171,7 +171,7 @@ class EntityChecker(Logging, ABC):
             return None
         last_time = None
         for doc in documents:
-            assert doc.identifier == identifier, 'document not match: %s, %s' % (identifier, doc)
+            assert identifier == doc['did'], 'document not match: %s, %s' % (identifier, doc)
             doc_time = doc.time
             if doc_time is None:
                 # assert False, 'document error: %s' % doc

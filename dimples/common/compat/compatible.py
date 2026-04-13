@@ -26,13 +26,14 @@
 from typing import List, Dict
 
 from dimsdk import Converter
-from dimsdk import Document, DocumentUtils
+from dimsdk import Document
 from dimsdk import ContentType
 from dimsdk import Content, FileContent, NameCard
 from dimsdk import Command, MetaCommand, DocumentCommand
 from dimsdk import ReceiptCommand
 from dimsdk import ReliableMessage
 
+from ..mkm import DocumentUtils
 from ..protocol import LoginCommand
 from ..protocol import ReportCommand
 

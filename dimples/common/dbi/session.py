@@ -28,8 +28,9 @@ from typing import Optional, Any, Dict, List, Tuple
 from typing import Iterable
 
 from dimsdk import ID, Identifier, EVERYWHERE
-from dimsdk import Station
 from dimsdk import ReliableMessage
+
+from ..mkm import Station
 
 from ..protocol import LoginCommand
 

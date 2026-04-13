@@ -44,9 +44,9 @@ from dimsdk import json_encode, json_decode
 from dimsdk import Converter
 from dimsdk import DateTime
 from dimsdk import ReliableMessage
-from dimsdk import DocumentUtils
 
 from dimplugins.crypto.aes import random_bytes
+from dimplugins.mem import MemoryCache, ThanosCache
 
 from startrek.skywalker import Singleton
 from startrek.skywalker import Runnable, Runner, Daemon
@@ -62,7 +62,6 @@ from .checker import RecentTimeChecker
 
 from .log import Log, Logging
 from .cache import CachePool, SharedCacheManager
-from .thanos import MemoryCache, ThanosCache
 
 from .http import HttpSession, HttpClient
 
@@ -71,7 +70,11 @@ from .config import Config
 
 def is_before(old_time: Optional[DateTime], new_time: Optional[DateTime]) -> bool:
     """ check whether new time is before old time """
-    return DocumentUtils.is_before(old_time, new_time)
+    if old_time is None or new_time is None:
+        return False
+    else:
+        return new_time.before(old_time)
+    # return DocumentUtils.is_before(old_time, new_time)
 
 
 def get_msg_sig(msg: ReliableMessage) -> str:
@@ -127,6 +130,7 @@ __all__ = [
     'json_encode', 'json_decode',
 
     'random_bytes',
+    'MemoryCache', 'ThanosCache',
 
     'Converter',
     'DateTime',
@@ -141,7 +145,6 @@ __all__ = [
     'Log', 'Logging',
     'Path', 'File', 'TextFile', 'JSONFile',
     'CachePool', 'SharedCacheManager',
-    'MemoryCache', 'ThanosCache',
 
     'HttpSession', 'HttpClient',
 

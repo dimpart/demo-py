@@ -30,9 +30,11 @@ from dimsdk import EncryptKey
 from dimsdk import ID
 from dimsdk import InstantMessage, SecureMessage, ReliableMessage
 from dimsdk import MessagePacker
-from dimsdk import MessageUtils
+from dimsdk import GeneralAccountHelper, shared_account_extensions
 
 from ..utils import Logging
+
+from .protocol import MessageUtils
 
 from .facebook import CommonFacebook
 from .messenger import CommonMessenger
@@ -83,7 +85,9 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
         visa = MessageUtils.get_visa(msg=msg)
         if visa is not None:
             # first handshake?
-            matched = visa.identifier == sender
+            helper = account_helper()
+            did = helper.get_document_id(document=visa.dictionary)
+            matched = did == sender
             assert matched, 'visa ID not match: %s => %s' % (sender, visa)
             # assert Meta.match_id(meta=msg.meta, identifier=sender), 'meta error: %s' % msg
             return matched
@@ -157,3 +161,9 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
             # already signed
             return msg
         return await super().sign_message(msg=msg)
+
+
+def account_helper() -> GeneralAccountHelper:
+    helper = shared_account_extensions.helper
+    assert isinstance(helper, GeneralAccountHelper), 'account helper error: %s' % helper
+    return helper
