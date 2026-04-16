@@ -158,11 +158,6 @@ class SharedGroupManager(GroupDataSource):
         delegate = self.delegate
         return await delegate.get_members(identifier=identifier)
 
-    # Override
-    async def get_assistants(self, identifier: ID) -> List[ID]:
-        delegate = self.delegate
-        return await delegate.get_assistants(identifier=identifier)
-
     async def get_administrators(self, group: ID) -> List[ID]:
         delegate = self.delegate
         return await delegate.get_administrators(group=group)

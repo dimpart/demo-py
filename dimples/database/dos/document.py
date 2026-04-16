@@ -56,7 +56,7 @@ class DocumentStorage(Storage):
         self.info(msg='Saving %d document(s) into: %s' % (len(documents), path))
         array = []
         for doc in documents:
-            assert doc.identifier == identifier, 'document ID not matched: %s, %s' % (identifier, doc)
+            assert identifier == doc.get('did'), 'document ID not matched: %s, %s' % (identifier, doc)
             array.append(doc.dictionary)
         return await self.write_json(container=array, path=path)
 
@@ -101,7 +101,8 @@ def parse_document(dictionary: dict, identifier: ID = None, doc_type: str = '*')
     if data is None or signature is None:
         raise ValueError('document error: %s' % dictionary)
     ted = TransportableData.parse(signature)
-    doc = Document.create(doc_type=doc_type, identifier=identifier, data=data, signature=ted)
+    doc = Document.create(doc_type=doc_type, data=data, signature=ted)
+    doc.set_string(key='did', value=identifier)
     for key in dictionary:
         if key == 'did' or key == 'data' or key == 'signature':
             continue

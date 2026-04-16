@@ -31,8 +31,9 @@
 from typing import List
 
 from dimsdk import ID, Document, Bulletin
-from dimsdk import Station
 from dimsdk import DocumentCommand
+
+from ..common import Station
 
 from .delegate import TripletsHelper
 
@@ -71,7 +72,7 @@ class AdminManager(TripletsHelper):
         #
         #   2. update document
         #
-        doc = await delegate.get_bulletin(group)
+        doc = await delegate.get_bulletin(identifier=group)
         if doc is None:
             # TODO: create new one?
             self.error(msg='failed to get group document: %s, owner: %s' % (group, me))
@@ -89,7 +90,7 @@ class AdminManager(TripletsHelper):
         if signature is None:
             self.error(msg='failed to sign document for group: %s, owner: %s' % (group, me))
             return False
-        elif not await delegate.save_document(document=doc):
+        elif not await delegate.save_document(document=doc, identifier=group):
             self.error(msg='failed to save document for group: %s' % group)
             return False
         else:
@@ -107,7 +108,7 @@ class AdminManager(TripletsHelper):
             'facebook messenger not ready: %s, %s' % (facebook, messenger)
         delegate = self.delegate
         #
-        #   0. get current user
+        #   1. get current user
         #
         user = await facebook.current_user
         if user is None:
@@ -115,24 +116,13 @@ class AdminManager(TripletsHelper):
             return False
         me = user.identifier
         #
-        #   1. create 'document' command, and send to current station
+        #   2. create 'document' command, and send to current station
         #
-        group = document.identifier
+        did = document.get('did')
+        group = ID.parse(identifier=did)
         meta = await facebook.get_meta(identifier=group)
         content = DocumentCommand.response(identifier=group, meta=meta, documents=[document])
         await messenger.send_content(sender=me, receiver=Station.ANY, content=content, priority=1)
-        #
-        #   2. check group bots
-        #
-        bots = await delegate.get_assistants(identifier=group)
-        if len(bots) > 0:
-            # group bots exist, let them to deliver to all other members
-            for item in bots:
-                if me == item:
-                    self.info(msg='skip cycled message: %s' % item)
-                    continue
-                await messenger.send_content(sender=me, receiver=item, content=content, priority=1)
-            return True
         #
         #   3. broadcast to all members
         #

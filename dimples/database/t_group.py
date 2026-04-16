@@ -84,33 +84,6 @@ class MemberTask(GrpTask):
         return ok1 or ok2
 
 
-class BotTask(GrpTask):
-
-    # Override
-    async def _read_data(self) -> Optional[List[ID]]:
-        # 1. the redis server will return None when cache not found
-        # 2. when redis server return an empty array, no need to check local storage again
-        bots = await self._redis.get_assistants(group=self._group)
-        if bots is not None:
-            return bots
-        # 3. the local storage will return an empty array, when no bot for this group
-        bots = await self._dos.get_assistants(group=self._group)
-        if bots is None:
-            # 4. return empty array as a placeholder for the memory cache
-            bots = []
-        # 5. update redis server
-        await self._redis.save_assistants(assistants=bots, group=self._group)
-        return bots
-
-    # Override
-    async def _write_data(self, value: List[ID]) -> bool:
-        # 1. store into redis server
-        ok1 = await self._redis.save_assistants(assistants=value, group=self._group)
-        # 2. save into local storage
-        ok2 = await self._dos.save_assistants(assistants=value, group=self._group)
-        return ok1 or ok2
-
-
 class AdminTask(GrpTask):
 
     # Override
@@ -145,7 +118,6 @@ class GroupTable(GroupDBI):
         super().__init__()
         man = SharedCacheManager()
         self._member_cache = man.get_pool(name='group.members')        # ID => List[ID]
-        self._bot_cache = man.get_pool(name='group.assistants')        # ID => List[ID]
         self._admin_cache = man.get_pool(name='group.administrators')  # ID => List[ID]
         self._redis = GroupCache(config=config)
         self._dos = GroupStorage(config=config)
@@ -158,11 +130,6 @@ class GroupTable(GroupDBI):
         return MemberTask(group=group,
                           redis=self._redis, storage=self._dos,
                           mutex_lock=self._lock, cache_pool=self._member_cache)
-
-    def _new_bot_task(self, group: ID) -> GrpTask:
-        return BotTask(group=group,
-                       redis=self._redis, storage=self._dos,
-                       mutex_lock=self._lock, cache_pool=self._bot_cache)
 
     def _new_admin_task(self, group: ID) -> GrpTask:
         return AdminTask(group=group,
@@ -191,17 +158,6 @@ class GroupTable(GroupDBI):
     async def save_members(self, members: List[ID], group: ID) -> bool:
         task = self._new_member_task(group=group)
         return await task.save(value=members)
-
-    # Override
-    async def get_assistants(self, group: ID) -> List[ID]:
-        task = self._new_bot_task(group=group)
-        bots = await task.load()
-        return [] if bots is None else bots
-
-    # Override
-    async def save_assistants(self, assistants: List[ID], group: ID) -> bool:
-        task = self._new_bot_task(group=group)
-        return await task.save(value=assistants)
 
     # Override
     async def get_administrators(self, group: ID) -> List[ID]:

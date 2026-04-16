@@ -34,8 +34,8 @@ from dimsdk import ID
 from dimsdk import Content, ForwardContent
 from dimsdk import MetaCommand, DocumentCommand
 from dimsdk import GroupCommand
-from dimsdk import Station
 
+from ..common import Station
 from ..common import Register
 
 from .delegate import TripletsHelper
@@ -186,13 +186,11 @@ class GroupManager(TripletsHelper):
         #
         is_owner = me == first
         is_admin = await self.delegate.is_administrator(user=me, group=group)
-        is_bot = await self.delegate.is_assistant(user=me, group=group)
         can_reset = is_owner or is_admin
         if not can_reset:
             self.error(msg='cannot reset members of group: %s' % group)
             return False
         # only the owner or admin can reset group member
-        assert not is_bot, 'group bot cannot reset members: %s, %s' % (group, me)
         #
         #   2. build 'reset' command
         #
@@ -216,16 +214,9 @@ class GroupManager(TripletsHelper):
         #
         messages = await self.builder.build_group_histories(group=group)
         forward = ForwardContent.create(messages=messages)
-        bots = await self.delegate.get_assistants(identifier=group)
-        if len(bots) > 0:
-            # let the group bots know the newest member ID list,
-            # so they can split group message correctly for us.
-            return await self.__send_command(content=forward, members=bots)   # to all assistants
-        else:
-            # group bots not exist,
-            # send the command to all members
-            await self.__send_command(content=forward, members=members)       # to new members
-            await self.__send_command(content=forward, members=expel_list)    # to removed members
+        # send the command to all members
+        await self.__send_command(content=forward, members=members)       # to new members
+        await self.__send_command(content=forward, members=expel_list)    # to removed members
         return True
 
     async def invite_members(self, members: List[ID], group: ID) -> bool:
@@ -280,11 +271,6 @@ class GroupManager(TripletsHelper):
         #
         #   3. forward group command(s)
         #
-        bots = await self.delegate.get_assistants(identifier=group)
-        if len(bots) > 0:
-            # let the group bots know the newest member ID list,
-            # so they can split group message correctly for us.
-            return await self.__send_command(content=forward, members=bots)   # to all assistants
         # forward 'invite' to old members
         await self.__send_command(content=forward, members=old_members)       # to old members
         # forward all group history to new members
@@ -316,7 +302,6 @@ class GroupManager(TripletsHelper):
         assert len(members) > 0, 'failed to get members for group: %s' % group
         is_owner = await self.delegate.is_owner(user=me, group=group)
         is_admin = await self.delegate.is_administrator(user=me, group=group)
-        is_bot = await self.delegate.is_assistant(user=me, group=group)
         is_member = me in members
         #
         #   1. check permission
@@ -327,7 +312,6 @@ class GroupManager(TripletsHelper):
         elif is_admin:
             self.warning(msg='administrator cannot quit from group: %s' % group)
             return False
-        assert not is_bot, 'group bot cannot quit: %s, %s' % (group, me)
         #
         #   2. update local storage
         #
@@ -352,11 +336,6 @@ class GroupManager(TripletsHelper):
         #
         #   4. forward 'quit' command
         #
-        bots = await self.delegate.get_assistants(identifier=group)
-        if len(bots) > 0:
-            # let the group bots know the newest member ID list,
-            # so they can split group message correctly for us.
-            return await self.__send_command(content=forward, members=bots)   # to group bots
         # group bots not exist,
         # send the command to all members directly
         return await self.__send_command(content=forward, members=members)    # to all members

@@ -59,9 +59,9 @@ class DocumentCache(RedisCache):
     async def save_documents(self, documents: List[Document], identifier: ID) -> bool:
         array = []
         for doc in documents:
-            assert doc.identifier == identifier, 'document ID not matched: %s, %s' % (identifier, doc)
+            assert identifier == doc.get('did'), 'document ID not matched: %s, %s' % (identifier, doc)
             array.append(doc.dictionary)
-        js = json_encode(obj=array)
+        js = json_encode(container=array)
         value = utf8_encode(string=js)
         name = self.__cache_name(identifier=identifier)
         return await self.set(name=name, value=value, expires=self.EXPIRES)

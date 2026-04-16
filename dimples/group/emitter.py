@@ -32,7 +32,7 @@ from typing import Optional, List
 
 from dimsdk import ID
 from dimsdk import InstantMessage, ReliableMessage
-from dimsdk import ForwardContent, FileContent
+from dimsdk import FileContent
 from dimsdk import GroupCommand
 
 from .delegate import TripletsHelper
@@ -109,7 +109,7 @@ class GroupEmitter(TripletsHelper):
         content = msg.content
         group = content.group
         #
-        #   0. check group
+        #   1. check group
         #
         if group is None:
             self.error(msg='not a group message')
@@ -127,14 +127,6 @@ class GroupEmitter(TripletsHelper):
         #       before calling this
         assert not isinstance(content, FileContent) or content.data is None, 'content error: %s' % content
         #
-        #   1. check group bots
-        #
-        prime = await self.delegate.get_fastest_assistant(identifier=group)
-        if prime is not None:
-            # group bots found, forward this message to any bot to let it split for me;
-            # this can reduce my jobs.
-            return await self.__forward_message(msg=msg, bot=prime, group=group, priority=priority)
-        #
         #   2. check group members
         #
         members = await self.delegate.get_members(identifier=group)
@@ -142,7 +134,6 @@ class GroupEmitter(TripletsHelper):
         if count == 0:
             self.error(msg='failed to get members for group: %s' % group)
             return None
-        # no 'assistants' found in group's bulletin document?
         # split group messages and send to all members one by one
         if count < self.SECRET_GROUP_LIMIT:
             # it is a tiny group, split this message before encrypting and signing,
@@ -155,46 +146,46 @@ class GroupEmitter(TripletsHelper):
             # then split and send to all members one by one
             return await self.__disperse_message(msg=msg, members=members, group=group, priority=priority)
 
-    async def __forward_message(self, msg: InstantMessage, bot: ID, group: ID,
-                                priority: int = 0) -> Optional[ReliableMessage]:
-        """ Encrypt & sign message, then forward to the bot """
-        assert bot.is_user and group.is_group, 'ID error: %s, %s' % (bot, group)
-        # NOTICE: because group assistant (bot) cannot be a member of the group, so
-        #         if you want to send a group command to any assistant, you must
-        #         set the bot ID as 'receiver' and set the group ID in content;
-        #         this means you must send it to the bot directly.
-        messenger = self.messenger
-        #
-        # group bots designated, let group bot to split the message, so
-        # here must expose the group ID; this will cause the client to
-        # use a "user-to-group" encrypt key to encrypt the message content,
-        # this key will be encrypted by each member's public key, so
-        # all members will received a message split by the group bot,
-        # but the group bots cannot decrypt it.
-        msg.set_string(key='group', value=group)
-        #
-        # the group bot can only get the message 'signature',
-        # but cannot know the 'sn' because it cannot decrypt the content,
-        # this is usually not a problem;
-        # but sometimes we want to respond a receipt with original sn,
-        # so I suggest to expose 'sn' too.
-        msg['sn'] = msg.content.sn
-        #
-        #   1. pack message
-        #
-        r_msg = await self.packer.encrypt_sign_message(msg=msg)
-        if r_msg is None:
-            self.error(msg='failed to encrypt & sign message: %s => %s' % (msg.sender, group))
-            return None
-        #
-        #   2. forward the group message to any bot
-        #
-        content = ForwardContent.create(message=r_msg)
-        _, out = await messenger.send_content(sender=None, receiver=bot, content=content, priority=priority)
-        if out is None:
-            self.error(msg='failed to forward message for group: %s, bot: %s' % (group, bot))
-        # OK, return the forwarding message
-        return r_msg
+    # async def __forward_message(self, msg: InstantMessage, bot: ID, group: ID,
+    #                             priority: int = 0) -> Optional[ReliableMessage]:
+    #     """ Encrypt & sign message, then forward to the bot """
+    #     assert bot.is_user and group.is_group, 'ID error: %s, %s' % (bot, group)
+    #     # NOTICE: because group assistant (bot) cannot be a member of the group, so
+    #     #         if you want to send a group command to any assistant, you must
+    #     #         set the bot ID as 'receiver' and set the group ID in content;
+    #     #         this means you must send it to the bot directly.
+    #     messenger = self.messenger
+    #     #
+    #     # group bots designated, let group bot to split the message, so
+    #     # here must expose the group ID; this will cause the client to
+    #     # use a "user-to-group" encrypt key to encrypt the message content,
+    #     # this key will be encrypted by each member's public key, so
+    #     # all members will received a message split by the group bot,
+    #     # but the group bots cannot decrypt it.
+    #     msg.set_string(key='group', value=group)
+    #     #
+    #     # the group bot can only get the message 'signature',
+    #     # but cannot know the 'sn' because it cannot decrypt the content,
+    #     # this is usually not a problem;
+    #     # but sometimes we want to respond a receipt with original sn,
+    #     # so I suggest to expose 'sn' too.
+    #     msg['sn'] = msg.content.sn
+    #     #
+    #     #   1. pack message
+    #     #
+    #     r_msg = await self.packer.encrypt_sign_message(msg=msg)
+    #     if r_msg is None:
+    #         self.error(msg='failed to encrypt & sign message: %s => %s' % (msg.sender, group))
+    #         return None
+    #     #
+    #     #   2. forward the group message to any bot
+    #     #
+    #     content = ForwardContent.create(message=r_msg)
+    #     _, out = await messenger.send_content(sender=None, receiver=bot, content=content, priority=priority)
+    #     if out is None:
+    #         self.error(msg='failed to forward message for group: %s, bot: %s' % (group, bot))
+    #     # OK, return the forwarding message
+    #     return r_msg
 
     async def __disperse_message(self, msg: InstantMessage, members: List[ID], group: ID,
                                  priority: int = 0) -> Optional[ReliableMessage]:

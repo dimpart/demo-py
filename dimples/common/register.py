@@ -87,7 +87,7 @@ class Register:
         await db.save_private_key(key=id_key, user=identifier, key_type=PrivateKeyDBI.META)
         await db.save_private_key(key=msg_key, user=identifier, key_type=PrivateKeyDBI.VISA)
         await db.save_meta(meta=meta, identifier=identifier)
-        await db.save_document(document=visa)
+        await db.save_document(document=visa, identifier=identifier)
         # OK
         return identifier
 
@@ -124,7 +124,7 @@ class Register:
         #   Step 5: save meta & bulletin in local storage
         #
         await db.save_meta(meta=meta, identifier=identifier)
-        await db.save_document(document=doc)
+        await db.save_document(document=doc, identifier=identifier)
         #
         #   Step 6: add founder as first member
         #

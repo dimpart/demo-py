@@ -29,9 +29,9 @@ from typing import Optional, List
 from aiou.mem import CachePool
 
 from dimsdk import ID, Document
-from dimsdk import DocumentUtils
 
 from ..utils import Config
+from ..common import DocumentUtils
 from ..common import DocumentDBI
 
 from .dos import DocumentStorage
@@ -78,7 +78,8 @@ class DocTask(DbTask[ID, List[Document]]):
             assert False, 'should not happen: %s' % self._identifier
             # return False
         else:
-            identifier = new_doc.identifier
+            did = new_doc.get('did')
+            identifier = ID.parse(identifier=did)
             doc_type = DocumentUtils.get_document_type(document=new_doc)
             created_time = new_doc.get_property(name='created_time')
         #
@@ -89,7 +90,7 @@ class DocTask(DbTask[ID, List[Document]]):
         while index > 0:
             index -= 1
             item = documents[index]
-            if not isinstance(item, Document) or item.identifier != identifier:
+            if not isinstance(item, Document) or identifier != item.get('did'):
                 self.error(msg='document error: %s, %s' % (identifier, item))
                 continue
             elif item.get('type') != doc_type:
@@ -140,11 +141,10 @@ class DocumentTable(DataCache, DocumentDBI):
     #
 
     # Override
-    async def save_document(self, document: Document) -> bool:
+    async def save_document(self, document: Document, identifier: ID) -> bool:
         #
         #   0. check valid
         #
-        identifier = document.identifier
         if not document.valid:
             self.error(msg='document not valid: %s' % identifier)
             return False

@@ -29,9 +29,9 @@ from dimsdk import GroupCommand, ResetCommand
 from dimsdk import PrivateKey, DecryptKey, SignKey
 from dimsdk import ID, Meta, Document, Bulletin
 from dimsdk import ReliableMessage
-from dimsdk import MetaUtils
 
 from ..utils import Config
+from ..common import MetaUtils
 from ..common import AccountDBI
 
 from .t_private import PrivateKeyTable
@@ -92,7 +92,7 @@ class AccountDatabase(AccountDBI):
     # Override
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
         # check meta with ID
-        if not MetaUtils.match_identifier(identifier=identifier, meta=meta):
+        if not MetaUtils.match_id(identifier=identifier, meta=meta):
             raise ValueError('meta not match: %s => %s' % (identifier, meta))
         return await self._meta_table.save_meta(meta=meta, identifier=identifier)
 
@@ -105,23 +105,23 @@ class AccountDatabase(AccountDBI):
     #
 
     # Override
-    async def save_document(self, document: Document) -> bool:
+    async def save_document(self, document: Document, identifier: ID) -> bool:
         # check meta first
-        meta = await self._meta_table.get_meta(identifier=document.identifier)
+        meta = await self._meta_table.get_meta(identifier=identifier)
         if meta is None:
-            raise LookupError('meta not exists: %s' % document.identifier)
+            raise LookupError('meta not exists: %s' % identifier)
         # check document valid before saving it
         if not (document.valid or document.verify(public_key=meta.public_key)):
-            raise ValueError('document error: %s' % document.identifier)
+            raise ValueError('document error: %s' % identifier)
         # check founder in group document
         if isinstance(document, Bulletin):
             founder = document.founder
             if founder is not None:
                 f_meta = await self._meta_table.get_meta(identifier=founder)
                 if f_meta is None or meta.public_key != meta.public_key:
-                    raise ValueError('founder error: %s, group: %s' % (founder, document.identifier))
+                    raise ValueError('founder error: %s, group: %s' % (founder, identifier))
         # document ok, try to save it
-        return await self._doc_table.save_document(document=document)
+        return await self._doc_table.save_document(document=document, identifier=identifier)
 
     # Override
     async def get_documents(self, identifier: ID) -> List[Document]:
@@ -166,14 +166,6 @@ class AccountDatabase(AccountDBI):
     # Override
     async def save_members(self, members: List[ID], group: ID) -> bool:
         return await self._group_table.save_members(members=members, group=group)
-
-    # Override
-    async def get_assistants(self, group: ID) -> List[ID]:
-        return await self._group_table.get_assistants(group=group)
-
-    # Override
-    async def save_assistants(self, assistants: List[ID], group: ID) -> bool:
-        return await self._group_table.save_assistants(assistants=assistants, group=group)
 
     # Override
     async def get_administrators(self, group: ID) -> List[ID]:

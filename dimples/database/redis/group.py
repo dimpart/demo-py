@@ -93,27 +93,3 @@ class GroupCache(RedisCache):
         value = utf8_encode(string=text)
         key = self.__administrators_cache_name(identifier=group)
         return await self.set(name=key, value=value, expires=self.EXPIRES)
-
-    """
-        Group assistants
-        ~~~~~~~~~~~~~~~~
-
-        redis key: 'mkm.group.{ID}.assistants'
-    """
-    def __assistants_cache_name(self, identifier: ID) -> str:
-        return '%s.%s.%s.assistants' % (self.db_name, self.tbl_name, identifier)
-
-    async def get_assistants(self, group: ID) -> Optional[List[ID]]:
-        key = self.__assistants_cache_name(identifier=group)
-        value = await self.get(name=key)
-        if value is not None:
-            text = utf8_decode(data=value)
-            assert text is not None, 'failed to decode string: %s' % value
-            return ID.convert(array=text.splitlines())
-
-    async def save_assistants(self, assistants: List[ID], group: ID) -> bool:
-        bots = ID.revert(identifiers=assistants)
-        text = '\n'.join(bots)
-        value = utf8_encode(string=text)
-        key = self.__assistants_cache_name(identifier=group)
-        return await self.set(name=key, value=value, expires=self.EXPIRES)

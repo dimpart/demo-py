@@ -186,7 +186,7 @@ class CommonArchivist(Barrack, Archivist, Logging):
         #  3. save into database
         #
         db = self.database
-        return await db.save_document(document=document)
+        return await db.save_document(document=document, identifier=identifier)
 
     # protected
     async def check_document(self, document: Document, identifier: ID) -> bool:

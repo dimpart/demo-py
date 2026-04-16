@@ -34,8 +34,8 @@ from dimsdk import DateTime
 from dimsdk import ID
 from dimsdk import ReliableMessage
 from dimsdk import GroupCommand, ResetCommand
-from dimsdk import DocumentUtils
 
+from ..common import DocumentUtils
 from ..common import ResignCommand
 
 from .delegate import TripletsHelper

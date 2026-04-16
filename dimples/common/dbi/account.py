@@ -124,7 +124,7 @@ class DocumentDBI(ABC):
     """ Document Table """
 
     @abstractmethod
-    async def save_document(self, document: Document) -> bool:
+    async def save_document(self, document: Document, identifier: ID) -> bool:
         raise NotImplemented
 
     @abstractmethod
@@ -176,15 +176,6 @@ class GroupDBI(ABC):
 
     @abstractmethod
     async def save_members(self, members: List[ID], group: ID) -> bool:
-        raise NotImplemented
-
-    @abstractmethod
-    async def get_assistants(self, group: ID) -> List[ID]:
-        """ bots for group """
-        raise NotImplemented
-
-    @abstractmethod
-    async def save_assistants(self, assistants: List[ID], group: ID) -> bool:
         raise NotImplemented
 
     @abstractmethod

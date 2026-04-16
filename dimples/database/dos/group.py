@@ -39,28 +39,20 @@ class GroupStorage(Storage, GroupDBI):
         ~~~~~~~~~~~~~
 
         file path: '.dim/protected/{ADDRESS}/members.js'
-        file path: '.dim/protected/{ADDRESS}/assistants.js'
         file path: '.dim/protected/{ADDRESS}/administrators.js'
     """
 
     members_path = '{PROTECTED}/{ADDRESS}/members.js'
-    assistants_path = '{PROTECTED}/{ADDRESS}/assistants.js'
     administrators_path = '{PROTECTED}/{ADDRESS}/administrators.js'
 
     def show_info(self):
         path1 = self.protected_path(self.members_path)
-        path2 = self.protected_path(self.assistants_path)
-        path3 = self.protected_path(self.administrators_path)
+        path2 = self.protected_path(self.administrators_path)
         print('!!!        members path: %s' % path1)
-        print('!!!     assistants path: %s' % path2)
-        print('!!! administrators path: %s' % path3)
+        print('!!! administrators path: %s' % path2)
 
     def __members_path(self, identifier: ID) -> str:
         path = self.protected_path(self.members_path)
-        return template_replace(path, key='ADDRESS', value=str(identifier.address))
-
-    def __assistants_path(self, identifier: ID) -> str:
-        path = self.protected_path(self.assistants_path)
         return template_replace(path, key='ADDRESS', value=str(identifier.address))
 
     def __administrators_path(self, identifier: ID) -> str:
@@ -96,24 +88,6 @@ class GroupStorage(Storage, GroupDBI):
         path = self.__members_path(identifier=group)
         self.info(msg='Saving members into: %s' % path)
         return await self.write_json(container=ID.revert(identifiers=members), path=path)
-
-    # Override
-    async def get_assistants(self, group: ID) -> List[ID]:
-        """ load assistants from file """
-        path = self.__assistants_path(identifier=group)
-        self.info(msg='Loading assistants from: %s' % path)
-        bots = await self.read_json(path=path)
-        if bots is None:
-            # assistants not found
-            return []
-        return ID.convert(array=bots)
-
-    # Override
-    async def save_assistants(self, assistants: List[ID], group: ID) -> bool:
-        """ save assistants into file """
-        path = self.__assistants_path(identifier=group)
-        self.info(msg='Saving assistants into: %s' % path)
-        return await self.write_json(container=ID.revert(identifiers=assistants), path=path)
 
     # Override
     async def get_administrators(self, group: ID) -> List[ID]:

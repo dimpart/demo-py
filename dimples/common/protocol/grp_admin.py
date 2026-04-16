@@ -62,16 +62,6 @@ class HireCommand(GroupCommand, ABC):
     def administrators(self, users: List[ID]):
         raise NotImplemented
 
-    @property
-    @abstractmethod
-    def assistants(self) -> Optional[List[ID]]:
-        raise NotImplemented
-
-    @assistants.setter
-    @abstractmethod
-    def assistants(self, bots: List[ID]):
-        raise NotImplemented
-
 
 class FireCommand(GroupCommand, ABC):
 
@@ -83,16 +73,6 @@ class FireCommand(GroupCommand, ABC):
     @administrators.setter
     @abstractmethod
     def administrators(self, users: List[ID]):
-        raise NotImplemented
-
-    @property
-    @abstractmethod
-    def assistants(self) -> Optional[List[ID]]:
-        raise NotImplemented
-
-    @assistants.setter
-    @abstractmethod
-    def assistants(self, bots: List[ID]):
         raise NotImplemented
 
 
@@ -117,16 +97,12 @@ class ResignCommand(GroupCommand, ABC):
 class HireGroupCommand(BaseGroupCommand, HireCommand):
 
     def __init__(self, content: Dict = None, group: ID = None,
-                 administrators: List[ID] = None,
-                 assistants: List[ID] = None):
+                 administrators: List[ID] = None):
         cmd = GroupCommand.HIRE if content is None else None
         super().__init__(content, cmd=cmd, group=group)
         # group admins
         if administrators is not None:
             self['administrators'] = ID.revert(identifiers=administrators)
-        # group bots
-        if assistants is not None:
-            self['assistants'] = ID.revert(identifiers=assistants)
 
     @property  # Override
     def administrators(self) -> Optional[List[ID]]:
@@ -142,36 +118,17 @@ class HireGroupCommand(BaseGroupCommand, HireCommand):
             self.pop('administrators', None)
         else:
             self['administrators'] = ID.revert(identifiers=users)
-
-    @property  # Override
-    def assistants(self) -> Optional[List[ID]]:
-        bots = self.get('assistants')
-        if isinstance(bots, List):
-            # convert all items to ID objects
-            return ID.convert(array=bots)
-        assert bots is None, 'ID list error: %s' % bots
-
-    @assistants.setter  # Override
-    def assistants(self, bots: List[ID]):
-        if bots is None:
-            self.pop('assistants', None)
-        else:
-            self['assistants'] = ID.revert(identifiers=bots)
 
 
 class FireGroupCommand(BaseGroupCommand, FireCommand):
 
     def __init__(self, content: Dict = None, group: ID = None,
-                 administrators: List[ID] = None,
-                 assistants: List[ID] = None):
+                 administrators: List[ID] = None):
         cmd = GroupCommand.FIRE if content is None else None
         super().__init__(content=content, cmd=cmd, group=group)
         # group admins
         if administrators is not None:
             self['administrators'] = ID.revert(identifiers=administrators)
-        # group bots
-        if assistants is not None:
-            self['assistants'] = ID.revert(identifiers=assistants)
 
     @property  # Override
     def administrators(self) -> Optional[List[ID]]:
@@ -187,21 +144,6 @@ class FireGroupCommand(BaseGroupCommand, FireCommand):
             self.pop('administrators', None)
         else:
             self['administrators'] = ID.revert(identifiers=users)
-
-    @property  # Override
-    def assistants(self) -> Optional[List[ID]]:
-        bots = self.get('assistants')
-        if isinstance(bots, List):
-            # convert all items to ID objects
-            return ID.convert(array=bots)
-        assert bots is None, 'ID list error: %s' % bots
-
-    @assistants.setter  # Override
-    def assistants(self, bots: List[ID]):
-        if bots is None:
-            self.pop('assistants', None)
-        else:
-            self['assistants'] = ID.revert(identifiers=bots)
 
 
 class ResignGroupCommand(BaseGroupCommand, ResignCommand):
