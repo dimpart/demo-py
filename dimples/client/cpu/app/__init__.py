@@ -28,37 +28,21 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Union, List
+from .handler import CustomizedContentHandler, BaseCustomizedContentHandler
 
-from dimsdk import ReliableMessage
-from dimsdk import Content
-from dimsdk import MessageExtensions, shared_message_extensions
-from dimsdk.cpu import BaseContentProcessor
+from .filter import CustomizedContentFilter, AppCustomizedFilter
+from .filter import CustomizedFilterExtensions
 
-from ...common import CustomizedContent
-
-from .app import CustomizedFilterExtensions
+from .group import GroupHistoryHandler
 
 
-class CustomizedContentProcessor(BaseContentProcessor):
-    """
-        Customized Content Processing Unit
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        Handle content for application customized
-    """
+__all__ = [
 
-    # def __init__(self, facebook: Facebook, messenger: Messenger):
-    #     super().__init__(facebook=facebook, messenger=messenger)
+    'CustomizedContentHandler', 'BaseCustomizedContentHandler',
 
-    # Override
-    async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
-        assert isinstance(content, CustomizedContent), 'customized content error: %s' % content
-        ext = message_extensions()
-        customized_filter = ext.customized_filter
-        # get handler for 'app' & 'mod'
-        handler = customized_filter.filter_content(content=content, msg=r_msg)
-        return await handler.handle_action(content=content, msg=r_msg, messenger=self.messenger)
+    'CustomizedContentFilter', 'AppCustomizedFilter',
+    'CustomizedFilterExtensions',
 
+    'GroupHistoryHandler',
 
-def message_extensions() -> Union[MessageExtensions, CustomizedFilterExtensions]:
-    return shared_message_extensions
+]

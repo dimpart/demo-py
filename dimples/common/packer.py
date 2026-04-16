@@ -33,6 +33,7 @@ from dimsdk import MessagePacker
 from dimsdk import GeneralAccountHelper, shared_account_extensions
 
 from ..utils import Logging
+from ..common import DocumentUtils
 
 from .protocol import MessageUtils
 
@@ -74,7 +75,18 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
     async def _visa_key(self, user: ID) -> Optional[EncryptKey]:
         """ for checking whether user's ready """
         db = self.facebook
-        return await db.public_key_for_encryption(identifier=user)
+        # return await db.public_key_for_encryption(identifier=user)
+        docs = await db.get_documents(identifier=user)
+        if docs is None or len(docs) == 0:
+            return None
+        visa = DocumentUtils.last_visa(documents=docs)
+        if visa is not None:  # and visa.valid:
+            return visa.public_key
+        meta = await db.get_meta(identifier=user)
+        if meta is not None:  # and meta.valid:
+            meta_key = meta.public_key
+            if isinstance(meta_key, EncryptKey):
+                return meta_key
 
     # protected
     async def _check_sender(self, msg: ReliableMessage) -> bool:

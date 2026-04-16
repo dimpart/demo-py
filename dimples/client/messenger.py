@@ -34,13 +34,13 @@ from typing import Optional, List
 
 from dimsdk import EntityType, ID, EVERYONE
 from dimsdk import Document, Visa
-from dimsdk import Station
 from dimsdk import Envelope, InstantMessage, ReliableMessage
 from dimsdk import ContentType, Command
 from dimsdk import ReceiptCommand
-from dimsdk import MessageUtils
 
 from ..utils import get_msg_sig
+from ..common import DocumentUtils, MessageUtils
+from ..common import Station
 from ..common import HandshakeCommand, ReportCommand, LoginCommand
 from ..common import CommonMessenger
 
@@ -171,7 +171,8 @@ class ClientMessenger(CommonMessenger):
             # update visa before first handshake
             await self._update_visa()
             meta = await user.meta
-            visa = await user.visa
+            docs = await user.documents
+            visa = DocumentUtils.last_visa(documents=docs)
             # create instant message with meta & visa
             i_msg = InstantMessage.create(head=env, body=cmd)
             MessageUtils.set_meta(meta=meta, msg=i_msg)
@@ -191,7 +192,8 @@ class ClientMessenger(CommonMessenger):
         pri_key = await facebook.private_key_for_visa_signature(identifier=user.identifier)
         assert pri_key is not None, 'private key not found: %s' % user.identifier
         # 2. get visa document for current user
-        visa = await user.visa
+        docs = await user.documents
+        visa = DocumentUtils.last_visa(documents=docs)
         if visa is None:
             # FIXME: query from station or create a new one?
             return None
@@ -207,7 +209,7 @@ class ClientMessenger(CommonMessenger):
         })
         if visa.sign(private_key=pri_key) is None:
             self.error(msg='failed to sign visa: %s, private key: %s' % (visa, pri_key))
-        elif await archivist.save_document(document=visa):
+        elif await archivist.save_document(document=visa, identifier=user.identifier):
             self.info(msg='visa updated: %s' % visa)
             return visa
         else:
@@ -227,7 +229,8 @@ class ClientMessenger(CommonMessenger):
         facebook = self.facebook
         user = await facebook.current_user
         assert user is not None, 'current user not found'
-        visa = await user.visa
+        docs = await user.documents
+        visa = DocumentUtils.last_visa(documents=docs)
         assert visa is not None, 'visa not found: %s' % user
         me = user.identifier
         #

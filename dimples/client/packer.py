@@ -33,6 +33,7 @@ from dimsdk import ID
 from dimsdk import ContentType, TextContent, FileContent
 from dimsdk import InstantMessage, SecureMessage, ReliableMessage
 
+from ..common import DocumentUtils
 from ..common import CommonFacebook
 from ..common import CommonMessagePacker
 
@@ -185,7 +186,8 @@ class ClientMessagePacker(CommonMessagePacker):
         if user is None:
             self.error(msg='current user not found')
             return False
-        visa = await user.visa
+        docs = await user.documents
+        visa = DocumentUtils.last_visa(documents=docs)
         assert visa is not None, 'user visa error: %s' % user
         return await checker.send_visa(visa=visa, receiver=receiver)
 

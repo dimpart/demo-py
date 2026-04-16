@@ -51,13 +51,14 @@ class ClientArchivist(CommonArchivist):
         super().cache_group(group=group)
 
     # Override
-    async def save_document(self, document: Document) -> bool:
-        ok = await super().save_document(document=document)
+    async def save_document(self, document: Document, identifier: ID) -> bool:
+        ok = await super().save_document(document=document, identifier=identifier)
         if ok and isinstance(document, Bulletin):
             # check administrators
             array = document.get_property(name='administrators')
             if array is not None:
-                group = document.identifier
+                did = document.get('did')
+                group = ID.parse(identifier=did)
                 assert group.is_group, 'group ID error: %s' % group
                 admins = ID.convert(array=array)
                 db = self.database
@@ -149,24 +150,6 @@ class ClientFacebook(CommonFacebook):
         else:
             assert users[0] == owner, 'group owner must be the first member: %s' % identifier
         return users
-
-    # Override
-    async def get_assistants(self, identifier: ID) -> List[ID]:
-        assert identifier.is_group, 'group ID error: %s' % identifier
-        # check bulletin document
-        doc = await self.get_bulletin(group=identifier)
-        if doc is None:
-            # the assistants should be set in the bulletin document of group
-            return []
-        db = self.database
-        # check local storage
-        bots = await db.get_assistants(group=identifier)
-        if len(bots) > 0:
-            # got from local storage
-            return bots
-        # get from bulletin document
-        bots = doc.assistants
-        return [] if bots is None else bots
 
     #
     #   Organizational Structure

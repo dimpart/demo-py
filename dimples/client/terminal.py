@@ -35,7 +35,6 @@ from typing import Optional
 
 from dimsdk import DateTime
 from dimsdk import EntityType
-from dimsdk import Station
 from dimsdk import Packer, Processor
 
 from ..utils import Logging
@@ -43,6 +42,7 @@ from ..utils import Runner
 from ..utils import StateDelegate
 
 from ..common import SessionDBI
+from ..common import Station
 
 from .network import ClientSession
 from .network import StateMachine, SessionState

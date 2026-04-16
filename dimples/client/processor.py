@@ -36,7 +36,7 @@ from dimsdk import ReliableMessage
 from dimsdk import Content, TextContent
 from dimsdk import ReceiptCommand
 from dimsdk import Facebook, Messenger
-from dimsdk import ContentProcessorCreator
+from dimsdk.cpu import ContentProcessorCreator
 
 from ..common import HandshakeCommand
 from ..common import CommonMessenger
@@ -112,7 +112,8 @@ class ClientMessageProcessor(CommonMessageProcessor):
             assert facebook is not None and messenger is not None, 'twins not ready: %s, %s' % (facebook, messenger)
         sender = r_msg.sender
         receiver = r_msg.receiver
-        me = await facebook.select_local_user(receiver=receiver)
+        user = await self.select_local_user(receiver=receiver)
+        me = None if user is None else user.identifier
         if me is None:
             # assert False, 'receiver error: %s' % receiver
             return responses

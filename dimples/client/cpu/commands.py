@@ -44,8 +44,6 @@ from ...common import AnsCommand
 from ...common import LoginCommand
 from ...common import CommonMessenger
 
-from ...group import SharedGroupManager
-
 from ..facebook import ClientFacebook
 
 
@@ -94,6 +92,4 @@ class ReceiptCommandProcessor(BaseCommandProcessor):
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
         assert isinstance(content, ReceiptCommand), 'receipt command error: %s' % content
-        man = SharedGroupManager()
-        man.delegate.update_respond_time(content=content, envelope=r_msg.envelope)
         return []

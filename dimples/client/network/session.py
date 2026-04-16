@@ -38,14 +38,15 @@
 import traceback
 from typing import Optional, List
 
-from dimsdk import Station
-
 from startrek import Porter, PorterStatus
 from startrek import Arrival
 
 from ...utils import StateDelegate
 from ...utils import Daemon, Runner
+
+from ...common import Station
 from ...common import SessionDBI
+
 from ...conn import BaseSession
 from ...conn import MTPStreamArrival
 

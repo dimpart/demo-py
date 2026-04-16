@@ -34,9 +34,9 @@ from typing import Optional, List
 from dimsdk import ID, Document, Visa
 from dimsdk import Content
 from dimsdk import MetaCommand, DocumentCommand
-from dimsdk import Station
 
 from ..utils import Logging
+from ..common import Station
 from ..common import QueryCommand
 from ..common import EntityChecker
 from ..common import AccountDBI
@@ -116,15 +116,11 @@ class ClientChecker(EntityChecker, Logging):
         # build query command for group members
         # TODO: use 'GroupHistory.queryGroupHistory(group, lastTime)' instead
         command = QueryCommand.query(group=group, last_time=last_time)
-        # 1. check group bots
-        ok = await self.query_members_from_assistants(command=command, sender=me, group=group)
-        if ok:
-            return True
-        # 2. check administrators
+        # 1. check administrators
         ok = await self.query_members_from_administrators(command=command, sender=me, group=group)
         if ok:
             return True
-        # 3. check group owner
+        # 2. check group owner
         ok = await self.query_members_from_owner(command=command, sender=me, group=group)
         if ok:
             return True
@@ -137,39 +133,6 @@ class ClientChecker(EntityChecker, Logging):
             _, r_msg = await messenger.send_content(sender=me, receiver=last_member, content=command, priority=1)
         self.error(msg='group not ready: %s' % group)
         return r_msg is not None
-
-    # protected
-    async def query_members_from_assistants(self, command: Content, sender: ID, group: ID) -> bool:
-        facebook = self.facebook
-        messenger = self.messenger
-        if facebook is None or messenger is None:
-            self.error(msg='facebook messenger not ready yet')
-            return False
-        bots = await facebook.get_assistants(group)
-        if bots is None or len(bots) == 0:
-            self.warning(msg='assistants not designated for group: %s' % group)
-            return False
-        success = 0
-        # querying members from bots
-        self.info(msg='querying members from bots: %s, group: %s' % (bots, group))
-        for receiver in bots:
-            if receiver == sender:
-                self.warning(msg='ignore cycled querying: %s, group: %s' % (receiver, group))
-                continue
-            _, r_msg = await messenger.send_content(sender=sender, receiver=receiver, content=command, priority=1)
-            if r_msg is not None:
-                success += 1
-        if success == 0:
-            # failed
-            return False
-        last_member = self.get_last_active_member(group=group)
-        if last_member is None or last_member in bots:
-            # last active member is a bot??
-            pass
-        else:
-            self.info(msg='querying members from: %s, group: %s' % (last_member, group))
-            await messenger.send_content(sender=sender, receiver=last_member, content=command, priority=1)
-        return True
 
     # protected
     async def query_members_from_administrators(self, command: Content, sender: ID, group: ID) -> bool:
@@ -235,7 +198,8 @@ class ClientChecker(EntityChecker, Logging):
 
     # Override
     async def send_visa(self, visa: Visa, receiver: ID, updated: bool = False) -> bool:
-        me = visa.identifier
+        did = visa.get('did')
+        me = ID.parse(identifier=did)
         if me == receiver:
             self.warning(msg='skip cycled message: %s, %s' % (receiver, visa))
             return False

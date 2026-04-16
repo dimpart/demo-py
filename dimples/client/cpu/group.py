@@ -127,10 +127,6 @@ class GroupCommandProcessor(HistoryCommandProcessor):
         delegate = self.delegate
         return await delegate.get_owner(identifier=group)
 
-    async def _assistants(self, group: ID) -> List[ID]:
-        delegate = self.delegate
-        return await delegate.get_assistants(identifier=group)
-
     async def _administrators(self, group: ID) -> List[ID]:
         delegate = self.delegate
         return await delegate.get_administrators(group=group)

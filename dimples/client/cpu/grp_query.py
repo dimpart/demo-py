@@ -64,10 +64,8 @@ class QueryCommandProcessor(GroupCommandProcessor):
             return errors
 
         sender = r_msg.sender
-        bots = await self._assistants(group=group)
         is_member = sender in members
-        is_bot = sender in bots
-        can_query = is_member or is_bot
+        can_query = is_member  # or is_bot
 
         # 2. check permission
         if not can_query:
