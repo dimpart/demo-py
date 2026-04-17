@@ -65,7 +65,7 @@ class MessageCache(RedisCache):
         sig = get_msg_sig(msg=msg)  # last 6 bytes (signature in base64)
         # 1. save message: 'dkd.msg.{RECEIVER}.{SIG}
         msg_key = self.__msg_cache_name(identifier=receiver, sig=sig)
-        js = json_encode(obj=msg.dictionary)
+        js = json_encode(container=msg.dictionary)
         value = utf8_encode(string=js)
         ok1 = await self.set(name=msg_key, value=value, expires=self.EXPIRES)
         # 2. append sig to an ordered set

@@ -37,10 +37,10 @@ from dimsdk import EntityType
 from dimsdk import ID, Document, Visa
 from dimsdk import Command, MetaCommand, DocumentCommand
 from dimsdk import Envelope, InstantMessage
-from dimsdk import Station
 
 from ..utils import Logging
 from ..common import AccountDBI
+from ..common import Station
 from ..common import StationInfo
 from ..common import EntityChecker
 from ..common import CommonFacebook, CommonMessenger
@@ -187,7 +187,8 @@ class ServerChecker(EntityChecker, Logging):
 
     # Override
     async def send_visa(self, visa: Visa, receiver: ID, updated: bool = False) -> bool:
-        me = visa.identifier
+        did = visa.get('did')
+        me = ID.parse(identifier=did)
         if me == receiver:
             self.warning(msg='skip cycled message: %s, %s' % (receiver, visa))
             return False

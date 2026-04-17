@@ -69,7 +69,7 @@ class StationCache(RedisCache):
     async def save_providers(self, providers: List[ProviderInfo]) -> bool:
         sp_key = self.__providers_cache_name()
         array = ProviderInfo.revert(providers=providers)
-        js = json_encode(obj=array)
+        js = json_encode(container=array)
         value = utf8_encode(string=js)
         return await self.set(name=sp_key, value=value, expires=self.EXPIRES)
 
@@ -140,7 +140,7 @@ class StationCache(RedisCache):
     async def save_stations(self, stations: List[StationInfo], provider: ID) -> bool:
         srv_key = self.__stations_cache_name(provider=provider)
         array = StationInfo.revert(stations=stations)
-        js = json_encode(obj=array)
+        js = json_encode(container=array)
         value = utf8_encode(string=js)
         return await self.set(name=srv_key, value=value, expires=self.EXPIRES)
 

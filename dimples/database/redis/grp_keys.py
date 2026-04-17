@@ -66,7 +66,7 @@ class GroupKeysCache(RedisCache):
             return info
 
     async def save_group_keys(self, group: ID, sender: ID, keys: Dict[str, str]) -> bool:
-        js = json_encode(obj=keys)
+        js = json_encode(container=keys)
         value = utf8_encode(string=js)
         name = self.__cache_name(group=group, sender=sender)
         return await self.set(name=name, value=value, expires=self.EXPIRES)

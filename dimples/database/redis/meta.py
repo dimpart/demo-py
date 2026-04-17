@@ -76,7 +76,7 @@ class MetaCache(RedisCache, Logging):
 
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
         dictionary = meta.dictionary
-        js = json_encode(obj=dictionary)
+        js = json_encode(container=dictionary)
         value = utf8_encode(string=js)
         key = self.__cache_name(identifier=identifier)
         return await self.set(name=key, value=value, expires=self.EXPIRES)

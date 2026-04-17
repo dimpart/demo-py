@@ -33,10 +33,10 @@
 from typing import List
 
 from dimsdk import ID
-from dimsdk import Station
 from dimsdk import ReliableMessage
-from dimsdk import MessageUtils
 
+from ..common import DocumentUtils, MessageUtils
+from ..common import Station
 from ..common import CommonMessenger
 from ..common import CommonMessagePacker
 
@@ -82,7 +82,8 @@ class ServerMessenger(CommonMessenger):
             # it means the client doesn't have the station's meta (e.g.: first handshaking)
             # or visa maybe expired, here attach them to the first response.
             meta = await current.meta
-            visa = await current.visa
+            docs = await current.documents
+            visa = DocumentUtils.last_visa(documents=docs)
             for res in responses:
                 if res.sender == sid:
                     # let the first responding message to carry the station's meta & visa

@@ -74,11 +74,6 @@ class ServerFacebook(CommonFacebook):
         self.error(msg='DO NOT CALL ME: %s' % identifier)
         return []
 
-    # Override
-    async def get_assistants(self, identifier: ID) -> List[ID]:
-        self.error(msg='DO NOT CALL ME: %s' % identifier)
-        return []
-
     #
     #   Organizational Structure
     #

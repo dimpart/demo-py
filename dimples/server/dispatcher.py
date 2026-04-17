@@ -33,11 +33,11 @@
 from typing import Optional, Set, List
 
 from dimsdk import EntityType, ID, EVERYONE
-from dimsdk import Station
 from dimsdk import Content, ReceiptCommand
 from dimsdk import ReliableMessage
 
 from ..utils import Singleton, Logging
+from ..common import Station
 from ..common import CommonFacebook
 from ..common import MessageDBI, SessionDBI
 

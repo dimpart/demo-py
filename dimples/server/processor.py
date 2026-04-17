@@ -31,14 +31,14 @@
 from typing import Optional, List
 
 from dimsdk import EntityType, ID, ANYONE, EVERYONE
-from dimsdk import Station
 from dimsdk import InstantMessage, ReliableMessage
 from dimsdk import Envelope
 from dimsdk import Content
 from dimsdk import TextContent, ReceiptCommand
 from dimsdk import Facebook, Messenger
-from dimsdk import ContentProcessorCreator
+from dimsdk.cpu import ContentProcessorCreator
 
+from ..common import Station
 from ..common import HandshakeCommand
 from ..common import CommonFacebook, CommonMessenger
 from ..common import CommonMessageProcessor

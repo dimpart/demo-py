@@ -91,7 +91,7 @@ class GroupHistoryCache(RedisCache, Logging):
                 'msg': msg.dictionary,
             }
             array.append(item)
-        js = json_encode(obj=array)
+        js = json_encode(container=array)
         value = utf8_encode(string=js)
         name = self.__cache_name(group=group)
         return await self.set(name=name, value=value, expires=self.EXPIRES)

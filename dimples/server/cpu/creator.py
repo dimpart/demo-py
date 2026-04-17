@@ -31,8 +31,8 @@
 from typing import Optional
 
 from dimsdk import Command
-from dimsdk import ContentProcessor
 
+from dimsdk.cpu import ContentProcessor
 from dimsdk.cpu import BaseContentProcessorCreator
 
 from ...common import HandshakeCommand, LoginCommand

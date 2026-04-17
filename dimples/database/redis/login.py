@@ -66,7 +66,7 @@ class LoginCache(RedisCache):
             'cmd': content,
             'msg': msg,
         }
-        js = json_encode(obj=table)
+        js = json_encode(container=table)
         value = utf8_encode(string=js)
         key = self.__login_cache_name(identifier=user)
         return await self.set(name=key, value=value, expires=self.EXPIRES)
@@ -173,7 +173,7 @@ def serialize_socket_addresses(addresses: Set[Tuple[str, int]]) -> Optional[byte
     for add in addresses:
         item = [add[0], add[1]]
         array.append(item)
-    js = json_encode(obj=array)
+    js = json_encode(container=array)
     return utf8_encode(string=js)
 
 
