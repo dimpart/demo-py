@@ -60,7 +60,8 @@ class DocumentCache(RedisCache):
         array = []
         for doc in documents:
             assert identifier == doc.get('did'), 'document ID not matched: %s, %s' % (identifier, doc)
-            array.append(doc.dictionary)
+            info = doc.to_dict()
+            array.append(info)
         js = json_encode(container=array)
         value = utf8_encode(string=js)
         name = self.__cache_name(identifier=identifier)

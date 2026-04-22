@@ -111,7 +111,7 @@ class AccountDatabase(AccountDBI):
         if meta is None:
             raise LookupError('meta not exists: %s' % identifier)
         # check document valid before saving it
-        if not (document.valid or document.verify(public_key=meta.public_key)):
+        if not (document.is_valid or document.verify(public_key=meta.public_key)):
             raise ValueError('document error: %s' % identifier)
         # check founder in group document
         if isinstance(document, Bulletin):

@@ -145,7 +145,7 @@ class DocumentTable(DataCache, DocumentDBI):
         #
         #   0. check valid
         #
-        if not document.valid:
+        if not document.is_valid:
             self.error(msg='document not valid: %s' % identifier)
             return False
         #

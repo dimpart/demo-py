@@ -45,7 +45,7 @@ class MetaUtils:
 
     @classmethod
     def match_id(cls, identifier: ID, meta: Meta) -> bool:
-        assert meta.valid, 'meta not valid: %s' % meta
+        assert meta.is_valid, 'meta not valid: %s' % meta
         # check ID.name
         seed = meta.seed
         name = identifier.name
@@ -61,7 +61,7 @@ class MetaUtils:
 
     @classmethod
     def match_public_key(cls, key: VerifyKey, meta: Meta) -> bool:
-        assert meta.valid, 'meta not valid: %s' % meta
+        assert meta.is_valid, 'meta not valid: %s' % meta
         # check whether the public key equals to meta.key
         if key == meta.public_key:
             return True
@@ -72,7 +72,7 @@ class MetaUtils:
             #         just compare the key.data to check matching
             return False
         ted = meta.fingerprint
-        fingerprint = None if ted is None else ted.binary
+        fingerprint = None if ted is None else ted.to_bytes()
         if fingerprint is None or len(fingerprint) == 0:
             # fingerprint should not be empty here
             return False
@@ -86,7 +86,8 @@ class DocumentUtils:
     @classmethod
     def get_document_type(cls, document: Document) -> Optional[str]:
         helper = account_helper()
-        return helper.get_document_type(document=document.dictionary)
+        info = document.to_dict()
+        return helper.get_document_type(document=info)
 
     @classmethod
     def is_before(cls, old_time: Optional[DateTime], this_time: Optional[DateTime]) -> bool:

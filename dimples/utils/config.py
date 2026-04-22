@@ -74,7 +74,7 @@ class MessageTransferAgent(Dictionary):
         elif isinstance(node, MessageTransferAgent):
             return node
         elif isinstance(node, Dictionary):
-            node = node.dictionary
+            node = node.to_dict()
         host = node.get('host')
         port = node.get('port')
         if host is not None and port is not None and port > 0:
@@ -94,7 +94,8 @@ class MessageTransferAgent(Dictionary):
         array = []
         for node in stations:
             assert isinstance(node, MessageTransferAgent), 'station node error: %s' % node
-            array.append(node.dictionary)
+            info = node.to_dict()
+            array.append(info)
         return array
 
 
@@ -132,8 +133,7 @@ class Config(Logging):
             self.error(msg='failed to load stations: %s, %s' % (error, parser))
         return self
 
-    @property
-    def dictionary(self) -> Optional[Dict]:
+    def to_dict(self) -> Optional[Dict]:
         parser = self.__parser
         if parser is None or self.__ready:
             return self.__info
@@ -143,11 +143,11 @@ class Config(Logging):
 
     # Override
     def __str__(self) -> str:
-        return 'Config: %s' % self.dictionary
+        return 'Config: %s' % self.to_dict()
 
     # Override
     def __repr__(self) -> str:
-        return 'Config: %s' % self.dictionary
+        return 'Config: %s' % self.to_dict()
 
     def get_section(self, section: str) -> Optional[Dict]:
         parser = self.__parser

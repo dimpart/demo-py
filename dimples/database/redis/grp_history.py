@@ -87,8 +87,8 @@ class GroupHistoryCache(RedisCache, Logging):
             cmd = his[0]
             msg = his[1]
             item = {
-                'cmd': cmd.dictionary,
-                'msg': msg.dictionary,
+                'cmd': cmd.to_dict(),
+                'msg': msg.to_dict(),
             }
             array.append(item)
         js = json_encode(container=array)

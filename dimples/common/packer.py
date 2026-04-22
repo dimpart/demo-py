@@ -80,10 +80,10 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
         if docs is None or len(docs) == 0:
             return None
         visa = DocumentUtils.last_visa(documents=docs)
-        if visa is not None:  # and visa.valid:
+        if visa is not None:  # and visa.is_valid:
             return visa.public_key
         meta = await db.get_meta(identifier=user)
-        if meta is not None:  # and meta.valid:
+        if meta is not None:  # and meta.is_valid:
             meta_key = meta.public_key
             if isinstance(meta_key, EncryptKey):
                 return meta_key
@@ -98,7 +98,8 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
         if visa is not None:
             # first handshake?
             helper = account_helper()
-            did = helper.get_document_id(document=visa.dictionary)
+            info = visa.to_dict()
+            did = helper.get_document_id(document=info)
             matched = did == sender
             assert matched, 'visa ID not match: %s => %s' % (sender, visa)
             # assert Meta.match_id(meta=msg.meta, identifier=sender), 'meta error: %s' % msg

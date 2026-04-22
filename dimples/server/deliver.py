@@ -126,7 +126,7 @@ async def bridge_message(msg: ReliableMessage, neighbor: Optional[ID], bridge: I
     # NOTE: the messenger will serialize this message immediately, so
     #       we don't need to clone this dictionary to avoid 'neighbor'
     #       be changed to another value before pushing to the bridge.
-    # clone = msg.copy_dictionary()
+    # clone = msg.copy_dict()
     # msg = ReliableMessage.parse(msg=clone)
     if neighbor is None:
         # broadcast to all neighbor stations

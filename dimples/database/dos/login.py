@@ -73,9 +73,13 @@ class LoginStorage(Storage, LoginDBI):
     # Override
     async def save_login_command_message(self, user: ID, content: LoginCommand, msg: ReliableMessage) -> bool:
         """ save login command into file """
+        if content is not None:
+            content = content.to_dict()
+        if msg is not None:
+            msg = msg.to_dict()
         info = {
-            'cmd': content.dictionary,
-            'msg': msg.dictionary
+            'cmd': content,
+            'msg': msg,
         }
         path = self.__login_path(identifier=user)
         self.info(msg='Saving login command into: %s' % path)

@@ -58,7 +58,7 @@ class CompatibleMetaFactory(BaseMetaFactory):
         else:
             # TODO: other types of meta
             raise TypeError('unknown meta type: %s' % version)
-        if out.valid:
+        if out.is_valid:
             return out
 
 

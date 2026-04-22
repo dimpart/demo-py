@@ -161,7 +161,7 @@ class CommonArchivist(Barrack, Archivist, Logging):
 
     # protected
     def check_meta(self, meta: Meta, identifier: ID) -> bool:
-        if meta.valid:
+        if meta.is_valid:
             return MetaUtils.match_id(identifier=identifier, meta=meta)
         else:
             self.warning(msg='meta error: %s -> %s' % (meta, identifier))
@@ -206,7 +206,7 @@ class CommonArchivist(Barrack, Archivist, Logging):
 
     # protected
     async def verify_document(self, document: Document, identifier: ID) -> bool:
-        # if document.valid:
+        # if document.is_valid:
         #     return True
         meta = await self.facebook.get_meta(identifier=identifier)
         if meta is None:

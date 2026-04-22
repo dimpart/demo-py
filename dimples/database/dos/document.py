@@ -57,7 +57,8 @@ class DocumentStorage(Storage):
         array = []
         for doc in documents:
             assert identifier == doc.get('did'), 'document ID not matched: %s, %s' % (identifier, doc)
-            array.append(doc.dictionary)
+            info = doc.to_dict()
+            array.append(info)
         return await self.write_json(container=array, path=path)
 
     async def load_documents(self, identifier: ID) -> Optional[List[Document]]:

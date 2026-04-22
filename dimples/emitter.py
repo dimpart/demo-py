@@ -272,7 +272,7 @@ class Emitter(Logging, ABC):
             return False
         # check file data
         ted = content.data
-        data = None if ted is None else ted.binary
+        data = None if ted is None else ted.to_bytes()
         #
         #   Step 1: save origin data into a cache directory;
         #
@@ -318,7 +318,7 @@ class Emitter(Logging, ABC):
             #         if this content is forwarded, there is a security risk.
             self.info(msg='generated new password to upload file: %s, %s, %s' % (sender, filename, password))
             assert password is not None, 'failed to generate AES key: %s' % sender
-        encrypted = password.encrypt(plaintext=data, extra=content.dictionary)
+        encrypted = password.encrypt(plaintext=data, extra=content.to_dict())
         #
         #   Step 4: upload the encrypted data and get a download URL;
         #   Step 5: resend the instant message with the download URL.

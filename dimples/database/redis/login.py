@@ -59,9 +59,9 @@ class LoginCache(RedisCache):
     async def save_login(self, user: ID, content: Optional[LoginCommand], msg: Optional[ReliableMessage]) -> bool:
         """ Save login command & message into Redis Server """
         if content is not None:
-            content = content.dictionary
+            content = content.to_dict()
         if msg is not None:
-            msg = msg.dictionary
+            msg = msg.to_dict()
         table = {
             'cmd': content,
             'msg': msg,
