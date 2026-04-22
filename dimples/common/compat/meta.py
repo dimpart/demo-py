@@ -31,7 +31,8 @@
 from typing import Optional
 
 from dimsdk import Meta
-from dimplugins import GeneralAccountHelper, shared_account_extensions
+from dimplugins import GeneralAccountHelper
+from dimplugins import GeneralAccountExtension, shared_account_extensions
 from dimplugins import DefaultMeta, BTCMeta, ETHMeta
 from dimplugins import BaseMetaFactory
 
@@ -61,7 +62,10 @@ class CompatibleMetaFactory(BaseMetaFactory):
             return out
 
 
+def account_extensions() -> GeneralAccountExtension:
+    return shared_account_extensions
+
+
 def account_helper() -> GeneralAccountHelper:
-    helper = shared_account_extensions.helper
-    assert isinstance(helper, GeneralAccountHelper), 'account helper error: %s' % helper
-    return helper
+    ext = account_extensions()
+    return ext.helper

@@ -37,10 +37,10 @@ from typing import Optional, List
 from dimsdk import ContentType
 from dimsdk import EntityType, ID
 from dimsdk import ReliableMessage
-from dimsdk import Station
 
 from ..utils import Log
 from ..utils import get_msg_sig
+from ..common import Station
 from ..common import ProviderInfo
 from ..common import MessageDBI, SessionDBI
 from ..common import HandshakeCommand

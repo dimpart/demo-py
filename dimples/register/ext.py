@@ -84,7 +84,7 @@ class GroupAccount(BaseAccount):
         assert meta is not None, 'failed to generate meta'
         identifier = self.generate_identifier(network=network)
         doc = self.generate_document(doc_type=DocumentType.BULLETIN)
-        assert doc.identifier == identifier, 'ID not match: %s' % identifier
+        assert identifier == doc.get('did'), 'ID not match: %s' % identifier
         return doc
 
     # Override
@@ -174,7 +174,7 @@ class UserAccount(BaseAccount):
         identifier = self.generate_identifier(network=network)
         doc = self.generate_document(doc_type=DocumentType.VISA)
         assert isinstance(doc, Visa), 'visa error: %s' % doc
-        assert doc.identifier == identifier, 'ID not match: %s' % identifier
+        assert identifier == doc.get('did'), 'ID not match: %s' % identifier
         return doc
 
     # Override

@@ -33,16 +33,17 @@ from ..utils import Singleton, Config
 from ..utils import Log
 from ..utils import Path
 
+from ..common import DocumentUtils
 from ..common import AccountDBI, MessageDBI, SessionDBI
 from ..common import ProviderInfo
 from ..common import CommonArchivist
 from ..common import CommonFacebook
-from ..common.compat import LibraryLoader
 
 from ..database import AccountDatabase, MessageDatabase, SessionDatabase
 
 from ..group import SharedGroupManager
 
+from ..client.compat import ClientLibraryLoader
 from ..client import ClientChecker
 from ..client import ClientFacebook, ClientMessenger
 
@@ -59,7 +60,7 @@ class GlobalVariable:
         self.__facebook: Optional[ClientFacebook] = None
         self.__messenger: Optional[ClientMessenger] = None
         # load extensions
-        LibraryLoader().run()
+        ClientLibraryLoader().run()
 
     @property
     def config(self) -> Config:
@@ -130,12 +131,13 @@ class GlobalVariable:
         Log.info(msg='set current user: %s' % current_user)
         user = await facebook.get_user(identifier=current_user)
         assert user is not None, 'failed to get current user: %s' % current_user
-        visa = await user.visa
+        docs = await user.documents
+        visa = DocumentUtils.last_visa(documents=docs)
         if visa is not None:
             # refresh visa
             visa = Document.parse(document=visa.copy_dictionary())
             visa.sign(private_key=sign_key)
-            await archivist.save_document(document=visa)
+            await archivist.save_document(document=visa, identifier=current_user)
         await facebook.set_current_user(user=user)
 
 

@@ -29,9 +29,10 @@ from typing import Optional, Tuple, List
 from dimsdk import SignKey
 from dimsdk import EntityType, ID
 from dimsdk import Meta
-from dimsdk import Document, DocumentUtils
+from dimsdk import Document
 
 from ..utils import Logging
+from ..common import DocumentUtils
 from ..common import MetaVersion
 from ..common import AccountDBI
 from ..common.compat import NetworkType, network_to_type
@@ -178,10 +179,12 @@ class BaseAccount(Logging, ABC):
     async def save_document(self) -> Optional[Document]:
         doc = self.__doc
         db = self.__db
-        if await db.save_document(document=doc):
+        did = doc.get('did')
+        identifier = ID.parse(identifier=did)
+        if await db.save_document(document=doc, identifier=identifier):
             return doc
         else:
-            self.error(msg='failed to save document: %s, %s' % (doc.identifier, doc))
+            self.error(msg='failed to save document: %s, %s' % (identifier, doc))
 
     async def update_document(self, exists: bool = False) -> Optional[Document]:
         doc = self.edit()
@@ -216,7 +219,10 @@ class BaseAccount(Logging, ABC):
     def generate_document(self, doc_type: str) -> Document:
         """ 3. generate document with id """
         assert self.__doc is None, 'document exists: %s' % self.__doc
-        self.__doc = Document.create(doc_type=doc_type, identifier=self.__id)
+        identifier = self.__id
+        doc = Document.create(doc_type=doc_type)
+        doc.set_string(key='did', value=identifier)
+        self.__doc = doc
         return self.__doc
 
     # protected
@@ -224,7 +230,7 @@ class BaseAccount(Logging, ABC):
         """ 4. edit properties in document """
         identifier = self.__id
         doc = self.__doc
-        assert doc.identifier == identifier, 'document error: %s, %s' % (identifier, doc)
+        assert identifier == doc.get('did'), 'document error: %s, %s' % (identifier, doc)
         print('!!!')
         print('!!! ========================================================================')
         print('!!!   Editing document for: %s' % identifier)
@@ -258,23 +264,23 @@ class BaseAccount(Logging, ABC):
 
     """ Fields of document properties """
     USER_FIELDS = [
-        # key          description     type   default
-        ('name',       'user name',    'str', 'Satoshi Nakamoto'),
-        ('avatar',     'avatar url',   'str', ''),
+        # key             description     type   default
+        ('name',          'user name',    'str', 'Satoshi Nakamoto'),
+        ('avatar',        'avatar url',   'str', ''),
     ]
     BOT_FIELDS = [
-        # key          description     type   default
-        ('name',       'bot name',     'str', 'Service Bot'),
-        ('avatar',     'avatar url',   'str', ''),
+        # key             description     type   default
+        ('name',          'bot name',     'str', 'Service Bot'),
+        ('avatar',        'avatar url',   'str', ''),
     ]
     STATION_FIELDS = [
-        # key          description     type   default
-        ('name',       'station name', 'str', 'Base Station'),
-        ('host',       'station host', 'str', '127.0.0.1'),
-        ('port',       'station port', 'int', 9394),
+        # key             description     type   default
+        ('name',          'station name', 'str', 'Base Station'),
+        ('host',          'station host', 'str', '127.0.0.1'),
+        ('port',          'station port', 'int', 9394),
     ]
     GROUP_FIELDS = [
-        # key         description      type   default
-        ('name',      'group name',    'str', 'Group Chat'),
-        ('assistant', 'group bot',     'str', ''),
+        # key             description     type   default
+        ('name',          'group name',   'str', 'Group Chat'),
+        ('administrator', 'group admin',  'str', ''),
     ]

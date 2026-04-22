@@ -33,8 +33,7 @@ from typing import Optional, Tuple, Dict
 
 from dimsdk import URI
 from dimsdk import SymmetricAlgorithms
-from dimsdk import EncodeAlgorithms
-from dimsdk import PortableNetworkFile, TransportableData
+from dimsdk import PortableNetworkFile, EmbedData
 from dimsdk import SymmetricKey
 from dimsdk import ID, User
 from dimsdk import Envelope, Content, TextContent, FileContent
@@ -113,7 +112,7 @@ class Emitter(Logging, ABC):
         :return:
         """
         assert len(mp4) > 0, 'voice data should not empty'
-        ted = TransportableData.create(data=mp4, algorithm=EncodeAlgorithms.DEFAULT)
+        ted = EmbedData.audio(mp4=mp4)
         # create audio content
         content = FileContent.audio(data=ted, filename=filename)
         # set voice data length & duration
@@ -138,7 +137,7 @@ class Emitter(Logging, ABC):
         :return:
         """
         assert len(jpeg) > 0, 'image data should not empty'
-        ted = TransportableData.create(data=jpeg, algorithm=EncodeAlgorithms.DEFAULT)
+        ted = EmbedData.image(jpeg=jpeg)
         # create image content
         content = FileContent.image(data=ted, filename=filename)
         # set image data length
@@ -272,7 +271,8 @@ class Emitter(Logging, ABC):
             self.error(msg='file content error: %s, %s' % (sender, content))
             return False
         # check file data
-        data = content.data
+        ted = content.data
+        data = None if ted is None else ted.binary
         #
         #   Step 1: save origin data into a cache directory;
         #
@@ -318,7 +318,7 @@ class Emitter(Logging, ABC):
             #         if this content is forwarded, there is a security risk.
             self.info(msg='generated new password to upload file: %s, %s, %s' % (sender, filename, password))
             assert password is not None, 'failed to generate AES key: %s' % sender
-        encrypted = password.encrypt(data=data, extra=content.dictionary)
+        encrypted = password.encrypt(plaintext=data, extra=content.dictionary)
         #
         #   Step 4: upload the encrypted data and get a download URL;
         #   Step 5: resend the instant message with the download URL.
