@@ -30,7 +30,7 @@ from dimsdk import EncryptKey
 from dimsdk import ID
 from dimsdk import InstantMessage, SecureMessage, ReliableMessage
 from dimsdk import MessagePacker
-from dimsdk import GeneralAccountHelper, shared_account_extensions
+from dimplugins.mem.ext import account_helper
 
 from ..utils import Logging
 from ..common import DocumentUtils
@@ -174,9 +174,3 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
             # already signed
             return msg
         return await super().sign_message(msg=msg)
-
-
-def account_helper() -> GeneralAccountHelper:
-    helper = shared_account_extensions.helper
-    assert isinstance(helper, GeneralAccountHelper), 'account helper error: %s' % helper
-    return helper

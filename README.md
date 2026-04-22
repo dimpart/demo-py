@@ -33,12 +33,12 @@
         # 'pycryptodome',  # 3.14.1
         # 'base58',  # 1.0.3
         # 'ecdsa',   # 0.16.1
-        'dimplugins>=2.3.3',
+        'dimplugins>=2.4.0',
 
-        'dimsdk>=2.3.3',
-        # 'dimp>=2.3.3',
-        # 'dkd>=2.3.3',
-        # 'mkm>=2.3.3',
+        'dimsdk>=2.4.0',
+        # 'dimp>=2.4.0',
+        # 'dkd>=2.4.0',
+        # 'mkm>=2.4.0',
 
         'startrek>=2.2.2',
         'tcp>=2.2.2',
@@ -48,5 +48,5 @@
     ]
 ```
 
-Copyright &copy; 2018-2025 Albert Moky
+Copyright &copy; 2018-2026 Albert Moky
 [![Followers](https://img.shields.io/github/followers/moky)](https://github.com/moky?tab=followers)

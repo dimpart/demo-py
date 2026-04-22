@@ -31,7 +31,7 @@
 from .handler import CustomizedContentHandler, BaseCustomizedContentHandler
 
 from .filter import CustomizedContentFilter, AppCustomizedFilter
-from .filter import CustomizedFilterExtensions
+from .filter import CustomizedFilterExtension
 
 from .group import GroupHistoryHandler
 
@@ -41,7 +41,7 @@ __all__ = [
     'CustomizedContentHandler', 'BaseCustomizedContentHandler',
 
     'CustomizedContentFilter', 'AppCustomizedFilter',
-    'CustomizedFilterExtensions',
+    'CustomizedFilterExtension',
 
     'GroupHistoryHandler',
 

@@ -81,7 +81,7 @@ class AppCustomizedFilter(CustomizedContentFilter):
 # -----------------------------------------------------------------------------
 
 
-class CustomizedFilterExtensions:
+class CustomizedFilterExtension:
 
     @property
     def customized_filter(self) -> CustomizedContentFilter:
@@ -95,5 +95,14 @@ class CustomizedFilterExtensions:
 shared_message_extensions.customized_filter = AppCustomizedFilter()
 
 
-# def message_extensions() -> Union[MessageExtensions, CustomizedFilterExtensions]:
-#     return shared_message_extensions
+def customized_extensions() -> CustomizedFilterExtension:
+    return shared_message_extensions
+
+
+def get_app_filter() -> AppCustomizedFilter:
+    ext = customized_extensions()
+    customized_filter = ext.customized_filter
+    if not isinstance(customized_filter, AppCustomizedFilter):
+        customized_filter = AppCustomizedFilter()
+        ext.customized_filter = customized_filter
+    return customized_filter

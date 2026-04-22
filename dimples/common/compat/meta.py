@@ -31,10 +31,9 @@
 from typing import Optional
 
 from dimsdk import Meta
-from dimplugins import GeneralAccountHelper
-from dimplugins import GeneralAccountExtension, shared_account_extensions
 from dimplugins import DefaultMeta, BTCMeta, ETHMeta
 from dimplugins import BaseMetaFactory
+from dimplugins.mem.ext import account_helper
 
 
 class CompatibleMetaFactory(BaseMetaFactory):
@@ -60,12 +59,3 @@ class CompatibleMetaFactory(BaseMetaFactory):
             raise TypeError('unknown meta type: %s' % version)
         if out.is_valid:
             return out
-
-
-def account_extensions() -> GeneralAccountExtension:
-    return shared_account_extensions
-
-
-def account_helper() -> GeneralAccountHelper:
-    ext = account_extensions()
-    return ext.helper

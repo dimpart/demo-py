@@ -47,7 +47,7 @@ from .grp_resign import ResignCommandProcessor
 
 from .app import CustomizedContentHandler, BaseCustomizedContentHandler
 from .app import CustomizedContentFilter, AppCustomizedFilter
-from .app import CustomizedFilterExtensions
+from .app import CustomizedFilterExtension
 from .app import GroupHistoryHandler
 
 from .customized import CustomizedContentProcessor
@@ -81,7 +81,7 @@ __all__ = [
 
     'CustomizedContentHandler', 'BaseCustomizedContentHandler',
     'CustomizedContentFilter', 'AppCustomizedFilter',
-    'CustomizedFilterExtensions',
+    'CustomizedFilterExtension',
     'GroupHistoryHandler',
 
     'CustomizedContentProcessor',

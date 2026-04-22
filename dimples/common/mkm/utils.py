@@ -38,7 +38,7 @@ from dimsdk import VerifyKey
 from dimsdk import Address, ID, Meta
 from dimsdk import Document, Visa, Bulletin
 
-from dimsdk import GeneralAccountHelper, shared_account_extensions
+from dimplugins.mem.ext import account_helper
 
 
 class MetaUtils:
@@ -163,9 +163,3 @@ class DocumentUtils:
             # got it
             last = item
         return last
-
-
-def account_helper() -> GeneralAccountHelper:
-    helper = shared_account_extensions.helper
-    assert isinstance(helper, GeneralAccountHelper), 'account helper error: %s' % helper
-    return helper

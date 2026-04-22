@@ -267,7 +267,7 @@ class GroupManager(TripletsHelper):
         elif not await self.helper.save_group_history(group=group, content=invite, message=r_msg):
             self.error(msg='failed to save "invite" command for group: %s' % group)
             return False
-        forward = ForwardContent.create(message=r_msg)
+        forward = ForwardContent.create(messages=[r_msg])
         #
         #   3. forward group command(s)
         #
@@ -332,7 +332,7 @@ class GroupManager(TripletsHelper):
         if r_msg is None:
             self.error(msg='failed to pack group message: %s' % group)
             return False
-        forward = ForwardContent.create(message=r_msg)
+        forward = ForwardContent.create(messages=[r_msg])
         #
         #   4. forward 'quit' command
         #

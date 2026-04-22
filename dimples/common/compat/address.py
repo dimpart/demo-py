@@ -34,7 +34,7 @@ from dimsdk import ConstantString
 from dimsdk import Address, ANYWHERE, EVERYWHERE
 from dimplugins import BTCAddress, ETHAddress
 from dimplugins import BaseAddressFactory
-from dimplugins import MemoryCache, shared_account_extensions
+from dimplugins.mem.ext import address_cache
 
 
 class CompatibleAddressFactory(BaseAddressFactory):
@@ -94,9 +94,3 @@ class UnknownAddress(ConstantString, Address):
     @property  # Override
     def network(self) -> int:
         return 0  # EntityType.USER.value
-
-
-def address_cache() -> MemoryCache[str, Address]:
-    cache = shared_account_extensions.address_cache
-    assert isinstance(cache, MemoryCache), 'address cache error: %s' % cache
-    return cache

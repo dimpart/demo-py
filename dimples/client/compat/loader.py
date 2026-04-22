@@ -23,16 +23,12 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Union
-
 from dimplugins import ExtensionLoader, PluginLoader
-from dimplugins import MessageExtensions, shared_message_extensions
 
 from ...common.compat import CommonExtensionLoader, CommonPluginLoader
 from ...common import GroupHistory
 
-from ..cpu import AppCustomizedFilter
-from ..cpu import CustomizedFilterExtensions
+from ..cpu.app.filter import get_app_filter
 from ..cpu import GroupHistoryHandler
 
 
@@ -73,16 +69,3 @@ class ClientExtensionLoader(CommonExtensionLoader):
                                        mod=GroupHistory.MOD,
                                        handler=GroupHistoryHandler()
                                        )
-
-
-def get_app_filter() -> AppCustomizedFilter:
-    ext = message_extensions()
-    app_filter = ext.customized_filter
-    if not isinstance(app_filter, AppCustomizedFilter):
-        app_filter = AppCustomizedFilter()
-        ext.customized_filter = app_filter
-    return app_filter
-
-
-def message_extensions() -> Union[MessageExtensions, CustomizedFilterExtensions]:
-    return shared_message_extensions

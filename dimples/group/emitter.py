@@ -180,7 +180,7 @@ class GroupEmitter(TripletsHelper):
     #     #
     #     #   2. forward the group message to any bot
     #     #
-    #     content = ForwardContent.create(message=r_msg)
+    #     content = ForwardContent.create(messages=[r_msg])
     #     _, out = await messenger.send_content(sender=None, receiver=bot, content=content, priority=priority)
     #     if out is None:
     #         self.error(msg='failed to forward message for group: %s, bot: %s' % (group, bot))

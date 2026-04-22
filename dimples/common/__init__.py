@@ -34,7 +34,6 @@ from .mkm import *
 from .dbi import *
 
 from .anonymous import Anonymous
-from .register import Register
 from .ans import AddressNameService
 from .ans import AddressNameServer, ANSFactory
 
@@ -46,6 +45,10 @@ from .packer import CommonMessagePacker
 from .processer import CommonMessageProcessor
 from .queue import SuspendedMessageQueue
 from .session import Transmitter, Session
+
+from .register import Register
+
+# from .compat import *
 
 
 __all__ = [

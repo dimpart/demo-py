@@ -35,8 +35,8 @@ from dimsdk import ID, Identifier
 from dimsdk import ANYONE, EVERYONE, FOUNDER
 from dimsdk import Address
 
-from dimplugins import MemoryCache, shared_account_extensions
 from dimplugins import GeneralIdentifierFactory
+from dimplugins.mem.ext import id_cache
 
 from .network import network_to_type
 
@@ -93,9 +93,3 @@ class EntityID(Identifier):
         # compatible with MKM 0.9.*
         address = self.address
         return network_to_type(network=address.network)
-
-
-def id_cache() -> MemoryCache[str, ID]:
-    cache = shared_account_extensions.id_cache
-    assert isinstance(cache, MemoryCache), 'ID cache error: %s' % cache
-    return cache

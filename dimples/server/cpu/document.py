@@ -85,7 +85,7 @@ async def forward_login_msg(doc_id: ID, sender: ID, node: ID, database: SessionD
     login_msg = await get_login_msg(doc_id=doc_id, sender=sender, node=node, database=database)
     if login_msg is not None:
         # respond login command
-        return ForwardContent.create(message=login_msg)
+        return ForwardContent.create(messages=[login_msg])
 
 
 async def get_login_msg(doc_id: ID, sender: ID, node: ID, database: SessionDBI) -> Optional[ReliableMessage]:

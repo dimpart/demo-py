@@ -28,16 +28,15 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Union, List
+from typing import List
 
 from dimsdk import ReliableMessage
 from dimsdk import Content
-from dimsdk import MessageExtensions, shared_message_extensions
 from dimsdk.cpu import BaseContentProcessor
 
 from ...common import CustomizedContent
 
-from .app import CustomizedFilterExtensions
+from .app.filter import get_app_filter
 
 
 class CustomizedContentProcessor(BaseContentProcessor):
@@ -53,12 +52,7 @@ class CustomizedContentProcessor(BaseContentProcessor):
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
         assert isinstance(content, CustomizedContent), 'customized content error: %s' % content
-        ext = message_extensions()
-        customized_filter = ext.customized_filter
+        customized_filter = get_app_filter()
         # get handler for 'app' & 'mod'
         handler = customized_filter.filter_content(content=content, msg=r_msg)
         return await handler.handle_action(content=content, msg=r_msg, messenger=self.messenger)
-
-
-def message_extensions() -> Union[MessageExtensions, CustomizedFilterExtensions]:
-    return shared_message_extensions
