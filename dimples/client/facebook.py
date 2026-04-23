@@ -37,6 +37,7 @@ from dimsdk import ID, Document, Bulletin
 from dimsdk import Group
 
 from ..utils import Runner
+from ..common import DocumentUtils
 from ..common import BroadcastUtils
 from ..common import CommonFacebook
 from ..common import CommonArchivist
@@ -57,8 +58,7 @@ class ClientArchivist(CommonArchivist):
             # check administrators
             array = document.get_property(name='administrators')
             if array is not None:
-                did = document.get('did')
-                group = ID.parse(identifier=did)
+                group = DocumentUtils.get_document_id(document=document)
                 assert group.is_group, 'group ID error: %s' % group
                 admins = ID.convert(array=array)
                 db = self.database

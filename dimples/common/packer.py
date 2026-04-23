@@ -30,10 +30,10 @@ from dimsdk import EncryptKey
 from dimsdk import ID
 from dimsdk import InstantMessage, SecureMessage, ReliableMessage
 from dimsdk import MessagePacker
-from dimplugins.mem.ext import account_helper
 
 from ..utils import Logging
-from ..common import DocumentUtils
+
+from .mkm import DocumentUtils
 
 from .protocol import MessageUtils
 
@@ -97,9 +97,7 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
         visa = MessageUtils.get_visa(msg=msg)
         if visa is not None:
             # first handshake?
-            helper = account_helper()
-            info = visa.to_dict()
-            did = helper.get_document_id(document=info)
+            did = DocumentUtils.get_document_id(document=visa)
             matched = did == sender
             assert matched, 'visa ID not match: %s => %s' % (sender, visa)
             # assert Meta.match_id(meta=msg.meta, identifier=sender), 'meta error: %s' % msg

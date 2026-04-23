@@ -179,8 +179,7 @@ class BaseAccount(Logging, ABC):
     async def save_document(self) -> Optional[Document]:
         doc = self.__doc
         db = self.__db
-        did = doc.get('did')
-        identifier = ID.parse(identifier=did)
+        identifier = DocumentUtils.get_document_id(document=doc)
         if await db.save_document(document=doc, identifier=identifier):
             return doc
         else:

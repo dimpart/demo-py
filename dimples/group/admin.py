@@ -33,6 +33,7 @@ from typing import List
 from dimsdk import ID, Document, Bulletin
 from dimsdk import DocumentCommand
 
+from ..common import DocumentUtils
 from ..common import Station
 
 from .delegate import TripletsHelper
@@ -118,8 +119,7 @@ class AdminManager(TripletsHelper):
         #
         #   2. create 'document' command, and send to current station
         #
-        did = document.get('did')
-        group = ID.parse(identifier=did)
+        group = DocumentUtils.get_document_id(document=document)
         meta = await facebook.get_meta(identifier=group)
         content = DocumentCommand.response(identifier=group, meta=meta, documents=[document])
         await messenger.send_content(sender=me, receiver=Station.ANY, content=content, priority=1)

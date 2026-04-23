@@ -33,7 +33,8 @@ from typing import Optional
 from dimsdk import Meta
 from dimplugins import DefaultMeta, BTCMeta, ETHMeta
 from dimplugins import BaseMetaFactory
-from dimplugins.mem.ext import account_helper
+
+from ..mkm import MetaUtils
 
 
 class CompatibleMetaFactory(BaseMetaFactory):
@@ -43,8 +44,7 @@ class CompatibleMetaFactory(BaseMetaFactory):
 
     # Override
     def parse_meta(self, meta: dict) -> Optional[Meta]:
-        helper = account_helper()
-        version = helper.get_meta_type(meta=meta)
+        version = MetaUtils.get_meta_type(meta=meta)
         if version == 'MKM' or version == 'mkm' or version == '1':
             # MKM
             out = DefaultMeta(meta=meta)

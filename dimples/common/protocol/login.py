@@ -88,7 +88,8 @@ class LoginCommand(BaseCommand):
     #
     @property
     def identifier(self) -> ID:
-        return ID.parse(identifier=self.get('did'))
+        did = self.get('did')
+        return ID.parse(identifier=did)
 
     # Device ID
     @property

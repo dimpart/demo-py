@@ -36,6 +36,7 @@ from dimsdk import Content
 from dimsdk import MetaCommand, DocumentCommand
 
 from ..utils import Logging
+from ..common import DocumentUtils
 from ..common import Station
 from ..common import QueryCommand
 from ..common import EntityChecker
@@ -198,8 +199,7 @@ class ClientChecker(EntityChecker, Logging):
 
     # Override
     async def send_visa(self, visa: Visa, receiver: ID, updated: bool = False) -> bool:
-        did = visa.get('did')
-        me = ID.parse(identifier=did)
+        me = DocumentUtils.get_document_id(document=visa)
         if me == receiver:
             self.warning(msg='skip cycled message: %s, %s' % (receiver, visa))
             return False

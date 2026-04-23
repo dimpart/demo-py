@@ -28,7 +28,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Iterable
+from typing import Optional, Union, Iterable, Dict
 
 from dimsdk import utf8_encode
 from dimsdk import DateTime
@@ -42,6 +42,13 @@ from dimplugins.mem.ext import account_helper
 
 
 class MetaUtils:
+
+    @classmethod
+    def get_meta_type(cls, meta: Union[Dict, Meta]) -> Optional[str]:
+        if isinstance(meta, Meta):
+            meta = meta.to_dict()
+        helper = account_helper()
+        return helper.get_meta_type(meta=meta)
 
     @classmethod
     def match_id(cls, identifier: ID, meta: Meta) -> bool:
@@ -84,10 +91,22 @@ class MetaUtils:
 class DocumentUtils:
 
     @classmethod
-    def get_document_type(cls, document: Document) -> Optional[str]:
+    def get_document_type(cls, document: Union[Dict, Document]) -> Optional[str]:
+        if isinstance(document, Document):
+            document = document.to_dict()
         helper = account_helper()
-        info = document.to_dict()
-        return helper.get_document_type(document=info)
+        return helper.get_document_type(document=document)
+
+    @classmethod
+    def get_document_id(cls, document: Union[Dict, Document]) -> Optional[ID]:
+        if isinstance(document, Document):
+            document = document.to_dict()
+        helper = account_helper()
+        return helper.get_document_id(document=document)
+
+    @classmethod
+    def get_document_name(cls, document: Union[Dict, Document]) -> Optional[str]:
+        return document.get_property(name='name')
 
     @classmethod
     def is_before(cls, old_time: Optional[DateTime], this_time: Optional[DateTime]) -> bool:

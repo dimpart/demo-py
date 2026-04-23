@@ -30,6 +30,7 @@ from dimsdk import ID, Document
 
 from ...utils import template_replace
 from ...common.compat import Compatible
+from ...common import DocumentUtils
 
 from .base import Storage
 
@@ -82,7 +83,7 @@ class DocumentStorage(Storage):
 def parse_document(dictionary: dict, identifier: ID = None, doc_type: str = '*') -> Optional[Document]:
     Compatible.fix_document_id(document=dictionary)
     # check document ID
-    doc_id = ID.parse(identifier=dictionary.get('did'))
+    doc_id = DocumentUtils.get_document_id(document=dictionary)
     assert doc_id is not None, 'document error: %s' % dictionary
     if identifier is None:
         identifier = doc_id

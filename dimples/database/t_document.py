@@ -78,8 +78,7 @@ class DocTask(DbTask[ID, List[Document]]):
             assert False, 'should not happen: %s' % self._identifier
             # return False
         else:
-            did = new_doc.get('did')
-            identifier = ID.parse(identifier=did)
+            identifier = DocumentUtils.get_document_id(document=new_doc)
             doc_type = DocumentUtils.get_document_type(document=new_doc)
             created_time = new_doc.get_property(name='created_time')
         #
