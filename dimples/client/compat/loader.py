@@ -60,6 +60,7 @@ class ClientExtensionLoader(CommonExtensionLoader):
     # Override
     def load(self):
         super().load()
+        self._register_customized_handlers()
 
     # noinspection PyMethodMayBeStatic
     def _register_customized_handlers(self):

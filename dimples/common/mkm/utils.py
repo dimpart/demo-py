@@ -31,6 +31,7 @@
 from typing import Optional, Union, Iterable, Dict
 
 from dimsdk import utf8_encode
+from dimsdk import Converter
 from dimsdk import DateTime
 
 from dimsdk import VerifyKey
@@ -105,8 +106,9 @@ class DocumentUtils:
         return helper.get_document_id(document=document)
 
     @classmethod
-    def get_document_name(cls, document: Union[Dict, Document]) -> Optional[str]:
-        return document.get_property(name='name')
+    def get_document_name(cls, document: Document) -> Optional[str]:
+        value = document.get_property(name='name')
+        return Converter.get_str(value=value)
 
     @classmethod
     def is_before(cls, old_time: Optional[DateTime], this_time: Optional[DateTime]) -> bool:

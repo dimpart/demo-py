@@ -41,11 +41,11 @@ from startrek import BaseChannel
 from startrek import Connection, ConnectionDelegate, BaseConnection
 from startrek import Arrival, Departure
 from startrek import Porter, PorterStatus, PorterDelegate
+from startrek import SocketHelper
 
 from tcp import StreamChannel
 from tcp import ServerHub, ClientHub
 
-from ..utils import get_remote_address, get_local_address
 from ..utils import get_msg_info
 from ..utils import Runner, Log, Logging
 
@@ -66,8 +66,8 @@ class StreamServerHub(ServerHub):
 
     # Override
     def _set_channel(self, channel: Channel,
-                     remote: Optional[SocketAddress], local: Optional[SocketAddress]):
-        super()._set_channel(channel=channel, remote=remote, local=None)
+                     remote: Optional[SocketAddress], local: Optional[SocketAddress]) -> Optional[Channel]:
+        return super()._set_channel(channel=channel, remote=remote, local=None)
 
     # Override
     def _remove_channel(self, channel: Optional[Channel],
@@ -80,8 +80,8 @@ class StreamServerHub(ServerHub):
 
     # Override
     def _set_connection(self, connection: Connection,
-                        remote: SocketAddress, local: Optional[SocketAddress]):
-        super()._set_connection(connection=connection, remote=remote, local=None)
+                        remote: SocketAddress, local: Optional[SocketAddress]) -> Optional[Connection]:
+        return super()._set_connection(connection=connection, remote=remote, local=None)
 
     # Override
     def _remove_connection(self, connection: Optional[Connection],
@@ -100,8 +100,8 @@ class StreamClientHub(ClientHub):
 
     # Override
     def _set_channel(self, channel: Channel,
-                     remote: Optional[SocketAddress], local: Optional[SocketAddress]):
-        super()._set_channel(channel=channel, remote=remote, local=None)
+                     remote: Optional[SocketAddress], local: Optional[SocketAddress]) -> Optional[Channel]:
+        return super()._set_channel(channel=channel, remote=remote, local=None)
 
     # Override
     def _remove_channel(self, channel: Optional[Channel],
@@ -114,8 +114,8 @@ class StreamClientHub(ClientHub):
 
     # Override
     def _set_connection(self, connection: Connection,
-                        remote: SocketAddress, local: Optional[SocketAddress]):
-        super()._set_connection(connection=connection, remote=remote, local=None)
+                        remote: SocketAddress, local: Optional[SocketAddress]) -> Optional[Connection]:
+        return super()._set_connection(connection=connection, remote=remote, local=None)
 
     # Override
     def _remove_connection(self, connection: Optional[Connection],
@@ -189,9 +189,10 @@ class GateKeeper(Runner, PorterDelegate, Logging):
             # server
             sock.setblocking(False)
             # sock.settimeout(0.5)
+            helper = SocketHelper()
             if address is None:
-                address = get_remote_address(sock=sock)
-            channel = StreamChannel(remote=address, local=get_local_address(sock=sock))
+                address = helper.get_remote_address(sock=sock)
+            channel = StreamChannel(remote=address, local=helper.get_local_address(sock=sock))
             coro = channel.set_socket(sock=sock)
             Runner.async_task(coro=coro)
             hub = StreamServerHub(delegate=delegate)
@@ -284,11 +285,11 @@ class GateKeeper(Runner, PorterDelegate, Logging):
         pass
 
     # Override
-    async def porter_failed(self, error: IOError, ship: Departure, porter: Porter):
+    async def porter_failed(self, error: OSError, ship: Departure, porter: Porter):
         self.error(msg='docker failed to send ship: %s, %s' % (error, porter))
 
     # Override
-    async def porter_error(self, error: IOError, ship: Departure, porter: Porter):
+    async def porter_error(self, error: OSError, ship: Departure, porter: Porter):
         self.error(msg='docker error while sending ship: %s, %s' % (error, porter))
         if isinstance(ship, MessageWrapper):
             msg = ship.msg

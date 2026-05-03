@@ -51,7 +51,6 @@ from dimplugins.mem import MemoryCache, ThanosCache
 from startrek.skywalker import Singleton
 from startrek.skywalker import Runnable, Runner, Daemon
 from startrek.fsm import Delegate as StateDelegate
-from startrek.net.socket import get_remote_address, get_local_address
 
 from aiou import Path, File, TextFile, JSONFile
 
@@ -137,8 +136,6 @@ __all__ = [
 
     'Runnable', 'Runner', 'Daemon',
     'StateDelegate',
-
-    'get_remote_address', 'get_local_address',
 
 
     'Singleton',

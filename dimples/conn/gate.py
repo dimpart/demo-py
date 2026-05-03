@@ -28,9 +28,8 @@
 # SOFTWARE.
 # ==============================================================================
 
-import socket
 from abc import ABC
-from typing import Generic, TypeVar, Optional, Union
+from typing import Generic, TypeVar, Optional
 
 from startrek.types import SocketAddress
 from startrek.net.state import StateOrder
@@ -155,12 +154,12 @@ class CommonGate(StarGate, Logging, Generic[H], ABC):
         self.debug(msg='sent %d byte(s): %s' % (len(data), connection.remote_address))
 
     # Override
-    async def connection_failed(self, error: Union[IOError, socket.error], data: bytes, connection: Connection):
+    async def connection_failed(self, error: OSError, data: bytes, connection: Connection):
         await super().connection_failed(error=error, data=data, connection=connection)
         self.error(msg='failed to send %d byte(s): %s, remote=%s' % (len(data), error, connection.remote_address))
 
     # Override
-    async def connection_error(self, error: Union[IOError, socket.error], connection: Connection):
+    async def connection_error(self, error: OSError, connection: Connection):
         await super().connection_error(error=error, connection=connection)
         if error is not None and str(error).startswith('failed to send: '):
             self.warning(msg='ignore socket error: %s, remote=%s' % (error, connection.remote_address))

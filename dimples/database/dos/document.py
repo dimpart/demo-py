@@ -90,7 +90,7 @@ def parse_document(dictionary: dict, identifier: ID = None, doc_type: str = '*')
     else:
         assert identifier == doc_id, 'document ID not match: %s, %s' % (identifier, doc_id)
     # check document type
-    doc_ty = dictionary.get('type')
+    doc_ty = DocumentUtils.get_document_type(document=dictionary)
     if doc_ty is not None:
         doc_type = doc_ty
     # check document data
