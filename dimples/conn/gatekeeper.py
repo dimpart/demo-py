@@ -31,6 +31,7 @@
 import socket
 import time
 import traceback
+import weakref
 from typing import Optional
 
 from dimsdk import ReliableMessage
@@ -38,7 +39,8 @@ from dimsdk import ReliableMessage
 from startrek.types import SocketAddress
 from startrek import Channel, Hub
 from startrek import BaseChannel
-from startrek import Connection, ConnectionDelegate, BaseConnection
+from startrek import Connection, ConnectionDelegate
+from startrek import BaseConnection, ActiveConnection
 from startrek import Arrival, Departure
 from startrek import Porter, PorterStatus, PorterDelegate
 from startrek import SocketHelper
@@ -88,6 +90,22 @@ class StreamServerHub(ServerHub):
                            remote: SocketAddress, local: Optional[SocketAddress]) -> Optional[Connection]:
         return super()._remove_connection(connection=connection, remote=remote, local=None)
 
+    # Override
+    def _create_connection(self, remote: SocketAddress, local: Optional[SocketAddress]) -> Optional[Connection]:
+        conn = ServerConnection(remote=remote, local=local)
+        conn.delegate = self.delegate  # gate
+        return conn
+
+
+class ServerConnection(BaseConnection):
+
+    # Override
+    async def start(self, hub: Hub):
+        # 1. start state machine
+        await self._start_machine()
+        # 2. open channel via the hub
+        await self._open_channel(hub=hub)
+
 
 class StreamClientHub(ClientHub):
 
@@ -121,6 +139,37 @@ class StreamClientHub(ClientHub):
     def _remove_connection(self, connection: Optional[Connection],
                            remote: SocketAddress, local: Optional[SocketAddress]) -> Optional[Connection]:
         return super()._remove_connection(connection=connection, remote=remote, local=None)
+
+    # Override
+    def _create_connection(self, remote: SocketAddress, local: Optional[SocketAddress]) -> Optional[Connection]:
+        conn = ClientConnection(remote=remote, local=local)
+        conn.delegate = self.delegate  # gate
+        return conn
+
+
+class ClientConnection(ActiveConnection):
+
+    def __init__(self, remote: SocketAddress, local: Optional[SocketAddress]):
+        super().__init__(remote=remote, local=local)
+        self.__hub_ref = None
+
+    @property  # Override
+    def hub(self) -> Optional[Hub]:
+        ref = self.__hub_ref
+        if ref is not None:
+            return ref()
+
+    # Override
+    async def start(self, hub: Hub):
+        # 1. start state machine
+        await self._start_machine()
+        # 2. open channel via the hub
+        await self._open_channel(hub=hub)
+        # 3. weak reference for the hub
+        self.__hub_ref = weakref.ref(hub)
+        # 4. start an async task to check channel
+        Runner.async_task(coro=self.run())
+        # await self.run()
 
 
 def reset_send_buffer_size(conn: Connection = None, sock: socket.socket = None) -> bool:
