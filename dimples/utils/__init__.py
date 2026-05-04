@@ -64,6 +64,7 @@ from .cache import CachePool, SharedCacheManager
 
 from .http import HttpSession, HttpClient
 
+from .conf_item import IConfig, MessageTransferAgent, Supervisor, NeighborLoader
 from .config import Config
 
 
@@ -147,6 +148,7 @@ __all__ = [
 
     'FrequencyChecker', 'RecentTimeChecker',
 
+    'IConfig', 'MessageTransferAgent', 'Supervisor', 'NeighborLoader',
     'Config',
 
     'is_before',

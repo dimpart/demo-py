@@ -24,83 +24,20 @@
 # ==============================================================================
 
 from configparser import ConfigParser
-from typing import Optional, Any, List, Dict
-from typing import Iterable
+from typing import Optional, List, Dict
 
-from aiou import JSONFile
 from aiou import RedisConnector
 
-from dimsdk import JSON
-from dimsdk import Dictionary
 from dimsdk import ID
-from dimsdk import Facebook
 
 from .log import Log, Logging
-from .http import HttpClient
-
-
-class MessageTransferAgent(Dictionary):
-    """ DIM Network Node """
-
-    # Override
-    def __str__(self) -> str:
-        clazz = self.__class__.__name__
-        return '<%s host="%s" port=%d id="%s" />' % (clazz, self.host, self.port, self.identifier)
-
-    # Override
-    def __repr__(self) -> str:
-        clazz = self.__class__.__name__
-        return '<%s host="%s" port=%d id="%s" />' % (clazz, self.host, self.port, self.identifier)
-
-    @property
-    def identifier(self) -> Optional[ID]:
-        string = self.get(key='did')
-        if string is None:
-            string = self.get(key='ID')
-        return ID.parse(identifier=string)
-
-    @property
-    def host(self) -> str:
-        return self.get(key='host', default='')
-
-    @property
-    def port(self) -> int:
-        return self.get(key='port', default=0)
-
-    @classmethod
-    def parse(cls, node: Any):
-        if node is None:
-            return None
-        elif isinstance(node, MessageTransferAgent):
-            return node
-        elif isinstance(node, Dictionary):
-            node = node.to_dict()
-        host = node.get('host')
-        port = node.get('port')
-        if host is not None and port is not None and port > 0:
-            return cls(dictionary=node)
-
-    @classmethod
-    def convert(cls, array: Iterable[Any]):
-        stations = []
-        for node in array:
-            item = cls.parse(node=node)
-            if item is not None:
-                stations.append(item)
-        return stations
-
-    @classmethod
-    def revert(cls, stations: Iterable) -> List[Dict]:
-        array = []
-        for node in stations:
-            assert isinstance(node, MessageTransferAgent), 'station node error: %s' % node
-            info = node.to_dict()
-            array.append(info)
-        return array
+from .conf_item import IConfig
+from .conf_item import MessageTransferAgent
+from .conf_item import NeighborLoader
 
 
 # @Singleton
-class Config(Logging):
+class Config(IConfig, Logging):
     """ Config info from ini file """
 
     def __init__(self):
@@ -149,11 +86,13 @@ class Config(Logging):
     def __repr__(self) -> str:
         return 'Config: %s' % self.to_dict()
 
+    # Override
     def get_section(self, section: str) -> Optional[Dict]:
         parser = self.__parser
         if parser is not None:
             return _section_options(parser=parser, section=section)
 
+    # Override
     def get_integer(self, section: str, option: str) -> int:
         parser = self.__parser
         if parser is None:
@@ -164,6 +103,7 @@ class Config(Logging):
             self.error(msg='failed to get integer: %s, %s, %s' % (section, option, error))
             return 0
 
+    # Override
     def get_boolean(self, section: str, option: str) -> bool:
         parser = self.__parser
         if parser is None:
@@ -173,6 +113,7 @@ class Config(Logging):
         except Exception as error:
             self.error(msg='failed to get boolean: %s, %s, %s' % (section, option, error))
 
+    # Override
     def get_string(self, section: str, option: str) -> Optional[str]:
         parser = self.__parser
         if parser is None:
@@ -182,15 +123,12 @@ class Config(Logging):
         except Exception as error:
             self.error(msg='failed to get string : %s, %s, %s' % (section, option, error))
 
-    def get_identifier(self, section: str, option: str) -> Optional[ID]:
-        value = self.get_string(section=section, option=option)
-        return ID.parse(identifier=value)
-
-    def get_list(self, section: str, option: str, separator: str = ',') -> List[str]:
+    # Override
+    def get_list(self, section: str, option: str, separator: str = ',') -> Optional[List[str]]:
         """ get str and separate to a list """
         text = self.get_string(section=section, option=option)
         if text is None:
-            return []
+            return None
         result = []
         array = text.split(separator)
         for item in array:
@@ -199,36 +137,9 @@ class Config(Logging):
                 result.append(string)
         return result
 
-    #
-    #   ID list
-    #
-
-    def get_identifiers(self, section: str, option: str) -> List[ID]:
-        array = self.get_list(section=section, option=option)
-        return ID.convert(array=array)
-
-    async def get_users(self, section: str, option: str, facebook: Facebook) -> List[ID]:
-        users = []
-        array = self.get_identifiers(section=section, option=option)
-        for item in array:
-            if item.is_user:
-                if item not in users:
-                    users.append(item)
-                continue
-            # extract group members
-            members = await facebook.get_members(identifier=item)
-            for usr in members:
-                if usr not in users:
-                    users.append(usr)
-        return users
-
-    async def get_supervisors(self, section: str = 'admin', option: str = 'supervisors',
-                              facebook: Facebook = None) -> List[ID]:
-        """ extract group members when facebook available """
-        if facebook is None:
-            return self.get_identifiers(section=section, option=option)
-        else:
-            return await self.get_users(section=section, option=option, facebook=facebook)
+    def get_identifier(self, section: str, option: str) -> Optional[ID]:
+        value = self.get_string(section=section, option=option)
+        return ID.parse(identifier=value)
 
     #
     #   database
@@ -337,70 +248,6 @@ class Config(Logging):
                 continue
             neighbor_stations.append(station)
         return neighbor_stations
-
-
-class NeighborLoader(Logging):
-
-    def __init__(self):
-        super().__init__()
-        self.__http = HttpClient()
-
-    async def load_stations(self, config: Config) -> Optional[List[MessageTransferAgent]]:
-        # check remote URL
-        source = config.get_string(section='neighbors', option='source')
-        if source is None:
-            stations = None
-        else:
-            stations = await self._download_stations(url=source)
-        # check local path
-        output = config.get_string(section='neighbors', option='output')
-        if output is None:
-            self.warning(msg='neighbors path not set')
-        elif stations is None:
-            stations = await self._load_stations(path=output)
-        else:
-            await self._save_stations(stations=stations, path=output)
-        # OK
-        return stations
-
-    async def _download_stations(self, url: str) -> Optional[List[MessageTransferAgent]]:
-        self.info(msg='downloading stations: %s' % url)
-        http = self.__http
-        try:
-            response = http.cache_get(url=url)
-            if response is None or response.status_code != 200:
-                self.error(msg='failed to get URL: %s response: %s' % (url, response))
-                return None
-            else:
-                text = response.text
-                stations = JSON.decode(string=text)
-        except Exception as error:
-            self.error(msg='failed to download stations: %s, %s' % (error, url))
-            return None
-        if isinstance(stations, Dict):
-            stations = stations.get('stations')
-        if isinstance(stations, List):
-            return MessageTransferAgent.convert(array=stations)
-
-    async def _load_stations(self, path: str) -> Optional[List[MessageTransferAgent]]:
-        self.info(msg='loading stations: %s' % path)
-        try:
-            stations = await JSONFile(path=path).read()
-        except Exception as error:
-            self.error(msg='failed to load stations: %s, %s' % (error, path))
-            return None
-        if isinstance(stations, Dict):
-            stations = stations.get('stations')
-        if isinstance(stations, List):
-            return MessageTransferAgent.convert(array=stations)
-
-    async def _save_stations(self, stations: List[MessageTransferAgent], path: str) -> bool:
-        info = MessageTransferAgent.revert(stations=stations)
-        self.info(msg='saving %d station(s): %s' % (len(stations), path))
-        try:
-            return await JSONFile(path=path).write(info)
-        except Exception as error:
-            self.error(msg='failed to save stations: %s, %s' % (error, path))
 
 
 def _update_sections(info: Dict, parser: ConfigParser) -> Dict:
