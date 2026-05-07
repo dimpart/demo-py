@@ -32,7 +32,7 @@ from aiou import JSONFile
 
 from dimsdk import JSON
 from dimsdk import Dictionary
-from dimsdk import ID
+from dimsdk import EntityType, ID
 from dimsdk import Facebook
 
 from .log import Logging
@@ -58,7 +58,7 @@ class IConfig(ABC):
         raise NotImplementedError('NotImplemented')
 
     @abstractmethod
-    def get_list(self, section: str, option: str, separator: str = ',') -> List[str]:
+    def get_list(self, section: str, option: str, separator: str = ',') -> Optional[List[str]]:
         raise NotImplementedError('NotImplemented')
 
 
@@ -123,6 +123,7 @@ class MessageTransferAgent(Dictionary):
 
 
 class Supervisor(Logging):
+    """ System Administrators """
 
     def __init__(self, facebook: Facebook):
         super().__init__()
@@ -135,32 +136,43 @@ class Supervisor(Logging):
             return ref()
 
     # noinspection PyMethodMayBeStatic
-    def get_identifiers(self, config: IConfig, section: str, option: str = 'supervisors') -> Optional[List[ID]]:
-        array = config.get_list(section=section, option=option)
-        if array is None:
-            return None
-        else:
-            return ID.convert(array=array)
+    def check_user(self, identifier: ID) -> bool:
+        """ Filter user """
+        return identifier.type == EntityType.USER
 
-    async def get_users(self, config: IConfig, section: str, option: str = 'supervisors') -> Optional[Set[ID]]:
+    # noinspection PyMethodMayBeStatic
+    def get_identifiers(self, config: IConfig, section: str, option: str) -> List[ID]:
+        """ Get ID list from config """
+        array = config.get_list(section=section, option=option)
+        return [] if array is None else ID.convert(array=array)
+
+    async def get_users(self, config: IConfig, section: str = 'system', option: str = 'supervisors') -> Set[ID]:
+        """ Get system administrators from config """
+        all_users = set()
         array = self.get_identifiers(config=config, section=section, option=option)
-        if array is None:
-            return None
+        if array is None or len(array) == 0:
+            return all_users
         facebook = self.facebook
         if facebook is None:
-            return set(array)
-        # extract all users
-        all_users = set()
+            # only filter user
+            for item in array:
+                if self.check_user(identifier=item):
+                    all_users.add(item)
+            return all_users
+        # extract group members
         for item in array:
             if item.is_user:
-                all_users.add(item)
+                if self.check_user(identifier=item):
+                    all_users.add(item)
                 continue
             assert item.is_group, 'group ID error: %s' % item
-            members = await facebook.get_members(identifier=item)
-            if members is None or len(members) == 0:
+            group_members = await facebook.get_members(identifier=item)
+            if group_members is None or len(group_members) == 0:
                 self.warning(msg='failed to get members for group: %s' % item)
-            else:
-                all_users.update(members)
+                continue
+            for member in group_members:
+                if self.check_user(identifier=member):
+                    all_users.add(member)
         return all_users
 
 
