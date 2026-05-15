@@ -59,6 +59,7 @@ from .digest import md5, sha1
 from .checker import FrequencyChecker
 from .checker import RecentTimeChecker
 
+from .log import init_logger, LogLevel
 from .log import Log, Logging
 from .cache import CachePool, SharedCacheManager
 
@@ -140,7 +141,10 @@ __all__ = [
 
 
     'Singleton',
+
+    'init_logger', 'LogLevel',
     'Log', 'Logging',
+
     'Path', 'File', 'TextFile', 'JSONFile',
     'CachePool', 'SharedCacheManager',
 

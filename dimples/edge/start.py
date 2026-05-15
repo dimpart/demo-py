@@ -37,7 +37,9 @@ path = os.path.dirname(path)
 path = os.path.dirname(path)
 sys.path.insert(0, path)
 
-from dimples.utils import Log, Runner
+from dimples.utils import init_logger
+from dimples.utils import Log, LogLevel
+from dimples.utils import Runner
 
 from dimples.client import ClientFacebook
 from dimples.client import ClientMessenger
@@ -101,7 +103,7 @@ class OctopusClient(Octopus):
 #
 # show logs
 #
-Log.LEVEL = Log.DEVELOP
+init_logger(name='bridge', level=LogLevel.DEVELOP)
 
 
 DEFAULT_CONFIG = '/etc/dim/config.ini'

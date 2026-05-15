@@ -28,82 +28,158 @@
     ~~~~~~~~
 """
 
-from dimsdk import DateTime
+import logging
+import sys
+
+from startrek.types import Log, Logger
 
 
-def current_time() -> str:
-    return str(DateTime.now())
+class LogLevel:
+    """ Logging levels """
+
+    DEBUG: int = logging.DEBUG
+    INFO: int = logging.INFO
+    WARNING: int = logging.WARNING
+    ERROR: int = logging.ERROR
+
+    # DEBUG: int = logging.DEBUG    # 10: debug(), info(), warning(), error()
+    DEVELOP: int = logging.INFO     # 20:          info(), warning(), error()
+    RELEASE: int = logging.WARNING  # 30:                  warning(), error()
 
 
-def shorten(text: str, max_len: int = 1024) -> str:
+class Logging:
+    """ Log MixIn """
+
+    def _format(self, fmt: str) -> str:
+        clazz = self.__class__.__name__
+        return '%s >\t%s' % (clazz, fmt)
+
+    def debug(self, msg: str, *args, **kwargs):
+        msg = self._format(fmt=msg)
+        Log.debug(msg, *args, **kwargs)
+
+    def info(self, msg: str, *args, **kwargs):
+        msg = self._format(fmt=msg)
+        Log.info(msg, *args, **kwargs)
+
+    def warning(self, msg: str, *args, **kwargs):
+        msg = self._format(fmt=msg)
+        Log.warning(msg, *args, **kwargs)
+
+    def error(self, msg: str, *args, **kwargs):
+        msg = self._format(fmt=msg)
+        Log.error(msg, *args, **kwargs)
+
+
+"""
+    Colored Log
+    ~~~~~~~~~~~
+"""
+
+
+class ColoredFormatter(logging.Formatter):
+
+    _COLORS = {
+        logging.DEBUG: '\033[90m',    # grey
+        # logging.INFO: '\033[39m',   # foreground
+        logging.INFO: None,
+        logging.WARNING: '\033[93m',  # yellow
+        logging.ERROR: '\033[91m',    # red
+    }
+    _RESET = '\033[0m'
+
+    def __init__(self, fmt: str = None, datefmt: str = '%Y-%m-%d %H:%M:%S', style: str = '%'):
+        super().__init__(fmt=fmt, datefmt=datefmt, style=style)
+
+    # Override
+    def format(self, record: logging.LogRecord) -> str:
+        _fix_record(record=record)
+        text = super().format(record)
+        text = _shorten(text=text, max_len=MAX_LOG_LEN)
+        color = self._COLORS.get(record.levelno)
+        if color is not None:
+            reset = self._RESET
+            return f'{color}{text}{reset}'
+        # text without color
+        return text
+
+
+def _fix_record(record: logging.LogRecord):
+    """ Fix for caller """
+    frame = logging.currentframe()
+    while frame:
+        filename = frame.f_code.co_filename
+        frame = frame.f_back
+        if filename.endswith('types/log.py'):
+            if frame is not None:
+                filename = frame.f_code.co_filename
+                if filename.endswith('utils/log.py'):
+                    frame = frame.f_back
+            break
+    if frame is not None:
+        record.module = frame.f_globals.get("__name__", "unknown")
+        record.lineno = frame.f_lineno
+
+
+def _shorten(text: str, max_len: int = 1024) -> str:
     # assert max_len > 128, 'too short: %s' % max_len
     size = 0 if text is None else len(text)
     if size <= max_len:
         return text
     desc = 'total %d chars' % size
-    pos = (max_len - len(desc) - 10) >> 1
-    return '%s ... %s ... %s' % (text[:pos], desc, text[-pos:])
+    gaps = len(desc) + 10
+    pos = max_len - gaps - 32
+    return '%s ... %s ... %s' % (text[:pos], desc, text[-32:])
 
 
-DEBUG_FLAG = 0x01
-INFO_FLAG = 0x02
-WARNING_FLAG = 0x04
-ERROR_FLAG = 0x08
+MAX_LOG_LEN = 1024
 
 
-class Log:
-
-    DEBUG = 0xFF    # 0000 1111 : debug(), info(), warning(), error()
-    DEVELOP = 0xFE  # 0000 1110 :          info(), warning(), error()
-    RELEASE = 0xFC  # 0000 1100 :                  warning(), error()
-
-    LEVEL = RELEASE
-
-    MAX_LEN = 1024
-
-    @classmethod
-    def debug(cls, msg: str):
-        if cls.LEVEL & DEBUG_FLAG == 0:
-            return None
-        # elif cls.MAX_LEN > 0:
-        #     msg = shorten(text=msg, max_len=cls.MAX_LEN)
-        print('[%s]  DEBUG  | %s' % (current_time(), msg))
-
-    @classmethod
-    def info(cls, msg: str):
-        if cls.LEVEL & INFO_FLAG == 0:
-            return None
-        elif cls.MAX_LEN > 0:
-            msg = shorten(text=msg, max_len=cls.MAX_LEN)
-        print('[%s]         | %s' % (current_time(), msg))
-
-    @classmethod
-    def warning(cls, msg: str):
-        if cls.LEVEL & WARNING_FLAG == 0:
-            return None
-        elif cls.MAX_LEN > 0:
-            msg = shorten(text=msg, max_len=cls.MAX_LEN)
-        print('[%s] WARNING | %s' % (current_time(), msg))
-
-    @classmethod
-    def error(cls, msg: str):
-        if cls.LEVEL & ERROR_FLAG == 0:
-            return None
-        elif cls.MAX_LEN > 0:
-            msg = shorten(text=msg, max_len=cls.MAX_LEN)
-        print('[%s]  ERROR  | %s' % (current_time(), msg))
+"""
+    Default Logger
+    ~~~~~~~~~~~~~~
+"""
 
 
-class Logging:
+class StandardLogger(Logger):
 
-    def debug(self, msg: str):
-        Log.debug(msg='%s >\t%s' % (self.__class__.__name__, msg))
+    def __init__(self, name: str, fmt: str, level: int):
+        super().__init__()
+        logger = logging.getLogger(name)
+        self.__logger = logger
+        if len(logger.handlers) == 0:
+            init_log_handlers(logger=logger, fmt=fmt, level=level)
 
-    def info(self, msg: str):
-        Log.info(msg='%s >\t%s' % (self.__class__.__name__, msg))
+    @property
+    def logger(self):
+        return self.__logger
 
-    def warning(self, msg: str):
-        Log.warning(msg='%s >\t%s' % (self.__class__.__name__, msg))
+    # Override
+    def debug(self, msg: str, *args, **kwargs):
+        self.logger.debug(msg, *args, **kwargs)
 
-    def error(self, msg: str):
-        Log.error(msg='%s >\t%s' % (self.__class__.__name__, msg))
+    # Override
+    def info(self, msg: str, *args, **kwargs):
+        self.logger.info(msg, *args, **kwargs)
+
+    # Override
+    def warning(self, msg: str, *args, **kwargs):
+        self.logger.warning(msg, *args, **kwargs)
+
+    # Override
+    def error(self, msg: str, *args, **kwargs):
+        self.logger.error(msg, *args, **kwargs)
+
+
+def init_log_handlers(logger: logging.Logger, fmt: str, level: int):
+    formatter = ColoredFormatter(fmt=fmt)
+    handler = logging.StreamHandler(stream=sys.stdout)
+    handler.setFormatter(fmt=formatter)  # output format
+    handler.setLevel(level=level)        # output level
+    logger.setLevel(level=level)         # output level
+    logger.addHandler(handler)
+
+
+def init_logger(name: str, level: int = LogLevel.DEBUG):
+    fmt = '%(asctime)s | %(levelname)-8s | %(module)s:%(lineno)d > %(message)s'
+    Log.logger = StandardLogger(name=name, fmt=fmt, level=level)

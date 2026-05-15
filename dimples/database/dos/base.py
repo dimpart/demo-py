@@ -26,13 +26,13 @@
 from typing import Optional, Union
 
 from ...utils import template_replace
-from ...utils import Log
+from ...utils import Log, Logging
 from ...utils import Path
 from ...utils import TextFile, JSONFile
 from ...utils import Config
 
 
-class Storage:
+class Storage(Logging):
     """
         DOS Storage
         ~~~~~~~~~~~
@@ -143,18 +143,3 @@ class Storage:
             return await TextFile(path=path).append(text=text)
         except Exception as error:
             Log.error(msg='Storage >\t%s' % error)
-
-    #
-    #  Logging
-    #
-    def debug(self, msg: str):
-        Log.debug(msg='[DB] %s >\t%s' % (self.__class__.__name__, msg))
-
-    def info(self, msg: str):
-        Log.info(msg='[DB] %s >\t%s' % (self.__class__.__name__, msg))
-
-    def warning(self, msg: str):
-        Log.warning(msg='[DB] %s >\t%s' % (self.__class__.__name__, msg))
-
-    def error(self, msg: str):
-        Log.error(msg='[DB] %s >\t%s' % (self.__class__.__name__, msg))

@@ -39,7 +39,9 @@ path = os.path.dirname(path)
 path = os.path.dirname(path)
 sys.path.insert(0, path)
 
-from dimples.utils import Log, Runner
+from dimples.utils import init_logger
+from dimples.utils import Log, LogLevel
+from dimples.utils import Runner
 
 from dimples.station.shared import GlobalVariable
 from dimples.station.shared import create_config
@@ -49,7 +51,7 @@ from dimples.station.handler import RequestHandler
 #
 # show logs
 #
-Log.LEVEL = Log.DEVELOP
+init_logger(name='dims', level=LogLevel.DEVELOP)
 
 
 DEFAULT_CONFIG = '/etc/dim/config.ini'
