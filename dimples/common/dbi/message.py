@@ -43,15 +43,21 @@ class ReliableMessageDBI(ABC):
         :param limit:    cache limit
         :return: last cached messages
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_reliable_messages()'
+        )
 
     @abstractmethod
     async def cache_reliable_message(self, msg: ReliableMessage, receiver: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.cache_reliable_message()'
+        )
 
     @abstractmethod
     async def remove_reliable_message(self, msg: ReliableMessage, receiver: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.remove_reliable_message()'
+        )
 
 
 # noinspection PyAbstractClass
@@ -65,11 +71,15 @@ class GroupKeysDBI(ABC):
 
     @abstractmethod
     async def get_group_keys(self, group: ID, sender: ID) -> Optional[Dict[str, str]]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_group_keys()'
+        )
 
     @abstractmethod
     async def save_group_keys(self, group: ID, sender: ID, keys: Dict[str, str]) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_group_keys()'
+        )
 
 
 # noinspection PyAbstractClass

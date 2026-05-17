@@ -55,7 +55,9 @@ class Transmitter(ABC):
         :param priority: smaller is faster
         :return: (i_msg, None) on error
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.send_content()'
+        )
 
     @abstractmethod
     async def send_instant_message(self, msg: InstantMessage, priority: int = 0) -> Optional[ReliableMessage]:
@@ -66,7 +68,9 @@ class Transmitter(ABC):
         :param priority: smaller is faster
         :return: None on error
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.send_instant_message()'
+        )
 
     @abstractmethod
     async def send_reliable_message(self, msg: ReliableMessage, priority: int = 0) -> bool:
@@ -77,7 +81,9 @@ class Transmitter(ABC):
         :param priority: smaller is faster
         :return: False on error
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.send_reliable_message()'
+        )
 
 
 class Session(Transmitter, ABC):
@@ -85,36 +91,50 @@ class Session(Transmitter, ABC):
     @property
     def database(self) -> SessionDBI:
         """ Session Database """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.database getter'
+        )
 
     @property
     def remote_address(self) -> SocketAddress:
         """ Remote (host, port) """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.remote_address getter'
+        )
 
     @property
     def session_key(self) -> Optional[str]:
         """ Session Key """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.session_key getter'
+        )
 
     @property
     def identifier(self) -> Optional[ID]:
         """ Login User ID """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.identifier getter'
+        )
 
     def set_identifier(self, identifier: ID) -> bool:
         """ Update ID and return True on changed """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.set_identifier()'
+        )
 
     @property
     def active(self) -> bool:
         """ Session active """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.active getter'
+        )
 
     @abstractmethod
     def set_active(self, active: bool, when: DateTime = None) -> bool:
         """ Update active flag and return True on changed """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.set_active()'
+        )
 
     # Override
     def __str__(self) -> str:
@@ -139,4 +159,6 @@ class Session(Transmitter, ABC):
         :param priority: smaller is faster
         :return: False on error
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.queue_message_package()'
+        )

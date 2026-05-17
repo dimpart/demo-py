@@ -50,7 +50,9 @@ class QueryCommand(GroupCommand, ABC):
     @abstractmethod
     def last_time(self) -> Optional[DateTime]:
         """ Last group history time for querying """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.last_time getter'
+        )
 
     #
     #   Factory

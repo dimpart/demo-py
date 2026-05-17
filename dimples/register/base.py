@@ -194,11 +194,15 @@ class BaseAccount(Logging, ABC):
     @abstractmethod
     def edit(self) -> Optional[Document]:
         """ edit properties """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.edit()'
+        )
 
     @abstractmethod
     def generate(self, network: int, version: str, seed: Optional[str]) -> Document:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.generate()'
+        )
 
     # protected
     def generate_meta(self, version: str, seed: Optional[str], sign_key: SignKey) -> Meta:

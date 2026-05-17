@@ -38,8 +38,6 @@ from startrek import Connection, ConnectionState, ActiveConnection
 from startrek import Porter, PorterStatus, PorterDelegate
 from startrek import Arrival, StarGate
 
-from ..utils import Logging
-
 from .mtp import TransactionID, MTPStreamPorter, MTPHelper
 from .mars import MarsStreamArrival, MarsStreamPorter, MarsHelper
 from .ws import WSPorter
@@ -50,7 +48,7 @@ H = TypeVar('H')
 
 
 # noinspection PyAbstractClass
-class CommonGate(StarGate, Logging, Generic[H], ABC):
+class CommonGate(StarGate, Generic[H], ABC):
 
     def __init__(self, delegate: PorterDelegate):
         super().__init__(delegate=delegate)
@@ -118,7 +116,7 @@ class CommonGate(StarGate, Logging, Generic[H], ABC):
             ship = worker.pack(payload=payload, priority=1, needs_respond=False)
             return await worker.send_ship(ship=ship)
         else:
-            raise LookupError('docker error (%s, %s): %s' % (remote, local, worker))
+            raise LookupError(f'docker error ({remote}, {local}): {worker}')
 
     # Override
     async def _heartbeat(self, connection: Connection):
@@ -135,34 +133,34 @@ class CommonGate(StarGate, Logging, Generic[H], ABC):
                                        connection: Connection):
         index = -1 if current is None else current.index
         if index == StateOrder.ERROR:
-            self.error(msg='connection lost: %s -> %s, %s' % (previous, current, connection.remote_address))
+            self.error('connection lost: %s -> %s, %s', previous, current, connection.remote_address)
         elif index != StateOrder.EXPIRED and index != StateOrder.MAINTAINING:
-            self.debug(msg='connection state changed: %s -> %s, %s' % (previous, current, connection.remote_address))
+            self.debug('connection state changed: %s -> %s, %s', previous, current, connection.remote_address)
         try:
             await super().connection_state_changed(previous=previous, current=current, connection=connection)
         except AssertionError as error:
-            self.error(msg='connection callback failed: %s' % error)
+            self.error('connection callback failed: %s', error)
 
     # Override
     async def connection_received(self, data: bytes, connection: Connection):
-        self.debug(msg='received %d byte(s): %s' % (len(data), connection.remote_address))
+        self.debug('received %d byte(s): %s', len(data), connection.remote_address)
         await super().connection_received(data=data, connection=connection)
 
     # Override
     async def connection_sent(self, sent: int, data: bytes, connection: Connection):
         await super().connection_sent(sent=sent, data=data, connection=connection)
-        self.debug(msg='sent %d byte(s): %s' % (len(data), connection.remote_address))
+        self.debug('sent %d byte(s): %s', len(data), connection.remote_address)
 
     # Override
     async def connection_failed(self, error: OSError, data: bytes, connection: Connection):
         await super().connection_failed(error=error, data=data, connection=connection)
-        self.error(msg='failed to send %d byte(s): %s, remote=%s' % (len(data), error, connection.remote_address))
+        self.error('failed to send %d byte(s): %s, remote=%s', len(data), error, connection.remote_address)
 
     # Override
     async def connection_error(self, error: OSError, connection: Connection):
         await super().connection_error(error=error, connection=connection)
         if error is not None and str(error).startswith('failed to send: '):
-            self.warning(msg='ignore socket error: %s, remote=%s' % (error, connection.remote_address))
+            self.warning('ignore socket error: %s, remote=%s', error, connection.remote_address)
 
 
 #

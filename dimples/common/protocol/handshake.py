@@ -84,17 +84,23 @@ class HandshakeCommand(Command, ABC):
     @property
     @abstractmethod
     def title(self) -> str:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.title getter'
+        )
 
     @property
     @abstractmethod
     def session(self) -> Optional[str]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.session getter'
+        )
 
     @property
     @abstractmethod
     def state(self) -> HandshakeState:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.state getter'
+        )
 
     #
     #   Factories

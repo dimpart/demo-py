@@ -35,7 +35,8 @@ from dimsdk import Dictionary
 from dimsdk import EntityType, ID
 from dimsdk import Facebook
 
-from .log import Logging
+from startrek.utils import Logging
+
 from .http import HttpClient
 
 
@@ -43,23 +44,33 @@ class IConfig(ABC):
 
     @abstractmethod
     def get_section(self, section: str) -> Optional[Dict]:
-        raise NotImplementedError('NotImplemented')
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_section()'
+        )
 
     @abstractmethod
     def get_integer(self, section: str, option: str) -> int:
-        raise NotImplementedError('NotImplemented')
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_integer()'
+        )
 
     @abstractmethod
     def get_boolean(self, section: str, option: str) -> bool:
-        raise NotImplementedError('NotImplemented')
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_boolean()'
+        )
 
     @abstractmethod
     def get_string(self, section: str, option: str) -> Optional[str]:
-        raise NotImplementedError('NotImplemented')
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_string()'
+        )
 
     @abstractmethod
     def get_list(self, section: str, option: str, separator: str = ',') -> Optional[List[str]]:
-        raise NotImplementedError('NotImplemented')
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_list()'
+        )
 
 
 class MessageTransferAgent(Dictionary):

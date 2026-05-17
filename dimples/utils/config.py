@@ -30,7 +30,8 @@ from aiou import RedisConnector
 
 from dimsdk import ID
 
-from .log import Log, Logging
+from startrek.utils import Log, Logging
+
 from .conf_item import IConfig
 from .conf_item import MessageTransferAgent
 from .conf_item import NeighborLoader

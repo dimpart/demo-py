@@ -31,7 +31,8 @@ from requests.cookies import RequestsCookieJar
 
 from dimsdk import DateTime
 
-from .log import Logging
+from startrek.utils import Logging
+
 from .cache import SharedCacheManager
 
 

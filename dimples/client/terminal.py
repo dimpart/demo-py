@@ -158,7 +158,9 @@ class Terminal(Runner, DeviceMixin, Logging, StateDelegate, ABC):
 
     @abstractmethod
     def _create_messenger(self, facebook: ClientFacebook, session: ClientSession) -> ClientMessenger:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}._create_messenger()'
+        )
 
     def start(self):
         thr = Runner.async_thread(coro=self.run())

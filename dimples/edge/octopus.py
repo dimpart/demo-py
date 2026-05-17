@@ -81,11 +81,15 @@ class Octopus(Runner, Logging, ABC):
 
     @abstractmethod
     async def create_inner_terminal(self, host: str, port: int) -> Terminal:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.create_inner_terminal()'
+        )
 
     @abstractmethod
     async def create_outer_terminal(self, host: str, port: int) -> Terminal:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.create_outer_terminal()'
+        )
 
     def add_index(self, identifier: ID, terminal: Terminal):
         with self.__outer_lock:

@@ -55,12 +55,16 @@ class HireCommand(GroupCommand, ABC):
     @property
     @abstractmethod
     def administrators(self) -> Optional[List[ID]]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.administrators getter'
+        )
 
     @administrators.setter
     @abstractmethod
     def administrators(self, users: List[ID]):
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.administrators setter'
+        )
 
 
 class FireCommand(GroupCommand, ABC):
@@ -68,12 +72,16 @@ class FireCommand(GroupCommand, ABC):
     @property
     @abstractmethod
     def administrators(self) -> Optional[List[ID]]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.administrators getter'
+        )
 
     @administrators.setter
     @abstractmethod
     def administrators(self, users: List[ID]):
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.administrators setter'
+        )
 
 
 # noinspection PyAbstractClass

@@ -185,19 +185,27 @@ class ProviderDBI(ABC):
     @abstractmethod
     async def all_providers(self) -> List[ProviderInfo]:
         """ get list of (SP_ID, chosen) """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.all_providers()'
+        )
 
     @abstractmethod
     async def add_provider(self, identifier: ID, chosen: int = 0) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.add_provider()'
+        )
 
     @abstractmethod
     async def update_provider(self, identifier: ID, chosen: int) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.update_provider()'
+        )
 
     @abstractmethod
     async def remove_provider(self, identifier: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.remove_provider()'
+        )
 
 
 class StationDBI(ABC):
@@ -205,25 +213,35 @@ class StationDBI(ABC):
     @abstractmethod
     async def all_stations(self, provider: ID) -> List[StationInfo]:
         """ get list of (host, port, SP_ID, chosen) """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.all_stations()'
+        )
 
     @abstractmethod
     async def add_station(self, identifier: Optional[ID], host: str, port: int, provider: ID,
                           chosen: int = 0) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.add_station()'
+        )
 
     @abstractmethod
     async def update_station(self, identifier: Optional[ID], host: str, port: int, provider: ID,
                              chosen: int = None) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.update_station()'
+        )
 
     @abstractmethod
     async def remove_station(self, host: str, port: int, provider: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.remove_station()'
+        )
 
     @abstractmethod
     async def remove_stations(self, provider: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.remove_stations()'
+        )
 
 
 class LoginDBI(ABC):
@@ -234,11 +252,15 @@ class LoginDBI(ABC):
     #
     @abstractmethod
     async def get_login_command_message(self, user: ID) -> Tuple[Optional[LoginCommand], Optional[ReliableMessage]]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_login_command_message()'
+        )
 
     @abstractmethod
     async def save_login_command_message(self, user: ID, content: LoginCommand, msg: ReliableMessage) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_login_command_message()'
+        )
 
 
 # noinspection PyAbstractClass

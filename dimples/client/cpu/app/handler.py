@@ -57,7 +57,9 @@ class CustomizedContentHandler(ABC):
         @param messenger: message transceiver
         @return contents
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.handle_action()'
+        )
 
 
 class BaseCustomizedContentHandler(CustomizedContentHandler):

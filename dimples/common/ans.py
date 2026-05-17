@@ -81,17 +81,23 @@ class AddressNameService(ABC):
     @abstractmethod
     def is_reserved(self, name: str) -> bool:
         # return name in self.KEYWORDS
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.is_reserved()'
+        )
 
     @abstractmethod
     def identifier(self, name: str) -> Optional[ID]:
         """ Get ID by short name """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.identifier()'
+        )
 
     @abstractmethod
     def names(self, identifier: ID) -> List[str]:
         """ Get all short names mapping to the same ID """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.names()'
+        )
 
 
 class AddressNameServer(AddressNameService):

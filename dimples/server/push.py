@@ -113,7 +113,9 @@ class PushService(ABC):
     @abstractmethod
     async def process(self, messages: List[ReliableMessage], badge_keeper: BadgeKeeper) -> bool:
         """ build and push notification for a batch of messages """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.process()'
+        )
 
 
 @Singleton

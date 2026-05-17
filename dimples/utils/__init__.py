@@ -48,6 +48,7 @@ from dimsdk import ReliableMessage
 from dimplugins.crypto.aes import random_bytes
 from dimplugins.mem import MemoryCache, ThanosCache
 
+from startrek.utils import Log, Logging, LogLevel
 from startrek.skywalker import Singleton
 from startrek.skywalker import Runnable, Runner, Daemon
 from startrek.fsm import Delegate as StateDelegate
@@ -59,8 +60,7 @@ from .digest import md5, sha1
 from .checker import FrequencyChecker
 from .checker import RecentTimeChecker
 
-from .log import init_logger, LogLevel
-from .log import Log, Logging
+from .log import init_logger
 from .cache import CachePool, SharedCacheManager
 
 from .http import HttpSession, HttpClient
@@ -142,8 +142,8 @@ __all__ = [
 
     'Singleton',
 
-    'init_logger', 'LogLevel',
-    'Log', 'Logging',
+    'Log', 'Logging', 'LogLevel',
+    'init_logger',
 
     'Path', 'File', 'TextFile', 'JSONFile',
     'CachePool', 'SharedCacheManager',

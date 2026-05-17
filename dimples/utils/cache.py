@@ -37,8 +37,7 @@ from aiou.mem.cache import K, V
 
 from startrek.skywalker import Singleton
 from startrek.skywalker import Runner
-
-from .log import Logging
+from startrek.utils import Logging
 
 
 @Singleton

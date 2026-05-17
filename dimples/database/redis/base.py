@@ -48,13 +48,17 @@ class RedisCache(RedisClient, ABC):
     @abstractmethod
     def db_name(self) -> Optional[str]:
         """ database name for redis """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.db_name getter'
+        )
 
     @property
     @abstractmethod
     def tbl_name(self) -> str:
         """ table name for redis """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.tbl_name getter'
+        )
 
     # protected
     def get_redis(self, name: str) -> Optional[Redis]:

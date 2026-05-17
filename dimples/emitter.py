@@ -50,12 +50,16 @@ class Emitter(Logging, ABC):
     @property
     @abstractmethod
     async def current_user(self) -> Optional[User]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.current_user getter'
+        )
 
     @property
     @abstractmethod
     def messenger(self) -> Optional[Transmitter]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.messenger getter'
+        )
 
     async def send_text(self, text: str, receiver: ID,
                         extra: Dict = None) -> Tuple[Optional[InstantMessage], Optional[ReliableMessage]]:
@@ -354,17 +358,23 @@ class Emitter(Logging, ABC):
     @abstractmethod
     async def cache_file_data(self, data: bytes, filename: str) -> bool:
         """ Save origin file data into the cache """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.cache_file_data()'
+        )
 
     @abstractmethod
     async def get_file_data(self, filename: str) -> Optional[bytes]:
         """ Load origin file data from the cache """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_file_data()'
+        )
 
     @abstractmethod
     async def cache_instant_message(self, msg: InstantMessage) -> bool:
         """ Save instant message without 'content.data' """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.cache_instant_message()'
+        )
 
     @abstractmethod
     async def upload_file_data(self, data: bytes, filename: str, sender: ID) -> Optional[URI]:
@@ -376,4 +386,6 @@ class Emitter(Logging, ABC):
         :param sender:   sender ID
         :return: None on error
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.upload_file_data()'
+        )

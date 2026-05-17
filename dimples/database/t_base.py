@@ -97,17 +97,23 @@ class DbTask(Logging, Generic[K, V], ABC):
     @abstractmethod
     def cache_key(self) -> K:
         """ key for memory cache """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.cache_key getter'
+        )
 
     @abstractmethod
     async def _read_data(self) -> Optional[V]:
         """ load value from local storage """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}._read_data()'
+        )
 
     @abstractmethod
     async def _write_data(self, value: V) -> bool:
         """ save value into local storage """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}._write_data()'
+        )
 
     async def save(self, value: V) -> bool:
         """ Task Save """

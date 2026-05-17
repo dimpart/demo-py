@@ -49,7 +49,9 @@ class CommonMessageProcessor(MessageProcessor, Logging, ABC):
 
     @abstractmethod
     def _create_creator(self, facebook: Facebook, messenger: Messenger) -> ContentProcessorCreator:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}._create_creator()'
+        )
 
     # private
     # noinspection PyUnusedLocal

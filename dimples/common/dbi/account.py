@@ -41,19 +41,27 @@ class PrivateKeyDBI(ABC):
 
     @abstractmethod
     async def save_private_key(self, key: PrivateKey, user: ID, key_type: str = 'M') -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_private_key()'
+        )
 
     @abstractmethod
     async def private_keys_for_decryption(self, user: ID) -> List[DecryptKey]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.private_keys_for_decryption()'
+        )
 
     @abstractmethod
     async def private_key_for_signature(self, user: ID) -> Optional[SignKey]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.private_key_for_signature()'
+        )
 
     @abstractmethod
     async def private_key_for_visa_signature(self, user: ID) -> Optional[SignKey]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.private_key_for_visa_signature()'
+        )
 
     #
     #  Conveniences
@@ -114,11 +122,15 @@ class MetaDBI(ABC):
 
     @abstractmethod
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_meta()'
+        )
 
     @abstractmethod
     async def get_meta(self, identifier: ID) -> Optional[Meta]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_meta()'
+        )
 
 
 class DocumentDBI(ABC):
@@ -126,11 +138,15 @@ class DocumentDBI(ABC):
 
     @abstractmethod
     async def save_document(self, document: Document, identifier: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_document()'
+        )
 
     @abstractmethod
     async def get_documents(self, identifier: ID) -> List[Document]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_documents()'
+        )
 
 
 class UserDBI(ABC):
@@ -139,11 +155,15 @@ class UserDBI(ABC):
     @abstractmethod
     async def get_local_users(self) -> List[ID]:
         """ local user ID list """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_local_users()'
+        )
 
     @abstractmethod
     async def save_local_users(self, users: List[ID]) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_local_users()'
+        )
 
 
 class ContactDBI(ABC):
@@ -152,11 +172,15 @@ class ContactDBI(ABC):
     @abstractmethod
     async def get_contacts(self, user: ID) -> List[ID]:
         """ contacts for user """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_contacts()'
+        )
 
     @abstractmethod
     async def save_contacts(self, contacts: List[ID], user: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_contacts()'
+        )
 
 
 class GroupDBI(ABC):
@@ -164,29 +188,41 @@ class GroupDBI(ABC):
 
     @abstractmethod
     async def get_founder(self, group: ID) -> Optional[ID]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_founder()'
+        )
 
     @abstractmethod
     async def get_owner(self, group: ID) -> Optional[ID]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_owner()'
+        )
 
     @abstractmethod
     async def get_members(self, group: ID) -> List[ID]:
         """ group members """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_members()'
+        )
 
     @abstractmethod
     async def save_members(self, members: List[ID], group: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_members()'
+        )
 
     @abstractmethod
     async def get_administrators(self, group: ID) -> List[ID]:
         """ group admins """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_administrators()'
+        )
 
     @abstractmethod
     async def save_administrators(self, administrators: List[ID], group: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_administrators()'
+        )
 
 
 class GroupHistoryDBI(ABC):
@@ -202,7 +238,9 @@ class GroupHistoryDBI(ABC):
                 reset
                 resign
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_group_history()'
+        )
 
     @abstractmethod
     async def get_group_histories(self, group: ID) -> List[Tuple[GroupCommand, ReliableMessage]]:
@@ -214,12 +252,16 @@ class GroupHistoryDBI(ABC):
                 reset
                 resign
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_group_histories()'
+        )
 
     @abstractmethod
     async def get_reset_command_message(self, group: ID) -> Tuple[Optional[ResetCommand], Optional[ReliableMessage]]:
         """ load last 'reset' group command """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_reset_command_message()'
+        )
 
     @abstractmethod
     async def clear_group_member_histories(self, group: ID) -> bool:
@@ -230,14 +272,18 @@ class GroupHistoryDBI(ABC):
                 quit
                 reset
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.clear_group_member_histories()'
+        )
 
     @abstractmethod
     async def clear_group_admin_histories(self, group: ID) -> bool:
         """ clear group commands for administrators:
                 resign
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.clear_group_admin_histories()'
+        )
 
 
 # noinspection PyAbstractClass

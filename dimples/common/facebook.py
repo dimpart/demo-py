@@ -231,15 +231,21 @@ class CommonFacebook(Facebook, Logging, ABC):
 
     @abstractmethod
     async def get_administrators(self, group: ID) -> List[ID]:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_administrators()'
+        )
 
     @abstractmethod
     async def save_administrators(self, administrators: List[ID], group: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_administrators()'
+        )
 
     @abstractmethod
     async def save_members(self, members: List[ID], group: ID) -> bool:
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_members()'
+        )
 
     #
     #   Address Name Service

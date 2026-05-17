@@ -241,7 +241,9 @@ class EntityChecker(Logging, ABC):
         :param identifier: entity ID
         :return: False on duplicated
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.query_meta()'
+        )
 
     async def query_documents(self, identifier: ID, documents: List[Document]) -> bool:
         """
@@ -252,7 +254,9 @@ class EntityChecker(Logging, ABC):
         :param documents:  exist documents
         :return: False on duplicated
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.query_documents()'
+        )
 
     async def query_members(self, group: ID, members: List[ID]) -> bool:
         """
@@ -263,7 +267,9 @@ class EntityChecker(Logging, ABC):
         :param members: exist members
         :return: False on duplicated
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.query_members()'
+        )
 
     #
     #   Responding
@@ -280,4 +286,6 @@ class EntityChecker(Logging, ABC):
         :param updated:
         :return: False on error
         """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.send_visa()'
+        )

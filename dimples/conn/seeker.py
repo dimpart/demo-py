@@ -52,22 +52,30 @@ class PackageSeeker(Generic[H, P]):
     @abstractmethod
     def parse_header(self, data: ByteArray) -> Optional[H]:
         """ Get package header from data buffer """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.parse_header()'
+        )
 
     @abstractmethod
     def get_head_length(self, head: H) -> int:
         """ Get length of header """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_head_length()'
+        )
 
     @abstractmethod
     def get_body_length(self, head: H) -> int:
         """ Get body length from header """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_body_length()'
+        )
 
     @abstractmethod
     def create_package(self, data: ByteArray, head: H, body: ByteArray) -> P:
         """ Create package with buffer, head & body """
-        raise NotImplemented
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.create_package()'
+        )
 
     def seek_header(self, data: ByteArray) -> Tuple[Optional[H], int]:
         """

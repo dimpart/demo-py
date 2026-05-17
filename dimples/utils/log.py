@@ -2,7 +2,7 @@
 # ==============================================================================
 # MIT License
 #
-# Copyright (c) 2019 Albert Moky
+# Copyright (c) 2026 Albert Moky
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,53 +31,46 @@
 import logging
 import sys
 
-from startrek.types import Log, Logger
+from startrek.utils import Log, LogLevel
 
 
-class LogLevel:
-    """ Logging levels """
-
-    DEBUG: int = logging.DEBUG
-    INFO: int = logging.INFO
-    WARNING: int = logging.WARNING
-    ERROR: int = logging.ERROR
-
-    # DEBUG: int = logging.DEBUG    # 10: debug(), info(), warning(), error()
-    DEVELOP: int = logging.INFO     # 20:          info(), warning(), error()
-    RELEASE: int = logging.WARNING  # 30:                  warning(), error()
+MAX_LOG_LEN = 1024
 
 
-class Logging:
-    """ Log MixIn """
+class LimitedFormatter(logging.Formatter):
+    """ Limit max log length """
 
-    def _format(self, fmt: str) -> str:
-        clazz = self.__class__.__name__
-        return '%s >\t%s' % (clazz, fmt)
+    def __init__(self, fmt: str = None, datefmt: str = None, style: str = '%', max_len: int = None):
+        super().__init__(fmt=fmt, datefmt=datefmt, style=style)
+        if max_len is None or max_len < 128:
+            max_len = MAX_LOG_LEN
+        self.__max_len = max_len
 
-    def debug(self, msg: str, *args, **kwargs):
-        msg = self._format(fmt=msg)
-        Log.debug(msg, *args, **kwargs)
+    @property
+    def max_len(self) -> int:
+        return self.__max_len
 
-    def info(self, msg: str, *args, **kwargs):
-        msg = self._format(fmt=msg)
-        Log.info(msg, *args, **kwargs)
+    # Override
+    def format(self, record: logging.LogRecord) -> str:
+        text = super().format(record)
+        return self._shorten(text=text)
 
-    def warning(self, msg: str, *args, **kwargs):
-        msg = self._format(fmt=msg)
-        Log.warning(msg, *args, **kwargs)
+    # private
+    def _shorten(self, text: str) -> str:
+        max_len = self.max_len
+        # assert max_len > 128, 'too short: %s' % max_len
+        size = 0 if text is None else len(text)
+        if size <= max_len:
+            return text
+        desc = 'total %d chars' % size
+        gaps = len(desc) + 10        # length of middle string: " ... total %d chars ... "
+        tail = max_len >> 2          # length of the tail
+        pos = max_len - gaps - tail  # length of the head
+        return '%s ... %s ... %s' % (text[:pos], desc, text[-tail:])
 
-    def error(self, msg: str, *args, **kwargs):
-        msg = self._format(fmt=msg)
-        Log.error(msg, *args, **kwargs)
 
-
-"""
-    Colored Log
-    ~~~~~~~~~~~
-"""
-
-
-class ColoredFormatter(logging.Formatter):
+class ColoredFormatter(LimitedFormatter):
+    """ Colored Log """
 
     _COLORS = {
         logging.DEBUG: '\033[90m',    # grey
@@ -88,98 +81,83 @@ class ColoredFormatter(logging.Formatter):
     }
     _RESET = '\033[0m'
 
-    def __init__(self, fmt: str = None, datefmt: str = '%Y-%m-%d %H:%M:%S', style: str = '%'):
-        super().__init__(fmt=fmt, datefmt=datefmt, style=style)
+    def __init__(self, fmt: str = None, datefmt: str = None, style: str = '%', max_len: int = None):
+        if datefmt is None:
+            datefmt = '%Y-%m-%d %H:%M:%S'
+        super().__init__(fmt=fmt, datefmt=datefmt, style=style, max_len=max_len)
 
     # Override
     def format(self, record: logging.LogRecord) -> str:
-        _fix_record(record=record)
         text = super().format(record)
-        text = _shorten(text=text, max_len=MAX_LOG_LEN)
         color = self._COLORS.get(record.levelno)
-        if color is not None:
-            reset = self._RESET
-            return f'{color}{text}{reset}'
-        # text without color
-        return text
+        if color is None:
+            # text without color
+            return text
+        # colored text
+        reset = self._RESET
+        return f'{color}{text}{reset}'
+
+
+class StandardHandler(logging.StreamHandler):
+    """ Stream Log Handler """
+
+    def __init__(self, stream=None, level: int = None, fmt: str = None, max_len: int = None):
+        if stream is None:
+            stream = sys.stdout
+        super().__init__(stream=stream)
+        #
+        #  output level
+        #
+        if level is None:
+            level = LogLevel.DEBUG
+        self.setLevel(level=level)
+        #
+        #  output format
+        #
+        if fmt is None:
+            # fmt = '%(asctime)s | %(levelname)-8s | %(module)s:%(lineno)d > %(message)s'
+            fmt = '[%(asctime)s]  %(levelname)-8s | %(message)s\n%(filename)s:%(lineno)d'
+        formatter = ColoredFormatter(fmt=fmt, max_len=max_len)
+        self.setFormatter(fmt=formatter)
+
+    # Override
+    def emit(self, record):
+        _fix_record(record=record)
+        return super().emit(record=record)
 
 
 def _fix_record(record: logging.LogRecord):
     """ Fix for caller """
+    if hasattr(record, '_fixed'):
+        return
     frame = logging.currentframe()
     while frame:
         filename = frame.f_code.co_filename
         frame = frame.f_back
-        if filename.endswith('types/log.py'):
-            if frame is not None:
-                filename = frame.f_code.co_filename
-                if filename.endswith('utils/log.py'):
-                    frame = frame.f_back
+        if filename.endswith('log.py'):
             break
     if frame is not None:
-        record.module = frame.f_globals.get("__name__", "unknown")
+        # record.module = frame.f_globals.get("__name__", "unknown")
+        record.filename = frame.f_code.co_filename
         record.lineno = frame.f_lineno
-
-
-def _shorten(text: str, max_len: int = 1024) -> str:
-    # assert max_len > 128, 'too short: %s' % max_len
-    size = 0 if text is None else len(text)
-    if size <= max_len:
-        return text
-    desc = 'total %d chars' % size
-    gaps = len(desc) + 10
-    pos = max_len - gaps - 32
-    return '%s ... %s ... %s' % (text[:pos], desc, text[-32:])
-
-
-MAX_LOG_LEN = 1024
+        record._fixed = True
 
 
 """
-    Default Logger
+    Initialization
     ~~~~~~~~~~~~~~
 """
 
 
-class StandardLogger(Logger):
-
-    def __init__(self, name: str, fmt: str, level: int):
-        super().__init__()
-        logger = logging.getLogger(name)
-        self.__logger = logger
-        if len(logger.handlers) == 0:
-            init_log_handlers(logger=logger, fmt=fmt, level=level)
-
-    @property
-    def logger(self):
-        return self.__logger
-
-    # Override
-    def debug(self, msg: str, *args, **kwargs):
-        self.logger.debug(msg, *args, **kwargs)
-
-    # Override
-    def info(self, msg: str, *args, **kwargs):
-        self.logger.info(msg, *args, **kwargs)
-
-    # Override
-    def warning(self, msg: str, *args, **kwargs):
-        self.logger.warning(msg, *args, **kwargs)
-
-    # Override
-    def error(self, msg: str, *args, **kwargs):
-        self.logger.error(msg, *args, **kwargs)
-
-
-def init_log_handlers(logger: logging.Logger, fmt: str, level: int):
-    formatter = ColoredFormatter(fmt=fmt)
-    handler = logging.StreamHandler(stream=sys.stdout)
-    handler.setFormatter(fmt=formatter)  # output format
-    handler.setLevel(level=level)        # output level
-    logger.setLevel(level=level)         # output level
+def init_log_handlers(logger: logging.Logger, level: int, max_len: int):
+    # add stream handler
+    handler = StandardHandler(level=level, max_len=max_len)
     logger.addHandler(handler)
+    # TODO: add file handler
+    logger.setLevel(level=level)
 
 
-def init_logger(name: str, level: int = LogLevel.DEBUG):
-    fmt = '%(asctime)s | %(levelname)-8s | %(module)s:%(lineno)d > %(message)s'
-    Log.logger = StandardLogger(name=name, fmt=fmt, level=level)
+def init_logger(name: str, level: int = LogLevel.DEBUG, max_len: int = MAX_LOG_LEN):
+    logger = logging.getLogger(name)
+    init_log_handlers(logger=logger, level=level, max_len=max_len)
+    Log.logger = logger

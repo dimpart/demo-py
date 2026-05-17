@@ -41,7 +41,10 @@ class DeparturePacker(ABC):
 
     @abstractmethod
     def pack(self, payload: bytes, priority: int, needs_respond: bool) -> Optional[Departure]:
-        raise NotImplemented
+        """ Pack payload for departure ship """
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.pack()'
+        )
 
 
 __all__ = [
