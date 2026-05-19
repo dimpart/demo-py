@@ -26,7 +26,6 @@
 
 import os
 import sys
-import getopt
 
 from dimsdk import ID
 
@@ -36,47 +35,82 @@ path = os.path.dirname(path)
 path = os.path.dirname(path)
 sys.path.insert(0, path)
 
+from dimples.utils import SysArgvParser
 from dimples.utils import init_logger
 from dimples.utils import LogLevel
 from dimples.utils import Runner
 
 from dimples.register.shared import GlobalVariable
-from dimples.register.shared import create_config, show_help
+from dimples.register.shared import create_config
 from dimples.register.shared import generate, modify
 
 
 #
-# show logs
+#  show logs
 #
-init_logger(name='register', level=LogLevel.DEVELOP)
-
+LOG_LEVEL = LogLevel.DEVELOP
+LOGGER_NAME = 'register'
 
 DEFAULT_CONFIG = '/etc/dim/config.ini'
 
+APP_NAME = 'DIM account generate/modify'
+
+
+def show_help():
+    cmd = sys.argv[0]
+    print('')
+    print('    %s' % APP_NAME)
+    print('')
+    print('usages:')
+    print('    %s [--config=<FILE>] generate' % cmd)
+    print('    %s [--config=<FILE>] modify <ID>' % cmd)
+    print('    %s [-h|--help]' % cmd)
+    print('')
+    print('actions:')
+    print('    generate        create new ID, meta & document')
+    print('    modify <ID>     edit document with ID')
+    print('')
+    print('optional arguments:')
+    print('    --config        config file path (default: "%s")' % DEFAULT_CONFIG)
+    print('    --help, -h      show this help message and exit')
+    print('')
+
 
 async def async_main():
-    # create global variable
-    shared = GlobalVariable()
-    config = await create_config(default_config=DEFAULT_CONFIG)
-    await shared.prepare(config=config)
-    try:
-        opts, args = getopt.getopt(args=sys.argv[1:],
-                                   shortopts='hf:',
-                                   longopts=['help', 'config='])
-    except getopt.GetoptError:
-        show_help(default_config=DEFAULT_CONFIG)
+    #
+    #  parse cmd parameters
+    #
+    sys_argv = SysArgvParser.parse(shortopts='hf:ld:',
+                                   longopts=['help', 'config=', 'log-location', 'log-dir='])
+    if sys_argv is None:
+        show_help()
+        sys.exit(1)
+    #
+    #  init logger
+    #
+    show_location = sys_argv.has_opt(opt='log-location')
+    init_logger(name=LOGGER_NAME, level=LOG_LEVEL, show_location=show_location)
+    #
+    #  create config
+    #
+    config = await create_config(sys_argv=sys_argv, default_config=DEFAULT_CONFIG)
+    if config is None:
+        show_help()
         sys.exit(1)
     #
     #  Check Actions
     #
+    shared = GlobalVariable()
+    database = shared.adb
+    args = sys_argv.args
     if len(args) == 1 and args[0] == 'generate':
-        await generate(database=shared.adb)
+        await generate(database=database)
     elif len(args) == 2 and args[0] == 'modify':
         identifier = ID.parse(identifier=args[1])
         assert identifier is not None, 'ID error: %s' % args[1]
-        await modify(identifier=identifier, database=shared.adb)
+        await modify(identifier=identifier, database=database)
     else:
-        show_help(default_config=DEFAULT_CONFIG)
+        show_help()
 
 
 def main():

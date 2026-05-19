@@ -60,6 +60,8 @@ from .digest import md5, sha1
 from .checker import FrequencyChecker
 from .checker import RecentTimeChecker
 
+from .opt import SysArgvParser
+
 from .log import init_logger
 from .cache import CachePool, SharedCacheManager
 
@@ -141,6 +143,8 @@ __all__ = [
 
 
     'Singleton',
+
+    'SysArgvParser',
 
     'Log', 'Logging', 'LogLevel',
     'init_logger',

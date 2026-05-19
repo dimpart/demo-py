@@ -37,6 +37,7 @@ path = os.path.dirname(path)
 path = os.path.dirname(path)
 sys.path.insert(0, path)
 
+from dimples.utils import SysArgvParser
 from dimples.utils import init_logger
 from dimples.utils import Log, LogLevel
 from dimples.utils import Runner
@@ -101,23 +102,57 @@ class OctopusClient(Octopus):
 
 
 #
-# show logs
+#  show logs
 #
-init_logger(name='bridge', level=LogLevel.DEVELOP)
-
+LOG_LEVEL = LogLevel.DEVELOP
+LOGGER_NAME = 'bridge'
 
 DEFAULT_CONFIG = '/etc/dim/config.ini'
 
+APP_NAME = 'DIM Network Edge'
+
+
+def show_help():
+    cmd = sys.argv[0]
+    print('')
+    print('    %s' % APP_NAME)
+    print('')
+    print('usages:')
+    print('    %s [--config=<FILE>]' % cmd)
+    print('    %s [-h|--help]' % cmd)
+    print('')
+    print('optional arguments:')
+    print('    --config        config file path (default: "%s")' % DEFAULT_CONFIG)
+    print('    --help, -h      show this help message and exit')
+    print('')
+
 
 async def async_main():
-    # create global variable
-    shared = GlobalVariable()
-    config = await create_config(app_name='DIM Network Edge', default_config=DEFAULT_CONFIG)
-    await shared.prepare(config=config)
     #
-    #  Login
+    #  parse cmd parameters
+    #
+    sys_argv = SysArgvParser.parse(shortopts='hf:ld:',
+                                   longopts=['help', 'config=', 'log-location', 'log-dir='])
+    if sys_argv is None:
+        show_help()
+        sys.exit(1)
+    #
+    #  init logger
+    #
+    show_location = sys_argv.has_opt(opt='log-location')
+    init_logger(name=LOGGER_NAME, level=LOG_LEVEL, show_location=show_location)
+    #
+    #  create config
+    #
+    config = await create_config(sys_argv=sys_argv, default_config=DEFAULT_CONFIG)
+    if config is None:
+        show_help()
+        sys.exit(1)
+    #
+    #  login
     #
     sid = config.station_id
+    shared = GlobalVariable()
     await shared.login(current_user=sid)
     #
     #  Station host & port

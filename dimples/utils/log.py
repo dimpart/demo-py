@@ -149,15 +149,19 @@ def _fix_record(record: logging.LogRecord):
 """
 
 
-def init_log_handlers(logger: logging.Logger, level: int, max_len: int):
+def init_log_handlers(logger: logging.Logger, level: int, max_len: int, show_location: bool):
+    if show_location:
+        fmt = '[%(asctime)s]  %(levelname)-8s | %(message)s\n%(filename)s:%(lineno)d'
+    else:
+        fmt = '[%(asctime)s]  %(levelname)-8s | %(message)s'
     # add stream handler
-    handler = StandardHandler(level=level, max_len=max_len)
+    handler = StandardHandler(level=level, fmt=fmt, max_len=max_len)
     logger.addHandler(handler)
     # TODO: add file handler
     logger.setLevel(level=level)
 
 
-def init_logger(name: str, level: int = LogLevel.DEBUG, max_len: int = MAX_LOG_LEN):
+def init_logger(name: str, level: int = LogLevel.DEBUG, max_len: int = MAX_LOG_LEN, show_location: bool = False):
     logger = logging.getLogger(name)
-    init_log_handlers(logger=logger, level=level, max_len=max_len)
+    init_log_handlers(logger=logger, level=level, max_len=max_len, show_location=show_location)
     Log.logger = logger

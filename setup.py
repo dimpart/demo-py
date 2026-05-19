@@ -24,7 +24,7 @@ with io.open('README.md', 'r', encoding='utf-8') as fh:
 setup(
     name='dimples',
     version=__version__,
-    url='https://github.com/dimchat/demo-py',
+    url='https://github.com/dimpart/demo-py',
     license='MIT',
     author=__author__,
     author_email=__contact__,
@@ -53,12 +53,12 @@ setup(
         # 'pycryptodome',  # 3.14.1
         # 'base58',  # 1.0.3
         # 'ecdsa',   # 0.16.1
-        'dimplugins==2.4.0',
+        'dimplugins==2.4.1',
 
-        'dimsdk==2.4.0',
-        'dimp==2.4.0',
-        'dkd==2.4.0',
-        'mkm==2.4.0',
+        'dimsdk==2.4.1',
+        'dimp==2.4.1',
+        'dkd==2.4.1',
+        'mkm==2.4.1',
 
         'startrek==2.3.1',
         'tcp==2.3.1',
