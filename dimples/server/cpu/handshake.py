@@ -37,12 +37,12 @@ from dimsdk import ID, Content, ReliableMessage
 
 from dimsdk.cpu import BaseCommandProcessor
 
-from ...utils import Log
+from ...utils import Logging
 from ...common import HandshakeCommand
 from ...common import CommonMessenger, Session
 
 
-class HandshakeCommandProcessor(BaseCommandProcessor):
+class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
 
     @property
     def messenger(self) -> CommonMessenger:
@@ -54,7 +54,7 @@ class HandshakeCommandProcessor(BaseCommandProcessor):
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
         assert isinstance(content, HandshakeCommand), 'handshake command error: %s' % content
         title = content.title
-        if title in ['DIM?', 'DIM!']:
+        if title == 'DIM?' or title == 'DIM!':
             # S -> C
             text = 'Command not support.'
             return self._respond_receipt(text=text, envelope=r_msg.envelope, content=content, extra={
@@ -63,8 +63,19 @@ class HandshakeCommandProcessor(BaseCommandProcessor):
                     'title': title,
                 }
             })
-        # C -> S: Hello world!
-        assert 'Hello world!' == title, 'Handshake command error: %s' % content
+        elif title == HandshakeCommand.SAY_HI:
+            # C -> S: Nice to meet you!
+            messenger = self.messenger
+            session = messenger.session
+            res = HandshakeCommand.respond(session=content.session)
+            res['remote_address'] = session.remote_address
+            return [res]
+        elif title == HandshakeCommand.HI_BACK:
+            # just ignore it
+            return []
+        else:
+            # C -> S: Hello world!
+            assert 'Hello world!' == title, 'Handshake command error: %s' % content
         # set/update session in session server with new session key
         messenger = self.messenger
         session = messenger.session
@@ -74,7 +85,7 @@ class HandshakeCommandProcessor(BaseCommandProcessor):
             assert sess_id == sender, 'sender error: %s, %s' % (sender, sess_id)
         if session.session_key == content.session:
             # session key match
-            Log.info(msg='handshake accepted: %s, session: %s' % (sender, session.session_key))
+            self.info('handshake accepted: %s, session: %s', sender, session.session_key)
             # verified success
             await handshake_accepted(identifier=sender, when=content.time, session=session, messenger=messenger)
             res = HandshakeCommand.success(session=session.session_key)

@@ -64,7 +64,7 @@ class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
         assert new_sess_key is not None, 'new session key should not be empty: %s' % content
         if 'DIM?' == title:
             # S -> C: station ask client to handshake again
-            self.info(msg='handshake again, session key: %s' % new_sess_key)
+            self.info('handshake again, session key: %s', new_sess_key)
             # clear client session key while handshake again
             if old_sess_key is None:
                 # first handshake response with new session key,
@@ -72,16 +72,16 @@ class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
             elif old_sess_key == new_sess_key:
                 # duplicated handshake response?
                 # or session expired and the station ask to handshake again?
-                self.warning(msg='session key already set: %s => %s' % (old_sess_key, new_sess_key))
+                self.warning('session key already set: %s => %s', old_sess_key, new_sess_key)
                 await messenger.handshake(session_key=new_sess_key)
             else:
                 # connection changed?
-                self.error(msg='session key from %s not match: %s => %s' % (sender, old_sess_key, new_sess_key))
+                self.error('session key from %s not match: %s => %s', sender, old_sess_key, new_sess_key)
                 # erase session key to handshake again
                 client_session.session_key = None
         elif 'DIM!' == title:
             # S -> C: handshake accepted by station
-            self.info(msg='handshake success: %s, local: %s' % (station.identifier, client_session.identifier))
+            self.info('handshake success: %s, local: %s', station.identifier, client_session.identifier)
             # check session key
             if old_sess_key is None:
                 # normal handshake response,
@@ -92,12 +92,20 @@ class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
                 pass
             else:
                 # FIXME: handshake error
-                self.error(msg='session key from %s not match: %s => %s' % (sender, old_sess_key, new_sess_key))
+                self.error('session key from %s not match: %s => %s', sender, old_sess_key, new_sess_key)
                 # erase session key to handshake again
                 client_session.session_key = None
+        elif title == HandshakeCommand.SAY_HI:
+            # C -> C: Nice to meet you!
+            res = HandshakeCommand.respond(session=content.session)
+            return [res]
+        elif title == HandshakeCommand.HI_BACK:
+            # just ignore it
+            self.warning('hi back: %s, %s', sender, content)
+            return []
         else:
             # C -> S: Hello world!
-            self.error(msg='[Error] handshake command from %s: %s' % (sender, content))
+            self.error('[Error] handshake command from %s: %s', sender, content)
         return []
 
 

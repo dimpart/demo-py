@@ -140,6 +140,21 @@ class HandshakeCommand(Command, ABC):
     restart = offer     # (3. C->S) handshake with new session key
     success = accepted  # (4. S->C) notice the client that handshake accepted
 
+    #
+    #   Test Speed
+    #
+
+    SAY_HI = 'Nice to meet you!'
+    HI_BACK = 'Nice to meet you too!'
+
+    @classmethod
+    def request(cls, session: str = None) -> Command:
+        return BaseHandshakeCommand(title=cls.SAY_HI, session=session)
+
+    @classmethod
+    def respond(cls, session: str = None) -> Command:
+        return BaseHandshakeCommand(title=cls.HI_BACK, session=session)
+
 
 class BaseHandshakeCommand(BaseCommand, HandshakeCommand):
 
