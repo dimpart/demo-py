@@ -33,7 +33,7 @@
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     1. reset group members
-    2. only group owner or assistant can reset group members
+    2. only group owner or administrators can reset group members
 """
 
 from typing import Tuple, List
@@ -50,7 +50,7 @@ class ResetCommandProcessor(GroupCommandProcessor):
 
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
-        assert isinstance(content, ResetCommand), 'group cmd error: %s' % content
+        assert isinstance(content, ResetCommand), f'group cmd error: {content}'
 
         # 0. check command
         group, errors = await self._check_expired(content=content, r_msg=r_msg)
@@ -111,12 +111,12 @@ class ResetCommandProcessor(GroupCommandProcessor):
         if not await self._save_group_history(group=group, content=content, r_msg=r_msg):
             # here try to save the 'reset' command to local storage as group history
             # it should not failed unless the command is expired
-            self.error(msg='failed to save "reset" command for group: %s' % group)
+            self.error('failed to save "reset" command for group: %s', group)
         elif len(add_list) == 0 and len(remove_list) == 0:
             # nothing changed
-            self.warning(msg='nothing changed for group members: %d, %s' % (len(members), group))
+            self.warning('nothing changed for group members: %d, %s', len(members), group)
         elif await self._save_members(members=new_members, group=group):
-            self.info(msg='new members saved in group: %s' % group)
+            self.info('new members saved in group: %s', group)
             if len(add_list) > 0:
                 content['added'] = ID.revert(identifiers=add_list)
             if len(remove_list) > 0:

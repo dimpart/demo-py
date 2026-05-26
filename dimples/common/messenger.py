@@ -134,7 +134,7 @@ class CommonMessenger(Messenger, Transmitter, Logging, ABC):
             return await super().encrypt_key(data=data, receiver=receiver, msg=msg)
         except Exception as error:
             # FIXME:
-            self.error(msg='failed to encrypt key: %s' % error)
+            self.error('failed to encrypt key: %s', error)
 
     # Override
     async def serialize_key(self, key: Union[dict, SymmetricKey], msg: InstantMessage) -> Optional[bytes]:
@@ -188,12 +188,12 @@ class CommonMessenger(Messenger, Transmitter, Logging, ABC):
             return False
         doc = await self.facebook.get_visa(sender)
         if doc is None:
-            self.error(msg='failed to get visa document for sender: %s' % sender)
+            self.error('failed to get visa document for sender: %s', sender)
             return False
         # attach sender document time
         last_doc_time = doc.time
         if last_doc_time is None:
-            self.error(msg='document error: %s' % doc)
+            self.error('document error: %s', doc)
             return False
         else:
             msg.set_datetime(key='SDT', value=last_doc_time)
@@ -207,25 +207,25 @@ class CommonMessenger(Messenger, Transmitter, Logging, ABC):
         #  0. check cycled message
         #
         if sender == msg.receiver:
-            self.warning(msg='cycled message: %s => %s, %s' % (sender, msg.receiver, msg.group))
+            self.warning('cycled message: %s => %s, %s', sender, msg.receiver, msg.group)
             # return None
         else:
-            self.debug(msg='send instant message message (type=%s): %s => %s, %s'
-                           % (msg.content.type, sender, msg.receiver, msg.group))
+            self.debug('send instant message message (type=%s): %s => %s, %s',
+                       msg.content.type, sender, msg.receiver, msg.group)
             # attach sender's document times
             # for the receiver to check whether user info synchronized
             ok = await self._attach_visa_time(sender=sender, msg=msg)
             if ok or isinstance(msg.content, Command):
                 pass
             else:
-                self.warning(msg='failed to attach document time: %s => %s' % (sender, msg.content))
+                self.warning('failed to attach document time: %s => %s', sender, msg.content)
         #
         #  1. encrypt message
         #
         s_msg = await self.encrypt_message(msg=msg)
         if s_msg is None:
             # public key not found?
-            self.warning(msg='failed to encrypt message: %s => %s, %s' % (sender, msg.receiver, msg.group))
+            self.warning('failed to encrypt message: %s => %s, %s', sender, msg.receiver, msg.group)
             return None
         #
         #  2. sign message
@@ -233,25 +233,25 @@ class CommonMessenger(Messenger, Transmitter, Logging, ABC):
         r_msg = await self.sign_message(msg=s_msg)
         if r_msg is None:
             # TODO: set msg.state = error
-            raise AssertionError('failed to sign message: %s' % s_msg)
+            raise AssertionError(f'failed to sign message: {s_msg}')
         #
         #  3. send message
         #
         if await self.send_reliable_message(msg=r_msg, priority=priority):
             return r_msg
         # failed
-        self.error(msg='failed to send message: %s => %s, %s' % (sender, msg.receiver, msg.group))
+        self.error('failed to send message: %s => %s, %s', sender, msg.receiver, msg.group)
 
     # Override
     async def send_reliable_message(self, msg: ReliableMessage, priority: int = 0) -> bool:
         """ send reliable message with priority """
         # 0. check cycled message
         if msg.sender == msg.receiver:
-            self.warning(msg='cycled message: %s => %s, %s' % (msg.sender, msg.receiver, msg.group))
+            self.warning('cycled message: %s => %s, %s', msg.sender, msg.receiver, msg.group)
             # return False
         # 1. serialize message
         data = await self.serialize_message(msg=msg)
-        assert data is not None, 'failed to serialize message: %s' % msg
+        assert data is not None, f'failed to serialize message: {msg}'
         # 2. call gate keeper to send the message data package
         #    put message package into the waiting queue of current session
         session = self.session

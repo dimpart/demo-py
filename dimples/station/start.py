@@ -56,6 +56,7 @@ LOG_LEVEL = LogLevel.DEVELOP
 LOGGER_NAME = 'dims'
 
 APP_NAME = 'DIM Network Station'
+
 DEFAULT_CONFIG = '/etc/dim/config.ini'
 
 
@@ -106,7 +107,7 @@ async def async_main():
     #
     host = config.station_host
     port = config.station_port
-    assert host is not None and port > 0, 'station config error: %s' % config
+    assert host is not None and port > 0, f'station config error: {config}'
     host = '0.0.0.0'
     server_address = (host, port)
     #
@@ -117,16 +118,16 @@ async def async_main():
         server = ThreadingTCPServer(server_address=server_address,
                                     RequestHandlerClass=RequestHandler,
                                     bind_and_activate=False)
-        Log.info(msg='>>> TCP server %s starting...' % str(server_address))
+        Log.info('>>> TCP server %s starting...', server_address)
         server.allow_reuse_address = True
         server.server_bind()
         server.server_activate()
-        Log.info(msg='>>> TCP server %s is listening...' % str(server_address))
+        Log.info('>>> TCP server %s is listening...', server_address)
         server.serve_forever()
     except KeyboardInterrupt as ex:
-        Log.info(msg='~~~~~~~~ %s' % ex)
+        Log.info('~~~~~~~~ %s', ex)
     finally:
-        Log.info(msg='======== station shutdown!')
+        Log.info('======== station shutdown!')
 
 
 def main():

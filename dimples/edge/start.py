@@ -107,9 +107,9 @@ class OctopusClient(Octopus):
 LOG_LEVEL = LogLevel.DEVELOP
 LOGGER_NAME = 'bridge'
 
-DEFAULT_CONFIG = '/etc/dim/config.ini'
-
 APP_NAME = 'DIM Network Edge'
+
+DEFAULT_CONFIG = '/etc/dim/config.ini'
 
 
 def show_help():
@@ -159,14 +159,14 @@ async def async_main():
     #
     host = config.station_host
     port = config.station_port
-    assert host is not None and port > 0, 'station config error: %s' % config
+    assert host is not None and port > 0, f'station config error: {config}'
     host = '127.0.0.1'
     #
     #  Start Octopus Client
     #
     octopus = OctopusClient(database=shared.sdb, local_host=host, local_port=port)
     await octopus.run()
-    Log.warning(msg='octopus stopped: %s' % octopus)
+    Log.warning('octopus stopped: %s', octopus)
 
 
 def main():

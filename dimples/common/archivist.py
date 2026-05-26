@@ -45,6 +45,7 @@ from dimsdk import Barrack
 
 from ..utils import Logging
 from ..utils import MemoryCache, ThanosCache
+
 from .mkm import MetaUtils, DocumentUtils
 from .mkm import Bot, Station, ServiceProvider
 
@@ -114,7 +115,7 @@ class CommonArchivist(Barrack, Archivist, Logging):
 
     # Override
     def create_user(self, identifier: ID) -> Optional[User]:
-        assert identifier.is_user, 'user ID error: %s' % identifier
+        assert identifier.is_user, f'user ID error: {identifier}'
         network = identifier.type
         # check user type
         if network == EntityType.STATION:
@@ -126,7 +127,7 @@ class CommonArchivist(Barrack, Archivist, Logging):
 
     # Override
     def create_group(self, identifier: ID) -> Optional[Group]:
-        assert identifier.is_group, 'group ID error: %s' % identifier
+        assert identifier.is_group, f'group ID error: {identifier}'
         network = identifier.type
         # check group type
         if network == EntityType.ISP:
@@ -144,14 +145,14 @@ class CommonArchivist(Barrack, Archivist, Logging):
         #  1. check valid
         #
         if not self.check_meta(meta=meta, identifier=identifier):
-            self.warning(msg='meta not valid: %s' % identifier)
+            self.warning('meta not valid: %s', identifier)
             return False
         #
         #  2. check duplicated
         #
         old = await self.facebook.get_meta(identifier=identifier)
         if old is not None:
-            self.debug(msg='meta duplicated: %s' % identifier)
+            self.debug('meta duplicated: %s', identifier)
             return True
         #
         #  3. save into database
@@ -164,7 +165,7 @@ class CommonArchivist(Barrack, Archivist, Logging):
         if meta.is_valid:
             return MetaUtils.match_id(identifier=identifier, meta=meta)
         else:
-            self.warning(msg='meta error: %s -> %s' % (meta, identifier))
+            self.warning('meta error: %s -> %s', meta, identifier)
 
     # Override
     async def save_document(self, document: Document, identifier: ID) -> bool:
@@ -173,14 +174,14 @@ class CommonArchivist(Barrack, Archivist, Logging):
         #
         valid = await self.check_document(document=document, identifier=identifier)
         if not valid:
-            self.warning(msg='meta not valid: %s' % identifier)
+            self.warning('meta not valid: %s', identifier)
             return False
         #
         #  2. check expired
         #
         expired = await self.is_document_expired(document=document, identifier=identifier)
         if expired:
-            self.info(msg='drop expired document: %s' % document)
+            self.info('drop expired document: %s', document)
             return False
         #
         #  3. save into database
@@ -193,13 +194,13 @@ class CommonArchivist(Barrack, Archivist, Logging):
         doc_time = document.time
         # check document time
         if doc_time is None:
-            self.warning(msg='document without time: %s' % identifier)
+            self.warning('document without time: %s', identifier)
         else:
             # calibrate the clock
             # make sure the document time is not in the far future
             near_future = DateTime.current_timestamp() + 30 * 60
             if doc_time > near_future:
-                self.error(msg='document time error: %s, %s' % (doc_time, identifier))
+                self.error('document time error: %s, %s', doc_time, identifier)
                 return False
         # check valid
         return await self.verify_document(document=document, identifier=identifier)
@@ -210,7 +211,7 @@ class CommonArchivist(Barrack, Archivist, Logging):
         #     return True
         meta = await self.facebook.get_meta(identifier=identifier)
         if meta is None:
-            self.warning(msg='failed to get meta: %s' % identifier)
+            self.warning('failed to get meta: %s', identifier)
         else:
             return document.verify(public_key=meta.public_key)
 

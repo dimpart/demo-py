@@ -54,10 +54,10 @@ class DocumentStorage(Storage):
     async def save_documents(self, documents: List[Document], identifier: ID) -> bool:
         """ save documents into file """
         path = self.__docs_path(identifier=identifier)
-        self.info(msg='Saving %d document(s) into: %s' % (len(documents), path))
+        self.info('Saving %d document(s) into: %s', len(documents), path)
         array = []
         for doc in documents:
-            assert identifier == doc.get('did'), 'document ID not matched: %s, %s' % (identifier, doc)
+            assert identifier == doc.get('did'), f'document ID not matched: {identifier}, {doc}'
             info = doc.to_dict()
             array.append(info)
         return await self.write_json(container=array, path=path)
@@ -65,18 +65,18 @@ class DocumentStorage(Storage):
     async def load_documents(self, identifier: ID) -> Optional[List[Document]]:
         """ load documents from file """
         path = self.__docs_path(identifier=identifier)
-        # self.info(msg='Loading documents from: %s' % path)
+        # self.info('Loading documents from: %s', path)
         array = await self.read_json(path=path)
         if array is None:
             # file not found
-            self.warning(msg='document file not found: %s' % path)
+            self.warning('document file not found: %s', path)
             return None
         documents = []
         for info in array:
             doc = parse_document(dictionary=info, identifier=identifier)
             if doc is not None:
                 documents.append(doc)
-        self.info(msg='Loaded %d documents from: %s' % (len(documents), path))
+        self.info('Loaded %d documents from: %s', len(documents), path)
         return documents
 
 
@@ -84,11 +84,11 @@ def parse_document(dictionary: dict, identifier: ID = None, doc_type: str = '*')
     Compatible.fix_document_id(document=dictionary)
     # check document ID
     doc_id = DocumentUtils.get_document_id(document=dictionary)
-    assert doc_id is not None, 'document error: %s' % dictionary
+    assert doc_id is not None, f'document error: {dictionary}'
     if identifier is None:
         identifier = doc_id
     else:
-        assert identifier == doc_id, 'document ID not match: %s, %s' % (identifier, doc_id)
+        assert identifier == doc_id, f'document ID not match: {identifier}, {doc_id}'
     # check document type
     doc_ty = DocumentUtils.get_document_type(document=dictionary)
     if doc_ty is not None:
@@ -101,7 +101,7 @@ def parse_document(dictionary: dict, identifier: ID = None, doc_type: str = '*')
     # check document signature
     signature = dictionary.get('signature')
     if data is None or signature is None:
-        raise ValueError('document error: %s' % dictionary)
+        raise ValueError(f'document error: {dictionary}')
     ted = TransportableData.parse(signature)
     doc = Document.create(doc_type=doc_type, data=data, signature=ted)
     doc.set_string(key='did', value=identifier)

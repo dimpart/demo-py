@@ -154,7 +154,7 @@ class NetMsgHead:
         # check data length
         data_len = len(data)
         if data_len < cls.MIN_HEAD_LEN:
-            # raise ValueError('Mars data length error: %d' % data_len)
+            # raise ValueError(f'Mars data length error: {data_len}')
             return None
         # get fields
         head_len = read_int(data, 0)
@@ -162,13 +162,13 @@ class NetMsgHead:
         cmd = read_int(data, 8)
         seq = read_int(data, 12)
         body_len = read_int(data, 16)
-        assert head_len >= cls.MIN_HEAD_LEN, 'Mars head length error: %d' % head_len
-        assert version == 200, 'Mars version error: %d' % version
-        assert cmd in [NetMsgHead.SEND_MSG, NetMsgHead.NOOP, NetMsgHead.PUSH_MESSAGE], 'Mars cmd error: %d' % cmd
-        assert body_len >= 0, 'Mars body length error: %d' % body_len
+        assert head_len >= cls.MIN_HEAD_LEN, f'Mars head length error: {head_len}'
+        assert version == 200, f'Mars version error: {version}'
+        assert cmd in [NetMsgHead.SEND_MSG, NetMsgHead.NOOP, NetMsgHead.PUSH_MESSAGE], f'Mars cmd error: {cmd}'
+        assert body_len >= 0, f'Mars body length error: {body_len}'
         # check head length
         if data_len < head_len:
-            # raise ValueError('Mars head length error: %d' % head_len)
+            # raise ValueError(f'Mars head length error: {head_len}')
             return None
         elif data_len > head_len:
             # cut head
@@ -180,7 +180,7 @@ class NetMsgHead:
             options = data[cls.MIN_HEAD_LEN:]
         # check body length
         if body_len < 0:
-            # raise ValueError('Mars body length error: %d' % body_len)
+            # raise ValueError(f'Mars body length error: {body_len}')
             return None
         return cls(data=data, version=version, cmd=cmd, seq=seq, options=options, body_len=body_len)
 

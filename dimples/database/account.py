@@ -93,7 +93,7 @@ class AccountDatabase(AccountDBI):
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
         # check meta with ID
         if not MetaUtils.match_id(identifier=identifier, meta=meta):
-            raise ValueError('meta not match: %s => %s' % (identifier, meta))
+            raise ValueError(f'meta not match: {identifier} => {meta}')
         return await self._meta_table.save_meta(meta=meta, identifier=identifier)
 
     # Override
@@ -109,17 +109,17 @@ class AccountDatabase(AccountDBI):
         # check meta first
         meta = await self._meta_table.get_meta(identifier=identifier)
         if meta is None:
-            raise LookupError('meta not exists: %s' % identifier)
+            raise LookupError(f'meta not exists: {identifier}')
         # check document valid before saving it
         if not (document.is_valid or document.verify(public_key=meta.public_key)):
-            raise ValueError('document error: %s' % identifier)
+            raise ValueError(f'document error: {identifier}')
         # check founder in group document
         if isinstance(document, Bulletin):
             founder = document.founder
             if founder is not None:
                 f_meta = await self._meta_table.get_meta(identifier=founder)
                 if f_meta is None or meta.public_key != meta.public_key:
-                    raise ValueError('founder error: %s, group: %s' % (founder, identifier))
+                    raise ValueError(f'founder error: {founder}, group: {identifier}')
         # document ok, try to save it
         return await self._doc_table.save_document(document=document, identifier=identifier)
 

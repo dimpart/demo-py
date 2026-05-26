@@ -209,7 +209,7 @@ class SharedGroupManager(GroupDataSource):
         :param group:   group ID
         :return: True on success
         """
-        assert group.is_group and len(members) > 0, 'params error: %s, %s' % (group, members)
+        assert group.is_group and len(members) > 0, f'params error: {group}, {members}'
         user = await self.facebook.current_user
         if user is None:
             return False
@@ -229,7 +229,7 @@ class SharedGroupManager(GroupDataSource):
                 remove_item(item=item, array=new_members)
             return await self.reset_group_members(members=new_members, group=group)
         # not an admin/owner
-        raise PermissionError('Cannot expel members from group: %s' % group)
+        raise PermissionError(f'Cannot expel members from group: {group}')
 
     async def invite_group_members(self, members: List[ID], group: ID) -> bool:
         """
@@ -253,7 +253,7 @@ class SharedGroupManager(GroupDataSource):
 
     async def send_instant_message(self, msg: InstantMessage, priority: int = 0) -> Optional[ReliableMessage]:
         """ Send group message """
-        assert msg.content.group is not None, 'group message error: %s' % msg
+        assert msg.content.group is not None, f'group message error: {msg}'
         msg['GF'] = True  # group flag for notification
         delegate = self.emitter
         return await delegate.send_instant_message(msg=msg, priority=priority)

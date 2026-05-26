@@ -52,7 +52,7 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
     @property  # Override
     def messenger(self) -> Optional[CommonMessenger]:
         transceiver = super().messenger
-        assert isinstance(transceiver, CommonMessenger), 'transceiver error: %s' % transceiver
+        assert isinstance(transceiver, CommonMessenger), f'transceiver error: {transceiver}'
         return transceiver
 
     def suspend_reliable_message(self, msg: ReliableMessage, error: Dict):
@@ -88,21 +88,38 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
             if isinstance(meta_key, EncryptKey):
                 return meta_key
 
+    async def _check_attachments(self, msg: ReliableMessage) -> bool:
+        """ Check meta & visa """
+        archivist = self.facebook.archivist
+        if archivist is None:
+            # assert archivist is not None, 'archivist not ready'
+            return False
+        else:
+            sender = msg.sender
+        # [Meta Protocol]
+        meta = MessageUtils.get_meta(msg=msg)
+        if meta is not None:
+            ok = await archivist.save_meta(meta=meta, identifier=sender)
+            if not ok:
+                self.error('meta error: %s, %s', sender, meta)
+                return False
+        # [Visa Protocol]
+        visa = MessageUtils.get_visa(msg=msg)
+        if visa is not None:
+            ok = await archivist.save_document(document=visa, identifier=sender)
+            if not ok:
+                self.error('visa error: %s, %s', sender, visa)
+                return False
+        # OK
+        return True
+
     # protected
     async def _check_sender(self, msg: ReliableMessage) -> bool:
         """ Check sender before verifying received message """
         sender = msg.sender
-        assert sender.is_user, 'sender error: %s' % sender
-        # check sender's meta & document
-        visa = MessageUtils.get_visa(msg=msg)
-        if visa is not None:
-            # first handshake?
-            did = DocumentUtils.get_document_id(document=visa)
-            matched = did == sender
-            assert matched, 'visa ID not match: %s => %s' % (sender, visa)
-            # assert Meta.match_id(meta=msg.meta, identifier=sender), 'meta error: %s' % msg
-            return matched
-        elif await self._visa_key(user=sender) is not None:
+        assert sender.is_user, f'sender error: {sender}'
+        # check sender's meta & visa document
+        if await self._visa_key(user=sender) is not None:
             # sender is OK
             return True
         # sender not ready, suspend message for waiting document
@@ -121,7 +138,7 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
             # broadcast message
             return True
         elif receiver.is_group:
-            # NOTICE: station will never send group message, so
+            # NOTICE: station will never receive grouped message, so
             #         we don't need to check group info here; and
             #         if a client wants to send group message,
             #         that should be sent to a group bot first,
@@ -150,7 +167,7 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
             # receiver is ready
             pass
         else:
-            self.warning(msg='receiver not ready: %s' % msg.receiver)
+            self.warning('receiver not ready: %s', msg.receiver)
             return None
         return await super().encrypt_message(msg=msg)
 
@@ -158,12 +175,13 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
     async def verify_message(self, msg: ReliableMessage) -> Optional[SecureMessage]:
         # 1. check receiver/group with local user
         # 2. check sender's meta
-        if await self._check_sender(msg=msg):
-            # sender is ready
-            pass
-        else:
-            self.warning(msg='sender not ready: %s' % msg.sender)
+        if not await self._check_attachments(msg=msg):
+            self.error('message attachments error: %s -> %s: %s', msg.sender, msg.receiver, msg)
             return None
+        elif not await self._check_sender(msg=msg):
+            self.warning('sender not ready: %s', msg.sender)
+            return None
+        # make sure sender's meta exists before verifying message
         return await super().verify_message(msg=msg)
 
     # Override

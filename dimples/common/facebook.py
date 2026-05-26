@@ -38,8 +38,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
 
-from dimsdk import SignKey, DecryptKey
-from dimsdk import ID, User
+from dimsdk import SignKey, DecryptKey, EncryptKey
+from dimsdk import ID, User, Group
 from dimsdk import Meta, Document, Visa, Bulletin
 from dimsdk import Facebook
 from dimsdk import DocumentType
@@ -104,7 +104,7 @@ class CommonFacebook(Facebook, Logging, ABC):
             return None
         else:
             me = array[0]
-        assert await self.private_key_for_signature(identifier=me), 'user error: %s' % me
+        assert await self.private_key_for_signature(identifier=me), f'user error: {me}'
         user = await self.get_user(identifier=me)
         self.__current = user
         return user
@@ -140,6 +140,30 @@ class CommonFacebook(Facebook, Logging, ABC):
                 return me
         # check local users
         return await super().select_member(members=members)
+
+    # Override
+    async def get_user(self, identifier: ID) -> Optional[User]:
+        visa = await self.get_visa(user=identifier)
+        if visa is None:
+            meta = await self.get_meta(identifier=identifier)
+            if meta is None:
+                self.error('user not ready: %s', identifier)
+                return None
+            elif not isinstance(meta.public_key, EncryptKey):
+                self.error('user not ready: %s, %s', identifier, meta)
+                return None
+        elif visa.public_key is None:
+            self.error('user error: %s, %s', identifier, visa)
+            return None
+        return await super().get_user(identifier=identifier)
+
+    # Override
+    async def get_group(self, identifier: ID) -> Optional[Group]:
+        members = await self.get_members(identifier=identifier)
+        if members is None or len(members) == 0:
+            self.error('group not ready: %s', identifier)
+            return None
+        return await super().get_group(identifier=identifier)
 
     #
     #   Documents

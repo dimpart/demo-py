@@ -118,14 +118,14 @@ class WebSocket:
         :return: (payload, remaining_data)
         """
         stream_len = len(stream)
-        # Log.info(msg='parsing stream: %d bytes' % stream_len)
+        # Log.info('parsing stream: %d bytes', stream_len)
         if stream_len < 2:
             return None, stream
         data = b''
         pos = 0
         while True:
             if stream_len < pos + 2:
-                Log.info(msg='incomplete ws package for op code: %d' % stream_len)
+                Log.info('incomplete ws package for op code: %d', stream_len)
                 return None, stream
             # 1. check whether a continuation frame
             ch0 = stream[pos+0]
@@ -139,7 +139,7 @@ class WebSocket:
             msg_len = ch1 & 0x7F
             if msg_len == 126:
                 if stream_len < pos + 4:
-                    Log.info(msg='incomplete ws package for msg len: %d' % stream_len)
+                    Log.info('incomplete ws package for msg len: %d', stream_len)
                     return None, stream
                 b2 = stream[pos+2]
                 b3 = stream[pos+3]
@@ -147,7 +147,7 @@ class WebSocket:
                 pos += 4
             elif msg_len == 127:
                 if stream_len < pos + 10:
-                    Log.info(msg='incomplete ws package for msg len: %d' % stream_len)
+                    Log.info('incomplete ws package for msg len: %d', stream_len)
                     return None, stream
                 b2 = stream[pos+2]
                 b3 = stream[pos+3]
@@ -164,7 +164,7 @@ class WebSocket:
             # 3. get masking-key
             if mask == 1:
                 if stream_len < pos + 4:
-                    Log.info(msg='incomplete ws package for mask: %d' % stream_len)
+                    Log.info('incomplete ws package for mask: %d', stream_len)
                     return None, stream
                 mask = stream[pos:pos+4]
                 pos += 4
@@ -172,7 +172,7 @@ class WebSocket:
                 mask = None
             # 4. get payload
             if stream_len < pos + msg_len:
-                # Log.info(msg='incomplete ws package for payload: %d, msg len: %d' % (stream_len, msg_len))
+                # Log.info('incomplete ws package for payload: %d, msg len: %d', stream_len, msg_len)
                 return None, stream
             payload = stream[pos:pos+msg_len]
             pos += msg_len
@@ -193,26 +193,26 @@ class WebSocket:
                 data += content
             elif op == 8:
                 # TODO: CLOSE
-                Log.warning(msg='CLOSE')
+                Log.warning('CLOSE')
                 # sock.close()
                 pass
             elif op == 9:
                 # TODO: PING
-                Log.warning(msg='PING')
+                Log.warning('PING')
                 pass
             elif op == 10:
                 # TODO: PONG
-                Log.warning(msg='PONG')
+                Log.warning('PONG')
                 pass
             else:
-                Log.error(msg='ws op error: %d => %s' % (op, stream))
+                Log.error('ws op error: %d => %s', op, stream)
                 return None, b''
             # 6. check final fragment
             if fin == 1 or op == 0:
                 # cut the received package(s) and return the remaining
                 stream = stream[pos:]
                 break
-        # Log.info(msg='received ws payload len: %d, left: %d' % (len(data), len(stream)))
+        # Log.info('received ws payload len: %d, left: %d', len(data), len(stream))
         return data, stream
 
     @classmethod
@@ -226,5 +226,5 @@ class WebSocket:
         elif msg_len <= (2 ** 64 - 1):
             head += struct.pack('!BQ', 127, msg_len)
         else:
-            raise ValueError('message is too long: %d' % msg_len)
+            raise ValueError(f'message is too long: {msg_len}')
         return head + payload
