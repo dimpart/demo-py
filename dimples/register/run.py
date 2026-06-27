@@ -51,9 +51,9 @@ from dimples.register.shared import generate, modify
 LOG_LEVEL = LogLevel.DEVELOP
 LOGGER_NAME = 'register'
 
-DEFAULT_CONFIG = '/etc/dim/config.ini'
-
 APP_NAME = 'DIM account generate/modify'
+
+DEFAULT_CONFIG = '/etc/dim/config.ini'
 
 
 def show_help():
@@ -89,7 +89,8 @@ async def async_main():
     #  init logger
     #
     show_location = sys_argv.has_opt(opt='log-location')
-    init_logger(name=LOGGER_NAME, level=LOG_LEVEL, show_location=show_location)
+    log_directory = sys_argv.get_opt(opt='log-dir')
+    init_logger(name=LOGGER_NAME, level=LOG_LEVEL, show_location=show_location, directory=log_directory)
     #
     #  create config
     #

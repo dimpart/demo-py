@@ -29,7 +29,9 @@
 """
 
 import logging
+import os
 import sys
+from logging.handlers import TimedRotatingFileHandler as FileHandler
 
 from startrek.utils import Log, LogLevel
 
@@ -101,24 +103,14 @@ class ColoredFormatter(LimitedFormatter):
 class StandardHandler(logging.StreamHandler):
     """ Stream Log Handler """
 
-    def __init__(self, stream=None, level: int = None, fmt: str = None, max_len: int = None):
-        if stream is None:
-            stream = sys.stdout
-        super().__init__(stream=stream)
-        #
-        #  output level
-        #
-        if level is None:
-            level = LogLevel.DEBUG
-        self.setLevel(level=level)
-        #
-        #  output format
-        #
-        if fmt is None:
-            # fmt = '%(asctime)s | %(levelname)-8s | %(module)s:%(lineno)d > %(message)s'
-            fmt = '[%(asctime)s]  %(levelname)-8s | %(message)s\n%(filename)s:%(lineno)d'
-        formatter = ColoredFormatter(fmt=fmt, max_len=max_len)
-        self.setFormatter(fmt=formatter)
+    # Override
+    def emit(self, record):
+        _fix_record(record=record)
+        return super().emit(record=record)
+
+
+class RotatingHandler(FileHandler):
+    """ Rotating Log Handler """
 
     # Override
     def emit(self, record):
@@ -149,19 +141,39 @@ def _fix_record(record: logging.LogRecord):
 """
 
 
-def init_log_handlers(logger: logging.Logger, level: int, max_len: int, show_location: bool):
+def init_logger(name: str, level: int = LogLevel.DEBUG, show_location: bool = False, directory: str = None):
+    if level is None:
+        level = LogLevel.DEBUG
     if show_location:
         fmt = '[%(asctime)s]  %(levelname)-8s | %(message)s\n%(filename)s:%(lineno)d'
+        fmt = ColoredFormatter(fmt=fmt, max_len=MAX_LOG_LEN)
     else:
         fmt = '[%(asctime)s]  %(levelname)-8s | %(message)s'
-    # add stream handler
-    handler = StandardHandler(level=level, fmt=fmt, max_len=max_len)
-    logger.addHandler(handler)
-    # TODO: add file handler
+        fmt = ColoredFormatter(fmt=fmt, max_len=MAX_LOG_LEN)
+    # create logger
+    logger = logging.getLogger(name=name)
     logger.setLevel(level=level)
-
-
-def init_logger(name: str, level: int = LogLevel.DEBUG, max_len: int = MAX_LOG_LEN, show_location: bool = False):
-    logger = logging.getLogger(name)
-    init_log_handlers(logger=logger, level=level, max_len=max_len, show_location=show_location)
+    #
+    #   1. add stream handler
+    #
+    if show_location:
+        handler = StandardHandler(stream=sys.stdout)
+    else:
+        handler = logging.StreamHandler(stream=sys.stdout)
+    handler.setLevel(level=level)
+    handler.setFormatter(fmt=fmt)
+    logger.addHandler(handler)
+    #
+    #   2. add file handler
+    #
+    if directory is not None:
+        filename = os.path.join(directory, f'{name}.log')
+        if show_location:
+            handler = RotatingHandler(filename=filename, when='D', interval=1, backupCount=30, encoding='utf-8')
+        else:
+            handler = FileHandler(filename=filename, when='D', interval=1, backupCount=30, encoding='utf-8')
+        handler.setLevel(level=level)
+        handler.setFormatter(fmt=fmt)
+        logger.addHandler(handler)
+    # OK
     Log.logger = logger
