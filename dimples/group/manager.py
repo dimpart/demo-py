@@ -272,13 +272,12 @@ class GroupManager(TripletsHelper):
         #   3. forward group command(s)
         #
         # forward 'invite' to old members
-        await self.__send_command(content=forward, members=old_members)       # to old members
-        # forward all group history to new members
-        messages = await self.builder.build_group_histories(group=group)
-        forward = ForwardContent.create(messages=messages)
-        # TODO: remove that members already exist before sending?
-        await self.__send_command(content=forward, members=members)           # to new members
-        return True
+        ok = await self.__send_command(content=forward, members=old_members)  # to old members
+        # # forward all group history to new members
+        # messages = await self.builder.build_group_histories(group=group)
+        # forward = ForwardContent.create(messages=messages)
+        # await self.__send_command(content=forward, members=members)         # to new members
+        return ok
 
     async def quit_group(self, group: ID) -> bool:
         """

@@ -90,23 +90,25 @@ class DocTask(DbTask[ID, List[Document]]):
             index -= 1
             item = documents[index]
             if not isinstance(item, Document) or identifier != item.get('did'):
-                self.error(msg='document error: %s, %s' % (identifier, item))
+                self.error('document error: %s, %s', identifier, item)
                 continue
             elif item.get('type') != doc_type:
-                self.info(msg='skip document: %s, type=%s, %s' % (identifier, doc_type, item))
+                self.info('skip document: %s, type=%s, %s', identifier, doc_type, item)
                 continue
-            elif item.get_property(name='created_time') != created_time:
-                self.info(msg='skip document: %s, created=%s, %s' % (identifier, created_time, item))
-                continue
+            # elif item.get_property(name='created_time') != created_time:
+            #     self.info('skip document: %s, created=%s, %s', identifier, created_time, item)
+            #     continue
             elif item == new_doc:
-                self.warning(msg='same document, no need to update: %s' % identifier)
+                self.warning('same document, no need to update: %s, type=%s', identifier, doc_type)
                 return True
             # old record found, update it
+            self.info('update document: %d/%d, %s, type=%s', index, len(documents), identifier, doc_type)
             documents[index] = new_doc
             updated = True
             # break
         if not updated:
             # same type not found
+            self.info('insert new document: %s, type=%s, created=%s', identifier, doc_type, created_time)
             documents.append(new_doc)
         #
         #   1. store into redis server
@@ -145,7 +147,7 @@ class DocumentTable(DataCache, DocumentDBI):
         #   0. check valid
         #
         if not document.is_valid:
-            self.error(msg='document not valid: %s' % identifier)
+            self.error('document not valid: %s', identifier)
             return False
         #
         #   1. load old records
@@ -161,7 +163,7 @@ class DocumentTable(DataCache, DocumentDBI):
                 for item in docs:
                     old_time = item.time
                     if old_time is not None and old_time > new_time:
-                        self.warning(msg='ignore expired document: %s' % document)
+                        self.warning('ignore expired document: %s', document)
                         return False
         #
         #   2. save new record
