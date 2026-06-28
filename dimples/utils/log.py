@@ -31,12 +31,14 @@
 import logging
 import os
 import sys
+import time
 from logging.handlers import TimedRotatingFileHandler as FileHandler
 
 from startrek.utils import Log, LogLevel
 
 
-MAX_LOG_LEN = 1024
+LOG_MAX_LENGTH = 1024
+LOG_BACKUP_COUNT = 30
 
 
 class LimitedFormatter(logging.Formatter):
@@ -45,7 +47,7 @@ class LimitedFormatter(logging.Formatter):
     def __init__(self, fmt: str = None, datefmt: str = None, style: str = '%', max_len: int = None):
         super().__init__(fmt=fmt, datefmt=datefmt, style=style)
         if max_len is None or max_len < 128:
-            max_len = MAX_LOG_LEN
+            max_len = LOG_MAX_LENGTH
         self.__max_len = max_len
 
     @property
@@ -146,10 +148,10 @@ def init_logger(name: str, level: int = LogLevel.DEBUG, show_location: bool = Fa
         level = LogLevel.DEBUG
     if show_location:
         fmt = '[%(asctime)s]  %(levelname)-8s | %(message)s\n%(filename)s:%(lineno)d'
-        fmt = ColoredFormatter(fmt=fmt, max_len=MAX_LOG_LEN)
+        fmt = ColoredFormatter(fmt=fmt, max_len=LOG_MAX_LENGTH)
     else:
         fmt = '[%(asctime)s]  %(levelname)-8s | %(message)s'
-        fmt = ColoredFormatter(fmt=fmt, max_len=MAX_LOG_LEN)
+        fmt = ColoredFormatter(fmt=fmt, max_len=LOG_MAX_LENGTH)
     # create logger
     logger = logging.getLogger(name=name)
     logger.setLevel(level=level)
@@ -167,11 +169,14 @@ def init_logger(name: str, level: int = LogLevel.DEBUG, show_location: bool = Fa
     #   2. add file handler
     #
     if directory is not None:
-        filename = os.path.join(directory, f'{name}.log')
+        cnt = LOG_BACKUP_COUNT
+        now = time.localtime(time.time())
+        when = time.strftime('%Y%m%d-%H%M', now)
+        filename = os.path.join(directory, f'{name}-{when}.log')
         if show_location:
-            handler = RotatingHandler(filename=filename, when='D', interval=1, backupCount=30, encoding='utf-8')
+            handler = RotatingHandler(filename=filename, when='D', interval=1, backupCount=cnt, encoding='utf-8')
         else:
-            handler = FileHandler(filename=filename, when='D', interval=1, backupCount=30, encoding='utf-8')
+            handler = FileHandler(filename=filename, when='D', interval=1, backupCount=cnt, encoding='utf-8')
         handler.setLevel(level=level)
         handler.setFormatter(fmt=fmt)
         logger.addHandler(handler)

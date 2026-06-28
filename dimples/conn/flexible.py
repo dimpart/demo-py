@@ -31,7 +31,6 @@
 from typing import Optional, List
 
 from startrek.types import SocketAddress
-from startrek.skywalker import Runner
 from startrek import Connection
 from startrek import Arrival, Departure
 from startrek import StarPorter
@@ -55,7 +54,7 @@ class FlexiblePorter(StarPorter, DeparturePacker, Logging):
         await super().set_connection(conn=conn)
         docker = self.__porter
         if docker is None:
-            self.error(msg='docker not ready, failed to set connection: %s' % conn)
+            self.error('docker not ready, failed to set connection: %s', conn)
         else:
             await docker.set_connection(conn=conn)
 
@@ -63,7 +62,7 @@ class FlexiblePorter(StarPorter, DeparturePacker, Logging):
     async def send_ship(self, ship: Departure) -> bool:
         docker = self.__porter
         if docker is None:
-            self.error(msg='docker not ready, failed to send ship: %s' % ship)
+            self.error('docker not ready, failed to send ship: %s', ship)
             return False
         else:
             return await docker.send_ship(ship=ship)
@@ -80,12 +79,13 @@ class FlexiblePorter(StarPorter, DeparturePacker, Logging):
             elif MarsStreamPorter.check(data=data):
                 docker = MarsStreamPorter(remote=self.remote_address, local=self.local_address)
             else:
-                self.error(msg='unsupported data format: %s' % data)
+                self.error('unsupported data format: %s', data)
                 return None
             # initialize
             docker.delegate = self.delegate
-            coro = docker.set_connection(conn=self.connection)
-            Runner.async_task(coro=coro)
+            await docker.set_connection(conn=self.connection)
+            # coro = docker.set_connection(conn=self.connection)
+            # Runner.async_task(coro=coro)
             self.__porter = docker
         # OK
         return await docker.process_received(data=data)
@@ -115,26 +115,31 @@ class FlexiblePorter(StarPorter, DeparturePacker, Logging):
         cnt = super().purge(now=now)
         docker = self.__porter
         if docker is None:
-            self.debug(msg='docker not ready, failed to purge')
+            self.debug('docker not ready, failed to purge')
         else:
             cnt += docker.purge(now=now)
         return cnt
 
     # Override
     async def close(self):
-        await super().set_connection(conn=None)
+        await super().close()
+        # await super().set_connection(conn=None)
         docker = self.__porter
         if docker is None:
-            self.warning(msg='docker not ready, failed to close')
+            self.warning('docker not ready, failed to close')
+        # elif docker.closed:
+        #     self.warning('docker was closed: %s', docker)
+        #     self.__porter = None
         else:
-            self.__porter = None
+            self.warning('closing docker: %s', docker)
             await docker.close()
+            # self.__porter = None
 
     # Override
     async def process(self) -> bool:
         docker = self.__porter
         if docker is None:
-            self.debug(msg='docker not ready, failed to process')
+            self.debug('docker not ready, failed to process')
             return False
         else:
             return await docker.process()
@@ -143,7 +148,7 @@ class FlexiblePorter(StarPorter, DeparturePacker, Logging):
     async def send_data(self, payload: bytes) -> bool:
         docker = self.__porter
         if docker is None:
-            self.error(msg='docker not ready, failed to send payload: %s' % payload)
+            self.error('docker not ready, failed to send payload: %s', payload)
             return False
         elif isinstance(docker, WSPorter):
             ship = docker.pack(payload=payload, priority=0, needs_respond=True)
@@ -165,7 +170,7 @@ class FlexiblePorter(StarPorter, DeparturePacker, Logging):
     async def heartbeat(self):
         docker = self.__porter
         if docker is None:
-            self.warning(msg='docker not ready, failed to heart bet')
+            self.warning('docker not ready, failed to heart bet')
         else:
             await docker.heartbeat()
 
@@ -173,7 +178,7 @@ class FlexiblePorter(StarPorter, DeparturePacker, Logging):
     def pack(self, payload: bytes, priority: int, needs_respond: bool) -> Optional[Departure]:
         docker = self.__porter
         if docker is None:
-            self.error(msg='docker not ready, failed to pack: %s' % payload)
+            self.error('docker not ready, failed to pack: %s', payload)
             return None
         else:
             assert isinstance(docker, DeparturePacker), 'docker error: %s' % docker
