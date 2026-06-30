@@ -92,10 +92,11 @@ class CommonGate(StarGate, Generic[H], ABC):
         hub = self.hub
         assert isinstance(hub, Hub), 'gate hub error: %s' % hub
         conn = await hub.connect(remote=remote, local=local)
-        if conn is not None:
-            # connected, get docker with this connection
-            return await self._dock(connection=conn, new_porter=True)
-        assert False, 'failed to get connection: %s -> %s' % (local, remote)
+        if conn is None or conn.closed:
+            self.warning('failed to fetch porter: %s -> %s, conn: %s', local, remote, conn)
+            return None
+        # connected, get docker with this connection
+        return await self._dock(connection=conn, new_porter=True)
 
     async def send_response(self, payload: bytes, ship: Arrival,
                             remote: SocketAddress, local: Optional[SocketAddress]) -> bool:

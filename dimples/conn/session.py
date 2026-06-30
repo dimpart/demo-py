@@ -90,9 +90,17 @@ class BaseSession(GateKeeper, Session, ABC):
     async def queue_message_package(self, msg: ReliableMessage, data: bytes, priority: int = 0) -> bool:
         ship = await self._porter_pack(payload=data, priority=priority)
         if ship is None:
-            self.error(msg='failed to pack msg: %s -> %s, %s' % (msg.sender, msg.receiver, msg.group))
+            self.error('failed to pack msg: %s -> %s, %s, session: %s, %s',
+                       msg.sender, msg.receiver, msg.group, self.identifier, self.remote_address)
         else:
             return self._queue_append(msg=msg, ship=ship)
+
+    # Override
+    async def porter_error(self, error: OSError, ship: Departure, porter: Porter):
+        await super().porter_error(error=error, ship=ship, porter=porter)
+        if porter.closed:
+            self.warning('stop session: %s, id: %s', self.remote_address, self.identifier)
+            await self.stop()
 
     #
     #   Transmitter
