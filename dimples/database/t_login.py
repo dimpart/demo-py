@@ -24,7 +24,7 @@
 # ==============================================================================
 
 import threading
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from aiou.mem import CachePool
 
@@ -32,6 +32,7 @@ from dimsdk import ID
 from dimsdk import ReliableMessage
 
 from ..utils import Config
+from ..utils import naked_id, dressed_id
 from ..utils import is_before
 from ..common import LoginDBI, LoginCommand
 
@@ -41,7 +42,7 @@ from .redis import LoginCache
 from .t_base import DbTask, DataCache
 
 
-class CmdTask(DbTask[ID, Tuple[Optional[LoginCommand], Optional[ReliableMessage]]]):
+class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
 
     def __init__(self, user: ID,
                  redis: LoginCache, storage: LoginStorage,
@@ -56,35 +57,27 @@ class CmdTask(DbTask[ID, Tuple[Optional[LoginCommand], Optional[ReliableMessage]
         return self._user
 
     # Override
-    async def _read_data(self) -> Optional[Tuple[Optional[LoginCommand], Optional[ReliableMessage]]]:
+    async def _read_data(self) -> Optional[List[Tuple[LoginCommand, ReliableMessage]]]:
         # 1. the redis server will return None when cache not found
         # 2. when redis server return a tuple with None values, no need to check local storage again
-        pair = await self._redis.load_login(user=self._user)
-        if pair is not None:
-            return pair
+        array = await self._redis.load_login_command_messages(user=self._user)
+        if len(array) > 0:
+            return array
         # 3. the local storage will return a tuple with None values, when command not found
-        pair = await self._dos.get_login_command_message(user=self._user)
-        if pair is None:
+        array = await self._dos.load_login_command_messages(user=self._user)
+        if array is None:
             # 4. return a tuple with None values as a placeholder for the memory cache
-            cmd = None
-            msg = None
-            pair = [cmd, msg]
-        else:
-            assert len(pair) == 2, 'login command message error: %s -> %s' % (self._user, pair)
-            cmd = pair[0]
-            msg = pair[1]
+            array = []
         # 5. update redis server
-        await self._redis.save_login(user=self._user, content=cmd, msg=msg)
-        return pair
+        await self._redis.save_login_command_messages(records=array, user=self._user)
+        return array
 
     # Override
-    async def _write_data(self, value: Tuple[Optional[LoginCommand], Optional[ReliableMessage]]) -> bool:
-        cmd = value[0]
-        msg = value[1]
+    async def _write_data(self, records: List[Tuple[LoginCommand, ReliableMessage]]) -> bool:
         # 1. store into redis server
-        ok1 = await self._redis.save_login(user=self._user, content=cmd, msg=msg)
+        ok1 = await self._redis.save_login_command_messages(records=records, user=self._user)
         # 2. save into local storage
-        ok2 = await self._dos.save_login_command_message(user=self._user, content=cmd, msg=msg)
+        ok2 = await self._dos.save_login_command_messages(records=records, user=self._user)
         return ok1 or ok2
 
 
@@ -104,23 +97,10 @@ class LoginTable(DataCache, LoginDBI):
                        redis=self._redis, storage=self._dos,
                        mutex_lock=self._mutex_lock, cache_pool=self._cache_pool)
 
-    async def _is_expired(self, user: ID, content: LoginCommand) -> bool:
-        """ check old record with command time """
-        new_time = content.time
-        if new_time is None or new_time <= 0:
-            return False
-        # check old record
-        old, _ = await self.load_login_command_message(user=user)
-        if old is not None and is_before(old_time=old.time, new_time=new_time):
-            # command expired
-            return True
-
-    async def load_login_command_message(self, user: ID) -> Tuple[Optional[LoginCommand], Optional[ReliableMessage]]:
+    async def _load_login_command_messages(self, user: ID) -> List[Tuple[LoginCommand, ReliableMessage]]:
         task = self._new_task(user=user)
-        pair = await task.load()
-        if pair is None:
-            return None, None
-        return pair
+        array = await task.load()
+        return [] if array is None else array
 
     #
     #   Login DBI
@@ -128,20 +108,52 @@ class LoginTable(DataCache, LoginDBI):
 
     # Override
     async def save_login_command_message(self, user: ID, content: LoginCommand, msg: ReliableMessage) -> bool:
+        new_time = content.time
+        terminal = content.get_str(key='terminal')
+        if terminal is None or len(terminal) == 0:
+            terminal = user.terminal
+        target = ID.create(name=user.name, address=user.address, terminal=terminal)
+        naked = naked_id(did=user)
+        records = await self._load_login_command_messages(user=naked)
         #
         #  check command time
         #
-        if await self._is_expired(user=user, content=content):
-            # command expired, drop it
-            return False
-        else:
-            value = (content, msg)
+        updated = False
+        index = len(records)
+        while index > 0:
+            index -= 1
+            old_cmd, old_msg = records[index]
+            if not isinstance(old_cmd, LoginCommand):
+                self.error('login command error: %s, %s', user, old_cmd)
+                continue
+            old_id = old_cmd.identifier
+            old_ter = old_cmd.get_str(key='terminal')
+            if dressed_id(did=old_id, terminal=old_ter) != target:
+                self.warning('skip login command: %s, %s', user, old_cmd)
+                continue
+            elif is_before(old_cmd.time, new_time=new_time):
+                self.warning('login command expired: %s, %s', user, old_cmd)
+                return False
+            elif old_cmd.to_dict() == content.to_dict():
+                self.warning('same command, no need to update: %s, terminal=%s', user, terminal)
+                return True
+            # old record found, update it
+            self.info('update login command: %d/%d, %s, terminal=%s', index, len(records), user, terminal)
+            records[index] = (content, msg)
+            updated = True
+            # break
+        if not updated:
+            # same terminal not found
+            self.info('insert new login command: %s, terminal=%s', user, terminal)
+            item = (content, msg)
+            records.append(item)
         #
         #  build task for saving
         #
-        task = self._new_task(user=user)
-        return await task.save(value=value)
+        task = self._new_task(user=naked)
+        return await task.save(value=records)
 
     # Override
-    async def get_login_command_message(self, user: ID) -> Tuple[Optional[LoginCommand], Optional[ReliableMessage]]:
-        return await self.load_login_command_message(user=user)
+    async def get_login_command_messages(self, user: ID) -> List[Tuple[LoginCommand, ReliableMessage]]:
+        naked = naked_id(did=user)
+        return await self._load_login_command_messages(user=naked)

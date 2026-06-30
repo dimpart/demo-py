@@ -251,9 +251,9 @@ class LoginDBI(ABC):
     #   login command message
     #
     @abstractmethod
-    async def get_login_command_message(self, user: ID) -> Tuple[Optional[LoginCommand], Optional[ReliableMessage]]:
+    async def get_login_command_messages(self, user: ID) -> List[Tuple[LoginCommand, ReliableMessage]]:
         raise NotImplementedError(
-            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_login_command_message()'
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_login_command_messages()'
         )
 
     @abstractmethod

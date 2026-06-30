@@ -55,8 +55,8 @@ class SessionDatabase(SessionDBI):
     #   Login DBI
     #
 
-    async def get_login_command_message(self, user: ID) -> Tuple[Optional[LoginCommand], Optional[ReliableMessage]]:
-        return await self._login_table.get_login_command_message(user=user)
+    async def get_login_command_messages(self, user: ID) -> List[Tuple[LoginCommand, ReliableMessage]]:
+        return await self._login_table.get_login_command_messages(user=user)
 
     async def save_login_command_message(self, user: ID, content: LoginCommand, msg: ReliableMessage) -> bool:
         return await self._login_table.save_login_command_message(user=user, content=content, msg=msg)

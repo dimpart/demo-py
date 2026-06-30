@@ -23,12 +23,14 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Set, Tuple
+from typing import Optional, Set, Tuple, List, Dict
 
 from dimsdk import ID, ReliableMessage
 
 from ...utils import json_encode, json_decode, utf8_encode, utf8_decode
 from ...common import LoginCommand
+
+from ..dos.login import parse_login_records
 
 from .base import RedisCache
 
@@ -51,29 +53,30 @@ class LoginCache(RedisCache):
         Login info for Users
         ~~~~~~~~~~~~~~~~~~~~
 
-        redis key: 'mkm.user.{ID}.login'
+        redis key: 'mkm.user.{ID}.login_commands'
     """
     def __login_cache_name(self, identifier: ID) -> str:
-        return '%s.%s.%s.login' % (self.db_name, self.tbl_name, identifier)
+        return '%s.%s.%s.login_commands' % (self.db_name, self.tbl_name, identifier)
 
-    async def save_login(self, user: ID, content: Optional[LoginCommand], msg: Optional[ReliableMessage]) -> bool:
-        """ Save login command & message into Redis Server """
-        if content is not None:
-            content = content.to_dict()
-        if msg is not None:
-            msg = msg.to_dict()
-        table = {
-            'cmd': content,
-            'msg': msg,
+    async def save_login_command_messages(self, records: List[Tuple[LoginCommand, ReliableMessage]], user: ID) -> bool:
+        """ Save login commands into Redis Server """
+        array = []
+        for cmd, msg in records:
+            array.append({
+                'cmd': cmd.to_dict(),
+                'msg': msg.to_dict(),
+            })
+        info = {
+            'records': array,
         }
-        js = json_encode(container=table)
+        js = json_encode(container=info)
         value = utf8_encode(string=js)
         key = self.__login_cache_name(identifier=user)
         return await self.set(name=key, value=value, expires=self.EXPIRES)
 
-    async def load_login(self, user: ID) -> Optional[Tuple[Optional[LoginCommand], Optional[ReliableMessage]]]:
+    async def load_login_command_messages(self, user: ID) -> List[Tuple[LoginCommand, ReliableMessage]]:
         """
-        Get 'login' command message
+        Get 'login' commands
 
         :param user: user ID
         :return: (*, None) when cache not found
@@ -82,16 +85,20 @@ class LoginCache(RedisCache):
         value = await self.get(name=key)
         if value is None:
             # data not exists
-            return None
+            return []
         js = utf8_decode(data=value)
-        assert js is not None, 'failed to decode string: %s' % value
+        assert js is not None, f'failed to decode string: {value}'
         info = json_decode(string=js)
-        assert info is not None, 'command error: %s' % value
-        cmd = info.get('cmd')
-        msg = info.get('msg')
-        if cmd is not None:
-            cmd = LoginCommand(cmd)
-        return cmd, ReliableMessage.parse(msg=msg)
+        if info is None:
+            self.warning('failed to load "login" commands: %s from %s', user, key)
+            return []
+        assert isinstance(info, Dict), f'login records error: {user} => {info}'
+        array = info.get('records')
+        if array is None:
+            self.error('login records error: %s => %s', user, info)
+            return []
+        # OK
+        return parse_login_records(array=array)
 
     """
         Session Online

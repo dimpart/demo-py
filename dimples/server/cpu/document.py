@@ -47,18 +47,18 @@ class DocumentCommandProcessor(SuperCommandProcessor):
     @property
     def facebook(self) -> CommonFacebook:
         barrack = super().facebook
-        assert isinstance(barrack, CommonFacebook), 'facebook error: %s' % barrack
+        assert isinstance(barrack, CommonFacebook), f'facebook error: {barrack}'
         return barrack
 
     @property
     def session(self) -> Session:
         messenger = self.messenger
-        assert isinstance(messenger, CommonMessenger), 'messenger error: %s' % messenger
+        assert isinstance(messenger, CommonMessenger), f'messenger error: {messenger}'
         return messenger.session
 
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
-        assert isinstance(content, DocumentCommand), 'document command error: %s' % content
+        assert isinstance(content, DocumentCommand), f'document command error: {content}'
         responses = await super().process_content(content=content, r_msg=r_msg)
         if content.documents is None:
             # this is a request, check DocumentCommand & LoginCommand
@@ -67,7 +67,7 @@ class DocumentCommandProcessor(SuperCommandProcessor):
                 current = await self.facebook.current_user
                 sid = current.identifier
                 assert db is not None, 'session DB not found'
-                assert sid is not None, 'current station not found: %s' % current
+                assert sid is not None, f'current station not found: {current}'
                 # forward login message after document command
                 res = await forward_login_msg(doc_id=content.identifier, sender=r_msg.sender, node=sid, database=db)
                 if res is not None:
@@ -82,13 +82,13 @@ def has_document(contents: List[Content]) -> bool:
 
 
 async def forward_login_msg(doc_id: ID, sender: ID, node: ID, database: SessionDBI) -> Optional[ForwardContent]:
-    login_msg = await get_login_msg(doc_id=doc_id, sender=sender, node=node, database=database)
-    if login_msg is not None:
+    messages = await get_login_msg(doc_id=doc_id, sender=sender, node=node, database=database)
+    if len(messages) > 0:
         # respond login command
-        return ForwardContent.create(messages=[login_msg])
+        return ForwardContent.create(messages=messages)
 
 
-async def get_login_msg(doc_id: ID, sender: ID, node: ID, database: SessionDBI) -> Optional[ReliableMessage]:
+async def get_login_msg(doc_id: ID, sender: ID, node: ID, database: SessionDBI) -> List[ReliableMessage]:
     """
     Get login message for document command
 
@@ -100,27 +100,30 @@ async def get_login_msg(doc_id: ID, sender: ID, node: ID, database: SessionDBI) 
     """
     if sender == node:
         # the station is querying itself, ignore it
-        return None
+        return []
     elif sender.type == EntityType.BOT:
         # no need to respond LoginCommand message to a bot,
         # just ignore it
-        return None
-    cmd, msg = await database.get_login_command_message(user=doc_id)
-    if cmd is not None:
+        return []
+    messages = []
+    records = await database.get_login_command_messages(user=doc_id)
+    for cmd, msg in records:
         if sender.type == EntityType.STATION:
             # this is a request from another station.
             # if the user is not roaming to this station, just ignore it,
             # let the target station to respond.
             roaming = cmd.station
             if not isinstance(roaming, Dict):
-                Log.error(msg='[CPU] login command error: %s -> %s' % (doc_id, cmd))
-                Log.error(msg='[CPU] login command error: %s -> %s' % (doc_id, msg))
-                return None
+                Log.error('[CPU] login command error: %s -> %s', doc_id, cmd)
+                Log.error('[CPU] login command error: %s -> %s', doc_id, msg)
+                continue
             sid = roaming.get('did')
             if sid is None:
                 sid = roaming.get('ID')
             sid = ID.parse(identifier=sid)
             if sid != node:
                 # not my guest, ignore it.
-                return None
-        return msg
+                continue
+        messages.append(msg)
+    # OK
+    return messages
