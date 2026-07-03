@@ -49,7 +49,8 @@ class MetaStorage(Storage, Logging, MetaDBI):
 
     def __meta_path(self, identifier: ID) -> str:
         path = self.public_path(self.meta_path)
-        return template_replace(path, key='ADDRESS', value=str(identifier.address))
+        address = str(identifier.address)
+        return template_replace(path, key='ADDRESS', value=address)
 
     #
     #   Meta DBI
@@ -59,7 +60,7 @@ class MetaStorage(Storage, Logging, MetaDBI):
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
         """ save meta into file """
         path = self.__meta_path(identifier=identifier)
-        self.info(msg='Saving meta into: %s' % path)
+        self.info('Saving meta into: %s', path)
         info = meta.to_dict()
         return await self.write_json(container=info, path=path)
 
@@ -67,15 +68,15 @@ class MetaStorage(Storage, Logging, MetaDBI):
     async def get_meta(self, identifier: ID) -> Optional[Meta]:
         """ load meta from file """
         path = self.__meta_path(identifier=identifier)
-        self.info(msg='Loading meta from: %s' % path)
+        self.info('Loading meta from: %s', path)
         info = await self.read_json(path=path)
         if info is None:
             # file not found
-            self.warning(msg='meta file not found: %s' % path)
+            self.warning('meta file not found: %s', path)
             return None
         else:
             Compatible.fix_meta_version(meta=info)
         try:
             return Meta.parse(meta=info)
         except Exception as error:
-            self.error(msg='meta error: %s, %s' % (error, info))
+            self.error('meta error: %s, %s', error, info)

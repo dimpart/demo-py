@@ -23,7 +23,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Tuple, List
+from typing import Optional, Tuple, List
 
 from dimsdk import ID
 from dimsdk import ReliableMessage
@@ -50,16 +50,17 @@ class GroupHistoryStorage(Storage):
 
     def __history_path(self, group: ID) -> str:
         path = self.protected_path(self.history_path)
-        return template_replace(path, key='ADDRESS', value=str(group.address))
+        address = str(group.address)
+        return template_replace(path, key='ADDRESS', value=address)
 
-    async def load_group_histories(self, group: ID) -> List[Tuple[GroupCommand, ReliableMessage]]:
+    async def load_group_histories(self, group: ID) -> Optional[List[Tuple[GroupCommand, ReliableMessage]]]:
         path = self.__history_path(group=group)
-        self.info(msg='Loading group history from: %s' % path)
+        self.info('Loading group history from: %s', path)
         array = await self.read_json(path=path)
         if array is None:
             # history not found
-            return []
-        assert isinstance(array, List), 'group history error: %s, %s' % (array, path)
+            return None
+        assert isinstance(array, List), f'group history error: {array}, {path}'
         histories = []
         for item in array:
             cmd = item.get('cmd')
@@ -67,7 +68,7 @@ class GroupHistoryStorage(Storage):
             cmd = Command.parse(content=cmd)
             msg = ReliableMessage.parse(msg=msg)
             if cmd is None or msg is None:
-                self.error(msg='group history error: %s' % item)
+                self.error('group history error: %s', item)
                 continue
             his = (cmd, msg)
             histories.append(his)
@@ -76,7 +77,7 @@ class GroupHistoryStorage(Storage):
     async def save_group_histories(self, group: ID, histories: List[Tuple[GroupCommand, ReliableMessage]]) -> bool:
         array = []
         for his in histories:
-            # assert len(his) == 2, 'group history error: %s' % his
+            # assert len(his) == 2, f'group history error: {his}'
             cmd = his[0]
             msg = his[1]
             item = {
@@ -85,5 +86,5 @@ class GroupHistoryStorage(Storage):
             }
             array.append(item)
         path = self.__history_path(group=group)
-        self.info(msg='Saving %d group history(ies) into: %s' % (len(histories), path))
+        self.info('Saving %d group history(ies) into: %s', len(histories), path)
         return await self.write_json(container=array, path=path)

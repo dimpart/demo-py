@@ -23,12 +23,12 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from dimsdk import ID, Document
 
 from ...utils import utf8_encode, utf8_decode, json_encode, json_decode
-from ..dos.document import parse_document
+from ...common import DocumentUtils
 
 from .base import RedisCache
 
@@ -51,42 +51,30 @@ class DocumentCache(RedisCache):
         Document for Entities (User/Group)
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        redis key: 'mkm.document.{ID}'
+        redis key: 'mkm.documents.{ADDRESS}'
     """
     def __cache_name(self, identifier: ID) -> str:
-        return '%s.%s.%s' % (self.db_name, self.tbl_name, identifier)
+        address = str(identifier.address)
+        return '%s.%s.%s' % (self.db_name, self.tbl_name, address)
 
     async def save_documents(self, documents: List[Document], identifier: ID) -> bool:
-        array = []
-        for doc in documents:
-            assert identifier == doc.get('did'), 'document ID not matched: %s, %s' % (identifier, doc)
-            info = doc.to_dict()
-            array.append(info)
-        js = json_encode(container=array)
+        """ cache documents """
+        info = DocumentUtils.dump_documents(documents=documents)
+        js = json_encode(container=info)
         value = utf8_encode(string=js)
         name = self.__cache_name(identifier=identifier)
+        # self.info('Caching %d document(s) for key: %s', len(documents), name)
         return await self.set(name=name, value=value, expires=self.EXPIRES)
 
     async def load_documents(self, identifier: ID) -> Optional[List[Document]]:
+        """ load documents from cache """
         name = self.__cache_name(identifier=identifier)
         value = await self.get(name=name)
         if value is None:
             # not found
             return None
-        else:
-            array = []
         js = utf8_decode(data=value)
-        assert js is not None, 'failed to decode string: %s' % value
+        assert js is not None, f'failed to decode string: {value}'
         info = json_decode(string=js)
-        if isinstance(info, List):
-            for item in info:
-                doc = parse_document(dictionary=item, identifier=identifier)
-                if doc is not None:
-                    array.append(doc)
-        elif isinstance(info, Dict):
-            doc = parse_document(dictionary=info, identifier=identifier)
-            if doc is not None:
-                array.append(doc)
-        else:
-            assert info is None, 'document error: %s' % value
-        return array
+        # load documents from cache server
+        return DocumentUtils.pump_documents(info=info)

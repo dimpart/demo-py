@@ -29,12 +29,11 @@ from dimsdk import ID, ReliableMessage
 from dimsdk import Command, GroupCommand
 
 from ...utils import json_encode, json_decode, utf8_encode, utf8_decode
-from ...utils import Logging
 
 from .base import RedisCache
 
 
-class GroupHistoryCache(RedisCache, Logging):
+class GroupHistoryCache(RedisCache):
 
     # history command cached in Redis will be expired after 30 minutes, after that
     # it will be reloaded from local storage if it's still need.
@@ -52,10 +51,11 @@ class GroupHistoryCache(RedisCache, Logging):
         Group History Command
         ~~~~~~~~~~~~~~~~~~~~~
 
-        redis key: 'mkm.group.{GID}.history'
+        redis key: 'mkm.group.{ADDRESS}.history'
     """
     def __cache_name(self, group: ID) -> str:
-        return '%s.%s.%s.history' % (self.db_name, self.tbl_name, group)
+        address = str(group.address)
+        return '%s.%s.%s.history' % (self.db_name, self.tbl_name, address)
 
     async def load_group_histories(self, group: ID) -> Optional[List[Tuple[GroupCommand, ReliableMessage]]]:
         name = self.__cache_name(group=group)
@@ -64,9 +64,9 @@ class GroupHistoryCache(RedisCache, Logging):
             # cache not found
             return None
         js = utf8_decode(data=value)
-        assert js is not None, 'failed to decode string: %s' % value
+        assert js is not None, f'failed to decode string: {value}'
         array = json_decode(string=js)
-        assert isinstance(array, List), 'history error: %s' % value
+        assert isinstance(array, List), f'history error: {value}'
         histories = []
         for item in array:
             cmd = item.get('cmd')
@@ -74,7 +74,7 @@ class GroupHistoryCache(RedisCache, Logging):
             cmd = Command.parse(content=cmd)
             msg = ReliableMessage.parse(msg=msg)
             if cmd is None or msg is None:
-                self.error(msg='group history error: %s' % item)
+                self.error('group history error: %s', item)
                 continue
             his = (cmd, msg)
             histories.append(his)
@@ -83,7 +83,7 @@ class GroupHistoryCache(RedisCache, Logging):
     async def save_group_histories(self, group: ID, histories: List[Tuple[GroupCommand, ReliableMessage]]) -> bool:
         array = []
         for his in histories:
-            # assert len(his) == 2, 'group history error: %s' % his
+            # assert len(his) == 2, f'group history error: {his}'
             cmd = his[0]
             msg = his[1]
             item = {

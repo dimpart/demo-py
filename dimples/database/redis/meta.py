@@ -28,13 +28,12 @@ from typing import Optional
 from dimsdk import ID, Meta
 
 from ...utils import json_encode, json_decode, utf8_encode, utf8_decode
-from ...utils import Logging
 from ...common.compat import Compatible
 
 from .base import RedisCache
 
 
-class MetaCache(RedisCache, Logging):
+class MetaCache(RedisCache):
 
     # meta cached in Redis will be removed after 10 hours, after that
     # it will be reloaded from local storage if it's still need.
@@ -52,10 +51,11 @@ class MetaCache(RedisCache, Logging):
         Meta key for Entities (User/Group)
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        redis key: 'mkm.meta.{ID}'
+        redis key: 'mkm.meta.{ADDRESS}'
     """
     def __cache_name(self, identifier: ID) -> str:
-        return '%s.%s.%s' % (self.db_name, self.tbl_name, identifier)
+        address = str(identifier.address)
+        return '%s.%s.%s' % (self.db_name, self.tbl_name, address)
 
     async def get_meta(self, identifier: ID) -> Optional[Meta]:
         key = self.__cache_name(identifier=identifier)
@@ -65,14 +65,14 @@ class MetaCache(RedisCache, Logging):
             return None
         else:
             js = utf8_decode(data=value)
-            assert js is not None, 'failed to decode string: %s' % value
+            assert js is not None, f'failed to decode string: {value}'
             info = json_decode(string=js)
-            assert info is not None, 'meta error: %s' % value
+            assert info is not None, f'meta error: {value}'
             Compatible.fix_meta_version(meta=info)
         try:
             return Meta.parse(meta=info)
         except Exception as error:
-            self.error(msg='meta error: %s, %s' % (error, info))
+            self.error('meta error: %s, %s', error, info)
 
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
         info = meta.to_dict()

@@ -28,11 +28,12 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Union, Iterable, Dict
+from typing import Optional, Union, Iterable, List, Dict
 
 from dimsdk import utf8_encode
 from dimsdk import Converter
 from dimsdk import DateTime
+from dimsdk import TransportableData
 
 from dimsdk import VerifyKey
 
@@ -40,6 +41,8 @@ from dimsdk import Address, ID, Meta
 from dimsdk import Document, Visa, Bulletin
 
 from dimplugins.mem.ext import account_helper
+
+from ...utils import Log
 
 
 class MetaUtils:
@@ -184,3 +187,123 @@ class DocumentUtils:
             # got it
             last = item
         return last
+
+    #
+    #   Local Storage
+    #
+
+    @classmethod
+    def dump_documents(cls, documents: List[Document]) -> Dict:
+        """ Serialize documents """
+        # sort and remove duplicated item
+        docs = _sort_documents(documents=documents)
+        Log.info('Dump %d/%d document(s)', len(docs), len(documents))
+        return {
+            'documents': [d.to_dict() for d in docs],
+        }
+
+    @classmethod
+    def pump_documents(cls, info: Union[Dict, List]) -> Optional[List[Document]]:
+        """ Deserialize documents """
+        array = _fetch_documents(info=info)
+        if array is not None:
+            documents = []
+            # convert documents
+            for item in array:
+                doc = cls._create_document(info=item)
+                if doc is not None:
+                    documents.append(doc)
+                else:
+                    Log.error('document error: %s', item)
+            # sort and remove duplicated item
+            docs = _sort_documents(documents=documents)
+            Log.info('Pump %d/%d document(s)', len(docs), len(array))
+            return documents
+
+    @classmethod
+    def _create_document(cls, info: Dict) -> Optional[Document]:
+        """ Local creation  """
+        _fix_did(content=info)
+        # 0. check document id
+        did = cls.get_document_id(document=info)
+        if did is None:
+            Log.error('document id error: %s', info)
+            # return None
+        # 1. check document type
+        doc_type = cls.get_document_type(document=info)
+        if doc_type is None:
+            doc_type = '*'
+        # 2. check document data & signature
+        data = info.get('data')
+        if data is None:
+            # compatible with v1.0
+            data = info.get('profile')
+        signature = info.get('signature')
+        ted = TransportableData.parse(signature)
+        if data is None or len(data) == 0 or ted is None or ted.is_empty:
+            Log.error('document data error: %s', info)
+            return None
+        # 3. create document with data + signature from local storage
+        doc = Document.create(doc_type=doc_type, data=data, signature=ted)
+        for key, value in info.items():
+            if key == 'data' or key == 'signature':
+                continue
+            elif key == 'ID':
+                continue
+            doc[key] = value
+        return doc
+
+
+def _fix_did(content: Dict):
+    did = content.get('did')
+    if did is None:
+        # 'did' not exists, copy the value from 'ID'
+        did = content.get('ID')
+        if did is not None:
+            content['did'] = did
+        # else:
+        #     assert False, 'did not exists: %s' % content
+    elif 'ID' in content:
+        # these two values must be equal
+        assert content.get('ID') == did, 'did error: %s' % content
+    else:
+        # copy value from 'did' to 'ID'
+        content['ID'] = did
+
+
+def _fetch_documents(info: Union[Dict, List]) -> Optional[List]:
+    if isinstance(info, List):
+        return info
+    elif isinstance(info, Dict):
+        docs = info.get('documents')
+        if isinstance(docs, List):
+            return docs
+        elif 'data' in info and 'signature' in info:
+            return [info]
+    # error
+    Log.error('documents error: %s', info)
+    return None
+
+
+def _sort_documents(documents: List[Document]) -> List[Document]:
+    # 1. sort by time DESC
+    sorted_docs = sorted(
+        documents,
+        # key=lambda x: -(x.time or 0.0)
+        key=lambda x: 0.0 if x.time is None else -float(x.time)
+    )
+    # 2. remove duplicated item
+    signatures = set()
+    array = []
+    for doc in sorted_docs:
+        # check signature
+        sig = doc.get('signature')
+        if sig is None or sig in signatures:
+            Log.warning('skip duplicated document: %s, %s', sig, doc)
+            continue
+        else:
+            signatures.add(sig)
+        # next document
+        array.append(doc)
+    # done
+    return array

@@ -30,10 +30,11 @@ from aiou import Redis
 from aiou import RedisClient
 from aiou import RedisConnector
 
+from ...utils import Logging
 from ...utils import Config
 
 
-class RedisCache(RedisClient, ABC):
+class RedisCache(RedisClient, Logging, ABC):
 
     def __init__(self, config: Config):
         super().__init__()
@@ -112,7 +113,8 @@ class RedisCache(RedisClient, ABC):
         tbl_name = self.tbl_name
         db = None
         if db_name is not None:
-            db = self.get_redis(name='%s.%s' % (db_name, tbl_name))
+            name = f'{db_name}.{tbl_name}'
+            db = self.get_redis(name=name)
         if db is None:
             db = self.get_redis(name=tbl_name)
         if db is None:
