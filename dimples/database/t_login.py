@@ -32,8 +32,8 @@ from dimsdk import ID
 from dimsdk import ReliableMessage
 
 from ..utils import Config
-from ..utils import naked_id, dressed_id
 from ..utils import is_before
+from ..common import CommandMessageUtils
 from ..common import LoginDBI, LoginCommand
 
 from .dos import LoginStorage
@@ -45,10 +45,14 @@ from .t_base import DbTask, DataCache
 class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
 
     def __init__(self, user: ID,
+                 new_cmd: Optional[LoginCommand],
+                 new_msg: Optional[ReliableMessage],
                  redis: LoginCache, storage: LoginStorage,
                  mutex_lock: threading.Lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool)
         self._user = user
+        self._new_cmd = new_cmd
+        self._new_msg = new_msg
         self._redis = redis
         self._dos = storage
 
@@ -61,7 +65,7 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
         # 1. the redis server will return None when cache not found
         # 2. when redis server return a tuple with None values, no need to check local storage again
         array = await self._redis.load_login_command_messages(user=self._user)
-        if len(array) > 0:
+        if array is not None:
             return array
         # 3. the local storage will return a tuple with None values, when command not found
         array = await self._dos.load_login_command_messages(user=self._user)
@@ -74,9 +78,62 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
 
     # Override
     async def _write_data(self, records: List[Tuple[LoginCommand, ReliableMessage]]) -> bool:
-        # 1. store into redis server
+        new_cmd = self._new_cmd
+        new_msg = self._new_msg
+        if new_cmd is None or new_msg is None:
+            assert False, 'should not happen: %s' % self._user
+        else:
+            new_sn = new_cmd.sn
+            new_time = new_cmd.time
+            identifier = new_cmd.identifier
+            terminal = CommandMessageUtils.get_terminal(content=new_cmd)
+        if identifier is None:
+            self.warning('login id not found: %s', new_cmd)
+            identifier = self._user
+        else:
+            assert identifier == self._user, f'login id error: {identifier}'
+        #
+        #   0. check old records
+        #
+        updated = False
+        index = len(records)
+        while index > 0:
+            index -= 1
+            cmd, msg = records[index]
+            assert isinstance(cmd, LoginCommand), f'login command error: {cmd}'
+            # check login id
+            did = cmd.identifier
+            if did is None or did.address != identifier.address:
+                self.error('login command error: %s => %s', identifier, cmd)
+                # TODO: remove it?
+                continue
+            # check with new record
+            if cmd.sn == new_sn:
+                self.warning('same login command, no need to update:: %s, "%s"', identifier, terminal)
+                return True
+            elif CommandMessageUtils.get_terminal(content=cmd) != terminal:
+                self.info('skip login record: %s, "%s", %s', identifier, terminal, cmd)
+                continue
+            elif is_before(cmd.time, new_time=new_time):
+                self.warning('login command expired: %s, "%s", %s', identifier, terminal, cmd)
+                return False
+            # old record found, update it
+            self.info('update login: %d/%d, %s, "%s"', index, len(records), identifier, terminal)
+            records[index] = (new_cmd, new_msg)
+            updated = True
+            # break
+        if not updated:
+            # same terminal not found
+            self.info('insert login record: %s, "%s"', identifier, terminal)
+            rec = (new_cmd, new_msg)
+            records.append(rec)
+        #
+        #   1. store into redis server
+        #
         ok1 = await self._redis.save_login_command_messages(records=records, user=self._user)
-        # 2. save into local storage
+        #
+        #   2. save into local storage
+        #
         ok2 = await self._dos.save_login_command_messages(records=records, user=self._user)
         return ok1 or ok2
 
@@ -92,8 +149,8 @@ class LoginTable(DataCache, LoginDBI):
     def show_info(self):
         self._dos.show_info()
 
-    def _new_task(self, user: ID) -> CmdTask:
-        return CmdTask(user=user,
+    def _new_task(self, user: ID, new_cmd: LoginCommand = None, new_msg: ReliableMessage = None) -> CmdTask:
+        return CmdTask(user=user, new_cmd=new_cmd, new_msg=new_msg,
                        redis=self._redis, storage=self._dos,
                        mutex_lock=self._mutex_lock, cache_pool=self._cache_pool)
 
@@ -108,52 +165,24 @@ class LoginTable(DataCache, LoginDBI):
 
     # Override
     async def save_login_command_message(self, user: ID, content: LoginCommand, msg: ReliableMessage) -> bool:
-        new_time = content.time
-        terminal = content.get_str(key='terminal')
-        if terminal is None or len(terminal) == 0:
-            terminal = user.terminal
-        target = ID.create(name=user.name, address=user.address, terminal=terminal)
-        naked = naked_id(did=user)
-        records = await self._load_login_command_messages(user=naked)
         #
-        #  check command time
+        #  1. load old records
         #
-        updated = False
-        index = len(records)
-        while index > 0:
-            index -= 1
-            old_cmd, old_msg = records[index]
-            if not isinstance(old_cmd, LoginCommand):
-                self.error('login command error: %s, %s', user, old_cmd)
-                continue
-            old_id = old_cmd.identifier
-            old_ter = old_cmd.get_str(key='terminal')
-            if dressed_id(did=old_id, terminal=old_ter) != target:
-                self.warning('skip login command: %s, %s', user, old_cmd)
-                continue
-            elif is_before(old_cmd.time, new_time=new_time):
-                self.warning('login command expired: %s, %s', user, old_cmd)
-                return False
-            elif old_cmd.to_dict() == content.to_dict():
-                self.warning('same command, no need to update: %s, terminal=%s', user, terminal)
-                return True
-            # old record found, update it
-            self.info('update login command: %d/%d, %s, terminal=%s', index, len(records), user, terminal)
-            records[index] = (content, msg)
-            updated = True
-            # break
-        if not updated:
-            # same terminal not found
-            self.info('insert new login command: %s, terminal=%s', user, terminal)
-            item = (content, msg)
-            records.append(item)
+        task = self._new_task(user=user)
+        array = await task.load()
+        if array is None:
+            array = []
         #
-        #  build task for saving
+        #   2. save new record
         #
-        task = self._new_task(user=naked)
-        return await task.save(value=records)
+        task = self._new_task(user=user, new_cmd=content, new_msg=msg)
+        return await task.save(array)
 
     # Override
     async def get_login_command_messages(self, user: ID) -> List[Tuple[LoginCommand, ReliableMessage]]:
-        naked = naked_id(did=user)
-        return await self._load_login_command_messages(user=naked)
+        #
+        #  build task for loading
+        #
+        task = self._new_task(user=user)
+        array = await task.load()
+        return [] if array is None else array

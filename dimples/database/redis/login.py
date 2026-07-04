@@ -23,14 +23,13 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Set, Tuple, List, Dict
+from typing import Optional, Set, Tuple, List
 
 from dimsdk import ID, ReliableMessage
 
 from ...utils import json_encode, json_decode, utf8_encode, utf8_decode
+from ...common import CommandMessageUtils
 from ...common import LoginCommand
-
-from ..dos.login import parse_login_records
 
 from .base import RedisCache
 
@@ -53,52 +52,33 @@ class LoginCache(RedisCache):
         Login info for Users
         ~~~~~~~~~~~~~~~~~~~~
 
-        redis key: 'mkm.user.{ID}.login_commands'
+        redis key: 'mkm.user.{ADDRESS}.login_commands'
     """
     def __login_cache_name(self, identifier: ID) -> str:
-        return '%s.%s.%s.login_commands' % (self.db_name, self.tbl_name, identifier)
+        address = str(identifier.address)
+        return '%s.%s.%s.login_commands' % (self.db_name, self.tbl_name, address)
 
     async def save_login_command_messages(self, records: List[Tuple[LoginCommand, ReliableMessage]], user: ID) -> bool:
-        """ Save login commands into Redis Server """
-        array = []
-        for cmd, msg in records:
-            array.append({
-                'cmd': cmd.to_dict(),
-                'msg': msg.to_dict(),
-            })
-        info = {
-            'records': array,
-        }
+        """ cache login commands """
+        info = CommandMessageUtils.dump_command_messages(records=records)
         js = json_encode(container=info)
         value = utf8_encode(string=js)
-        key = self.__login_cache_name(identifier=user)
-        return await self.set(name=key, value=value, expires=self.EXPIRES)
+        name = self.__login_cache_name(identifier=user)
+        # self.info('Caching %d record(s) for key: %s', len(records), name)
+        return await self.set(name=name, value=value, expires=self.EXPIRES)
 
-    async def load_login_command_messages(self, user: ID) -> List[Tuple[LoginCommand, ReliableMessage]]:
-        """
-        Get 'login' commands
-
-        :param user: user ID
-        :return: (*, None) when cache not found
-        """
-        key = self.__login_cache_name(identifier=user)
-        value = await self.get(name=key)
+    async def load_login_command_messages(self, user: ID) -> Optional[List[Tuple[LoginCommand, ReliableMessage]]]:
+        """ load login commands from cache """
+        name = self.__login_cache_name(identifier=user)
+        value = await self.get(name=name)
         if value is None:
-            # data not exists
-            return []
+            # not found
+            return None
         js = utf8_decode(data=value)
         assert js is not None, f'failed to decode string: {value}'
         info = json_decode(string=js)
-        if info is None:
-            self.warning('failed to load "login" commands: %s from %s', user, key)
-            return []
-        assert isinstance(info, Dict), f'login records error: {user} => {info}'
-        array = info.get('records')
-        if array is None:
-            self.error('login records error: %s => %s', user, info)
-            return []
-        # OK
-        return parse_login_records(array=array)
+        # load login records from cache server
+        return CommandMessageUtils.pump_command_messages(info=info)
 
     """
         Session Online

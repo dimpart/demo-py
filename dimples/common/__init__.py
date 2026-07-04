@@ -31,6 +31,7 @@
 
 from .protocol import *
 from .mkm import *
+from .dkd import *
 from .dbi import *
 
 from .anonymous import Anonymous
@@ -112,6 +113,8 @@ __all__ = [
 
     'MetaUtils',
     'DocumentUtils',
+
+    'CommandMessageUtils',
 
     #
     #   Database Interface

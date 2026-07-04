@@ -31,6 +31,7 @@ from aiou.mem import CachePool
 from dimsdk import ID, Document
 
 from ..utils import Config
+from ..utils import is_before
 from ..common import DocumentUtils
 from ..common import DocumentDBI
 
@@ -78,9 +79,17 @@ class DocTask(DbTask[ID, List[Document]]):
             assert False, 'should not happen: %s' % self._identifier
             # return False
         else:
+            signature = new_doc.get('signature')
+            new_time = new_doc.time
+            created_time = new_doc.get_property(name='created_time')
             identifier = DocumentUtils.get_document_id(document=new_doc)
             doc_type = DocumentUtils.get_document_type(document=new_doc)
-            created_time = new_doc.get_property(name='created_time')
+            terminal = DocumentUtils.get_terminal(document=new_doc)
+        if identifier is None:
+            self.warning('document id not found: %s', new_doc)
+            identifier = self._identifier
+        else:
+            assert identifier == self._identifier, f'document id error: {identifier}'
         #
         #   0. check old documents
         #
@@ -89,26 +98,34 @@ class DocTask(DbTask[ID, List[Document]]):
         while index > 0:
             index -= 1
             item = documents[index]
-            if not isinstance(item, Document) or identifier != item.get('did'):
-                self.error('document error: %s, %s', identifier, item)
+            assert isinstance(item, Document), f'document error: {identifier}, {item}'
+            # check document id
+            did = DocumentUtils.get_document_id(document=item)
+            if did is None or did.address != identifier.address:
+                self.error('document error: %s => %s', identifier, item)
+                # TODO: remove it?
                 continue
-            elif item.get('type') != doc_type:
-                self.info('skip document: %s, type=%s, %s', identifier, doc_type, item)
-                continue
-            # elif item.get_property(name='created_time') != created_time:
-            #     self.info('skip document: %s, created=%s, %s', identifier, created_time, item)
-            #     continue
-            elif item == new_doc:
-                self.warning('same document, no need to update: %s, type=%s', identifier, doc_type)
+            # check with new document
+            if item.get('signature') == signature:
+                self.warning('same document, no need to update: %s, "%s", type="%s"', identifier, terminal, doc_type)
                 return True
+            elif DocumentUtils.get_document_type(document=item) != doc_type:
+                self.info('skip document: %s, "%s", type="%s", sign: %s', identifier, terminal, doc_type, signature)
+                continue
+            elif DocumentUtils.get_terminal(document=item) != terminal:
+                self.info('skip document: %s, "%s", %s', identifier, terminal, item)
+                continue
+            elif is_before(item.time, new_time=new_time):
+                self.warning('document expired: %s, "%s", type="%s"', identifier, terminal, doc_type)
+                return False
             # old record found, update it
-            self.info('update document: %d/%d, %s, type=%s', index, len(documents), identifier, doc_type)
+            self.info('update doc: %d/%d, %s, "%s", type=%s', index, len(documents), identifier, terminal, doc_type)
             documents[index] = new_doc
             updated = True
             # break
         if not updated:
-            # same type not found
-            self.info('insert new document: %s, type=%s, created=%s', identifier, doc_type, created_time)
+            # same type + terminal not found
+            self.info('insert document: %s, "%s", type="%s", created=%s', identifier, terminal, doc_type, created_time)
             documents.append(new_doc)
         #
         #   1. store into redis server
@@ -156,15 +173,6 @@ class DocumentTable(DataCache, DocumentDBI):
         docs = await task.load()
         if docs is None:
             docs = []
-        else:
-            # check time
-            new_time = document.time
-            if new_time is not None:
-                for item in docs:
-                    old_time = item.time
-                    if old_time is not None and old_time > new_time:
-                        self.warning('ignore expired document: %s', document)
-                        return False
         #
         #   2. save new record
         #

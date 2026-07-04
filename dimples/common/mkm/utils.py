@@ -109,6 +109,19 @@ class DocumentUtils:
         return helper.get_document_id(document=document)
 
     @classmethod
+    def get_terminal(cls, document: Document) -> Optional[str]:
+        terminal = document.get_str(key='terminal')
+        if terminal is not None and len(terminal) > 0:
+            return terminal
+        did = cls.get_document_id(document=document)
+        if did is not None:
+            terminal = did.terminal
+            if terminal is not None and len(terminal) > 0:
+                return terminal
+        # '*'
+        return None
+
+    @classmethod
     def get_document_name(cls, document: Document) -> Optional[str]:
         value = document.get_property(name='name')
         return Converter.get_str(value=value)
