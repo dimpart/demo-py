@@ -28,14 +28,13 @@ from typing import Optional
 from dimsdk import ID, Meta
 
 from ...utils import template_replace
-from ...utils import Logging
 from ...common.compat import Compatible
 from ...common import MetaDBI
 
 from .base import Storage
 
 
-class MetaStorage(Storage, Logging, MetaDBI):
+class MetaStorage(Storage, MetaDBI):
     """
         Meta for Entities (User/Group)
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

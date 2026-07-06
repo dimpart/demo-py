@@ -552,6 +552,8 @@ __all__ = [
     'Station',
     'ServiceProvider',
 
+    'CommandMessageUtils',
+
     #
     #   Utils
     #

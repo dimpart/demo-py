@@ -38,7 +38,7 @@
 import threading
 import weakref
 from typing import MutableMapping, MutableSet
-from typing import Optional, Dict, Set, Tuple
+from typing import Optional, Dict, Set
 
 from startrek.types import SocketAddress
 
@@ -46,6 +46,7 @@ from dimsdk import ID
 
 from ..utils import Logging
 from ..utils import Singleton
+from ..utils import naked_id
 from ..common import Session
 
 
@@ -54,18 +55,20 @@ class SessionPool(Logging):
     def __init__(self):
         super().__init__()
         # ID => remote addresses
-        self.__addresses: Dict[ID, MutableSet[Tuple[str, int]]] = {}
+        self.__addresses: Dict[ID, MutableSet[SocketAddress]] = {}
         # remote address => session
         self.__sessions: MutableMapping[SocketAddress, Session] = weakref.WeakValueDictionary()
 
-    def all_addresses(self, identifier: ID) -> MutableSet[Tuple[str, int]]:
-        addresses = self.__addresses.get(identifier)
-        if addresses is None:
-            addresses = set()
-        elif len(addresses) == 0:
-            # remote addresses empty, remote it from cache
-            self.__addresses.pop(identifier, None)
-        return addresses
+    # def all_addresses(self, identifier: ID) -> MutableSet[SocketAddress]:
+    #     addresses = self.__addresses.get(identifier)
+    #     if addresses is None:
+    #         addresses = set()
+    #     elif len(addresses) == 0:
+    #         # remote addresses empty, remote it from cache
+    #         self.__addresses.pop(identifier, None)
+    #     else:
+    #         addresses = set(addresses)  # copy
+    #     return addresses
 
     def add_address(self, identifier: ID, remote: SocketAddress):
         all_addresses = self.__addresses.get(identifier)
@@ -82,7 +85,12 @@ class SessionPool(Logging):
                 self.__addresses.pop(identifier, None)
 
     def all_users(self) -> Set[ID]:
-        return set(self.__addresses.keys())
+        all_keys = set(self.__addresses.keys())
+        users = set()
+        for key in all_keys:
+            did = naked_id(did=key)
+            users.add(did)
+        return users
 
     def get_session(self, remote: SocketAddress) -> Optional[Session]:
         return self.__sessions.get(remote)
@@ -189,7 +197,12 @@ class SessionCenter:
                 # remove remote address from old ID
                 self.__pool.remove_address(identifier=oid, remote=address)
             # insert remote address for new ID
-            self.__pool.add_address(identifier=identifier, remote=address)
+            terminal = session.terminal
+            if terminal is None or len(terminal) == 0:
+                did = identifier
+            else:
+                did = ID.create(name=identifier.name, address=identifier.address, terminal=terminal)
+            self.__pool.add_address(identifier=did, remote=address)
         # update session ID
         session.set_identifier(identifier=identifier)
         return True
@@ -204,11 +217,11 @@ class SessionCenter:
                     actives.add(session)
         return actives
 
-    def is_active(self, identifier: ID) -> bool:
-        """ check whether user online """
-        with self.__lock:
-            all_sessions = self.__pool.all_sessions(identifier=identifier)
-            for session in all_sessions:
-                if session.active:
-                    # got one active
-                    return True
+    # def is_active(self, identifier: ID) -> bool:
+    #     """ check whether user online """
+    #     with self.__lock:
+    #         all_sessions = self.__pool.all_sessions(identifier=identifier)
+    #         for session in all_sessions:
+    #             if session.active:
+    #                 # got one active
+    #                 return True

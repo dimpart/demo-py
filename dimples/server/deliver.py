@@ -37,9 +37,9 @@ from dimsdk import Content, ReceiptCommand
 from dimsdk import ReliableMessage
 
 from ..utils import Log, Logging
+from ..common import CommandMessageUtils
 from ..common import CommonFacebook
 from ..common import SessionDBI
-from ..common import LoginCommand
 
 
 class MessageDeliver(Logging):
@@ -66,8 +66,8 @@ class MessageDeliver(Logging):
         :param receiver: actual receiver
         :return: responses
         """
-        assert receiver.is_user, 'receiver ID error: %s' % receiver
-        assert receiver.type != EntityType.STATION, 'should not push message for station: %s' % receiver
+        assert receiver.is_user, f'receiver ID error: {receiver}'
+        assert receiver.type != EntityType.STATION, f'should not push message for station: {receiver}'
         # 1. try to push message directly
         if await session_push(msg=msg, receiver=receiver) > 0:
             text = 'Message delivered.'
@@ -92,14 +92,14 @@ class MessageDeliver(Logging):
         :return: responses
         """
         """ Redirect message to neighbor station """
-        assert neighbor is None or neighbor.type == EntityType.STATION, 'neighbor station ID error: %s' % neighbor
-        self.info(msg='redirect message %s => %s to neighbor station: %s' % (msg.sender, msg.receiver, neighbor))
+        assert neighbor is None or neighbor.type == EntityType.STATION, f'neighbor station ID error: {neighbor}'
+        self.info('redirect message %s => %s to neighbor station: %s', msg.sender, msg.receiver, neighbor)
         # 0. check current station
         current = await self.facebook.current_user
         current = current.identifier
-        assert current.type == EntityType.STATION, 'current station ID error: %s' % current
+        assert current.type == EntityType.STATION, f'current station ID error: {current}'
         if neighbor == current:
-            self.debug(msg='same destination: %s, msg %s => %s' % (neighbor, msg.sender, msg.receiver))
+            self.debug('same destination: %s, msg %s => %s', neighbor, msg.sender, msg.receiver)
             # the user is roaming to current station, but it's not online now
             # return None to tell the push center to push notification for it.
             return None
@@ -135,13 +135,13 @@ async def bridge_message(msg: ReliableMessage, neighbor: Optional[ID], bridge: I
         # no need to respond receipt for this broadcast message
         return []
     else:
-        assert neighbor != bridge, 'cannot bridge cycled message: %s' % neighbor
+        assert neighbor != bridge, f'cannot bridge cycled message: {neighbor}'
         msg['neighbor'] = str(neighbor)
     # push to the bridge
     if await session_push(msg=msg, receiver=bridge) == 0:
         # station bridge not found
-        Log.warning(msg='failed to push message to bridge: %s, drop message: %s -> %s'
-                        % (bridge, msg.sender, msg.receiver))
+        Log.warning('failed to push message to bridge: %s, drop message: %s -> %s',
+                    bridge, msg.sender, msg.receiver)
         return []
     text = 'Message redirected via station bridge.'
     cmd = ReceiptCommand.create(text=text, envelope=msg.envelope)
@@ -163,8 +163,17 @@ async def session_push(msg: ReliableMessage, receiver: ID) -> int:
 
 async def get_roaming_station(receiver: ID, database: SessionDBI) -> Optional[ID]:
     """ get login command for roaming station """
-    cmd, msg = await database.get_login_command_message(user=receiver)
-    if isinstance(cmd, LoginCommand):
+    records = await database.get_login_command_messages(user=receiver)
+    # check login command with terminal
+    terminal = receiver.terminal
+    if terminal == '':
+        terminal = None
+    for cmd, msg in records:
+        # check terminal
+        if terminal != CommandMessageUtils.get_terminal(content=cmd):
+            Log.info('skip login record: %s, %s', receiver, cmd)
+            continue
+        # return station id
         station = cmd.station
         if isinstance(station, Dict):
             sid = station.get('did')
@@ -172,5 +181,5 @@ async def get_roaming_station(receiver: ID, database: SessionDBI) -> Optional[ID
                 sid = station.get('ID')
             return ID.parse(identifier=sid)
         else:
-            Log.error(msg='login command error: %s -> %s' % (receiver, cmd))
-            Log.error(msg='login command error: %s -> %s' % (receiver, msg))
+            Log.error('login command error: %s -> %s', receiver, cmd)
+            Log.error('login command error: %s -> %s', receiver, msg)

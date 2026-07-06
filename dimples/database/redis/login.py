@@ -117,11 +117,9 @@ class LoginCache(RedisCache):
         all_keys = await self.hkeys(name=name)
         users = set()
         for key in all_keys:
-            identifier = ID.parse(identifier=key)
-            if identifier is None:
-                # should not happen
-                continue
-            users.add(identifier)
+            did = _naked_id(identifier=key)
+            if did is not None:
+                users.add(did)
         return users
 
     async def get_active_users(self) -> Set[ID]:
@@ -130,18 +128,25 @@ class LoginCache(RedisCache):
         if records is None:
             return set()
         users = set()
-        for key in records:
-            value = records[key]
+        for key, value in records.items():
             if is_empty(value=value):
                 # user logout
                 continue
             string = utf8_decode(data=key)
-            identifier = ID.parse(identifier=string)
-            if identifier is None:
-                # should not happen
-                continue
-            users.add(identifier)
+            did = _naked_id(identifier=string)
+            if did is not None:
+                users.add(did)
         return users
+
+
+def _naked_id(identifier: str) -> Optional[ID]:
+    did = ID.parse(identifier=identifier)
+    if did is None:
+        assert False, f'id error: {identifier}'
+    elif did.terminal is None:
+        return did
+    # get naked id
+    return ID.create(name=did.name, address=did.address)
 
 
 """
@@ -158,7 +163,8 @@ def serialize_socket_addresses(addresses: Set[Tuple[str, int]]) -> Optional[byte
         return None
     array = []
     for add in addresses:
-        item = [add[0], add[1]]
+        # item = [add[0], add[1]]
+        item = list(add)
         array.append(item)
     js = json_encode(container=array)
     return utf8_encode(string=js)
@@ -169,7 +175,8 @@ def deserialize_socket_addresses(value: bytes) -> Set[Tuple[str, int]]:
     array = json_decode(string=js)
     all_addresses = set()
     for item in array:
-        address = (item[0], item[1])
+        # address = (item[0], item[1])
+        address = tuple(item)
         all_addresses.add(address)
     return all_addresses
 

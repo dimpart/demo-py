@@ -34,6 +34,7 @@ from abc import ABC
 from typing import Optional, Tuple
 
 from startrek.types import SocketAddress
+from startrek import Porter, Departure
 
 from dimsdk import ID, Content
 from dimsdk import InstantMessage, ReliableMessage
@@ -44,12 +45,14 @@ from ..common import Session, SessionDBI
 from .gatekeeper import GateKeeper
 
 
+# noinspection PyAbstractClass
 class BaseSession(GateKeeper, Session, ABC):
 
     def __init__(self, remote: SocketAddress, sock: Optional[socket.socket], database: SessionDBI):
         super().__init__(remote=remote, sock=sock)
         self.__database = database
         self.__identifier: Optional[ID] = None
+        self.__terminal: Optional[str] = None
         self.__messenger: Optional[weakref.ReferenceType] = None
 
     # Override
@@ -75,6 +78,14 @@ class BaseSession(GateKeeper, Session, ABC):
         if self.__identifier != identifier:
             self.__identifier = identifier
             return True
+
+    @property  # Override
+    def terminal(self) -> Optional[str]:
+        return self.__terminal
+
+    @terminal.setter  # Override
+    def terminal(self, location: str):
+        self.__terminal = location
 
     @property
     def messenger(self) -> Optional[CommonMessenger]:

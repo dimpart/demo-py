@@ -89,6 +89,7 @@ class Transmitter(ABC):
 class Session(Transmitter, ABC):
 
     @property
+    @abstractmethod
     def database(self) -> SessionDBI:
         """ Session Database """
         raise NotImplementedError(
@@ -96,6 +97,7 @@ class Session(Transmitter, ABC):
         )
 
     @property
+    @abstractmethod
     def remote_address(self) -> SocketAddress:
         """ Remote (host, port) """
         raise NotImplementedError(
@@ -103,6 +105,7 @@ class Session(Transmitter, ABC):
         )
 
     @property
+    @abstractmethod
     def session_key(self) -> Optional[str]:
         """ Session Key """
         raise NotImplementedError(
@@ -110,12 +113,14 @@ class Session(Transmitter, ABC):
         )
 
     @property
+    @abstractmethod
     def identifier(self) -> Optional[ID]:
         """ Login User ID """
         raise NotImplementedError(
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.identifier getter'
         )
 
+    @abstractmethod
     def set_identifier(self, identifier: ID) -> bool:
         """ Update ID and return True on changed """
         raise NotImplementedError(
@@ -123,12 +128,30 @@ class Session(Transmitter, ABC):
         )
 
     @property
+    @abstractmethod
+    def terminal(self) -> Optional[str]:
+        """ Login User ID terminal """
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.terminal getter'
+        )
+
+    @terminal.setter
+    @abstractmethod
+    def terminal(self, location: str):
+        """ Update ID terminal """
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.terminal setter'
+        )
+
+    @property
+    @abstractmethod
     def active(self) -> bool:
         """ Session active """
         raise NotImplementedError(
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.active getter'
         )
 
+    @abstractmethod
     @abstractmethod
     def set_active(self, active: bool, when: DateTime = None) -> bool:
         """ Update active flag and return True on changed """
@@ -150,6 +173,7 @@ class Session(Transmitter, ABC):
         remote = self.remote_address
         return '<%s:%s %s|%s active=%s />' % (clazz, session_key, remote, self.identifier, self.active)
 
+    @abstractmethod
     async def queue_message_package(self, msg: ReliableMessage, data: bytes, priority: int = 0) -> bool:
         """
         Pack message into a waiting queue

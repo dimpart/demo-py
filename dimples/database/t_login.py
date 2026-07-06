@@ -166,6 +166,13 @@ class LoginTable(DataCache, LoginDBI):
     # Override
     async def save_login_command_message(self, user: ID, content: LoginCommand, msg: ReliableMessage) -> bool:
         #
+        #  0. check valid
+        #
+        identifier = content.identifier
+        if identifier is None or identifier.address != user.address:
+            self.error('login id not matched: %s, %s', identifier, user)
+            return False
+        #
         #  1. load old records
         #
         task = self._new_task(user=user)
