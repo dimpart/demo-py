@@ -136,9 +136,9 @@ class AddressNameServer(AddressNameService):
         if array is None:
             array = []
             # TODO: update all tables?
-            for name in self.__caches:
-                if identifier == self.__caches[name]:
-                    array.append(name)
+            for alias, did in self.__caches.items():
+                if identifier == did:
+                    array.append(alias)
             self.__names[identifier] = array
         return array
 
@@ -179,8 +179,7 @@ class AddressNameServer(AddressNameService):
         self.__reserved['announcer'] = False
         self.__reserved['assistant'] = False
         # self.__reserved['station'] = False
-        for alias in records:
-            value = records[alias]
+        for alias, value in records.items():
             if value is None or len(value) == 0:
                 continue
             identifier = ID.parse(identifier=value)

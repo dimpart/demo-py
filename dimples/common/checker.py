@@ -37,6 +37,7 @@ from dimsdk import ID, Meta, Document, Visa
 from ..utils import Logging
 from ..utils import FrequencyChecker, RecentTimeChecker
 
+from .mkm import DocumentUtils
 from .dbi import AccountDBI
 
 
@@ -165,21 +166,13 @@ class EntityChecker(Logging, ABC):
         current = self.get_last_document_time(identifier=identifier, documents=documents)
         return self.__last_document_times.is_expired(key=identifier, now=current)
 
-    # noinspection PyMethodMayBeStatic
-    def get_last_document_time(self, identifier: ID, documents: List[Document]):
-        if documents is None or len(documents) == 0:
-            return None
-        last_time = None
-        for doc in documents:
-            assert identifier == doc['did'], 'document not match: %s, %s' % (identifier, doc)
-            doc_time = doc.time
-            if doc_time is None:
-                # assert False, 'document error: %s' % doc
-                self.warning(msg='document time error: %s' % doc)
-            elif last_time is None or last_time < doc_time:
-                last_time = doc_time
-        # OK
-        return last_time
+    # protected
+    def get_last_document_time(self, identifier: ID, documents: List[Document]) -> Optional[DateTime]:
+        last = DocumentUtils.last_document(documents=documents)
+        if last is None:
+            self.warning('failed to get last document: %s, %s', identifier, documents)
+        else:
+            return last.time
 
     #
     #   Group Members

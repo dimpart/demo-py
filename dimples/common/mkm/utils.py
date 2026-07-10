@@ -109,15 +109,14 @@ class DocumentUtils:
         return helper.get_document_id(document=document)
 
     @classmethod
-    def get_terminal(cls, document: Document) -> Optional[str]:
+    def get_visa_terminal(cls, document: Visa) -> Optional[str]:
         terminal = document.get_str(key='terminal')
+        if terminal is None or len(terminal) == 0:
+            did = cls.get_document_id(document=document)
+            if did is not None:
+                terminal = did.terminal
         if terminal is not None and len(terminal) > 0:
             return terminal
-        did = cls.get_document_id(document=document)
-        if did is not None:
-            terminal = did.terminal
-            if terminal is not None and len(terminal) > 0:
-                return terminal
         # '*'
         return None
 
@@ -140,7 +139,7 @@ class DocumentUtils:
         return cls.is_before(old_time=old_doc.time, this_time=this_doc.time)
 
     @classmethod
-    def last_document(cls, documents: Iterable[Document], doc_type: str = None) -> Optional[Document]:
+    def last_document(cls, documents: Iterable[Document], doc_type: str = '*') -> Optional[Document]:
         """ Select last document matched the type """
         if documents is None:
             return None
@@ -164,7 +163,7 @@ class DocumentUtils:
         return last
 
     @classmethod
-    def last_visa(cls, documents: Iterable[Document]) -> Optional[Visa]:
+    def last_visa(cls, documents: Iterable[Document], terminal: str = '*') -> Optional[Visa]:
         """ Select last visa document """
         if documents is None:
             return None
@@ -174,7 +173,11 @@ class DocumentUtils:
             if not isinstance(item, Visa):
                 # type not matched, skip it
                 continue
-            # 2. check time
+            # 2. check terminal
+            if terminal != '*' and terminal != cls.get_visa_terminal(document=item):
+                # terminal not matched, skip it
+                continue
+            # 3. check time
             if last is not None and cls.is_expired(this_doc=item, old_doc=last):
                 # skip expired document
                 continue

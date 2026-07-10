@@ -213,6 +213,9 @@ class Station(User):
 
 class ServiceProvider(BaseGroup):
 
+    # default service provider
+    GSP = Identifier.new(name='gsp', address=EVERYWHERE)
+
     def __init__(self, identifier: ID):
         super().__init__(identifier=identifier)
         assert identifier.type == EntityType.ISP, 'Service Provider ID type error: %s' % identifier

@@ -109,7 +109,8 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
             ok = await archivist.save_document(document=visa, identifier=sender)
             if not ok:
                 self.error('visa error: %s, %s', sender, visa)
-                return False
+                # FIXME: visa document maybe expired
+                # return False
         # OK
         return True
 

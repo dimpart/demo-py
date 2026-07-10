@@ -30,23 +30,28 @@
 
 from typing import Optional, Union, Tuple, List, Dict
 
-from dimsdk import ID
 from dimsdk import ReliableMessage
 from dimsdk import Command
 
 from ...utils import Log
+from ..protocol import LoginCommand
 
 
 class CommandMessageUtils:
 
     @classmethod
-    def get_terminal(cls, content: Command) -> Optional[str]:
+    def get_login_terminal(cls, content: LoginCommand) -> Optional[str]:
         terminal = content.get_str(key='terminal')
+        if terminal is None or len(terminal) == 0:
+            terminal = content.get_str(key='device')
+            if terminal is None or len(terminal) == 0:
+                did = content.identifier
+                if did is not None:
+                    terminal = did.terminal
         if terminal is not None and len(terminal) > 0:
             return terminal
-        did = ID.parse(identifier=content.get('did'))
-        if did is not None:
-            return did.terminal
+        # '*'
+        return None
 
     @classmethod
     def dump_command_messages(cls, records: List[Tuple[Command, ReliableMessage]]) -> Dict:

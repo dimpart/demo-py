@@ -76,3 +76,24 @@ class CompatibleShortener(MessageShortener):
     def compress_reliable_message(self, msg: Dict) -> Dict:
         # DON'T COMPRESS NOW
         return msg
+
+    # Override
+    def extract_reliable_message(self, msg: Dict) -> Dict:
+        keys = msg.get('K')
+        if keys is None:
+            # assert 'data' in msg, f'message data should not empty: {msg}'
+            pass
+        elif isinstance(keys, Dict):
+            assert 'keys' not in msg, f'message keys duplicated: {msg}'
+            msg.pop('K', None)
+            # msg.pop('key', None)
+            msg['keys'] = keys
+        elif isinstance(keys, str):
+            assert 'key' not in msg, f'message key duplicated: {msg}'
+            msg.pop('K', None)
+            # msg.pop('keys', None)
+            msg['key'] = keys
+        else:
+            assert False, f'message key error: {msg}'
+        # restore message keys
+        return super().extract_reliable_message(msg=msg)

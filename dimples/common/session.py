@@ -115,32 +115,23 @@ class Session(Transmitter, ABC):
     @property
     @abstractmethod
     def identifier(self) -> Optional[ID]:
-        """ Login User ID """
+        """ Login User ID with terminal """
         raise NotImplementedError(
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.identifier getter'
         )
 
     @abstractmethod
-    def set_identifier(self, identifier: ID) -> bool:
+    def set_did(self, did: ID) -> bool:
         """ Update ID and return True on changed """
         raise NotImplementedError(
-            f'Not implemented: {type(self).__module__}.{type(self).__name__}.set_identifier()'
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.set_did()'
         )
 
-    @property
     @abstractmethod
-    def terminal(self) -> Optional[str]:
-        """ Login User ID terminal """
-        raise NotImplementedError(
-            f'Not implemented: {type(self).__module__}.{type(self).__name__}.terminal getter'
-        )
-
-    @terminal.setter
-    @abstractmethod
-    def terminal(self, location: str):
+    def set_device(self, terminal: str):
         """ Update ID terminal """
         raise NotImplementedError(
-            f'Not implemented: {type(self).__module__}.{type(self).__name__}.terminal setter'
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.set_device()'
         )
 
     @property

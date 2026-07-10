@@ -43,7 +43,6 @@ from dimsdk import json_encode, json_decode
 
 from dimsdk import Converter
 from dimsdk import DateTime
-from dimsdk import ID
 from dimsdk import ReliableMessage
 
 from dimplugins.crypto.aes import random_bytes
@@ -70,23 +69,6 @@ from .http import HttpSession, HttpClient
 
 from .conf_item import IConfig, MessageTransferAgent, Supervisor, NeighborLoader
 from .config import Config
-
-
-def naked_id(did: ID) -> ID:
-    """ remove terminal """
-    terminal = did.terminal
-    if terminal is None or len(terminal) == 0:
-        return did
-    else:
-        return ID.create(name=did.name, address=did.address)
-
-
-def dressed_id(did: ID, terminal: Optional[str]) -> ID:
-    """ append terminal """
-    if terminal is None or len(terminal) == 0:
-        return did
-    else:
-        return ID.create(name=did.name, address=did.address, terminal=terminal)
 
 
 def is_before(old_time: Optional[DateTime], new_time: Optional[DateTime]) -> bool:
@@ -176,8 +158,6 @@ __all__ = [
 
     'IConfig', 'MessageTransferAgent', 'Supervisor', 'NeighborLoader',
     'Config',
-
-    'naked_id', 'dressed_id',
 
     'is_before',
     'get_msg_sig', 'get_msg_info',

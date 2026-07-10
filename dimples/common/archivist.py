@@ -32,10 +32,9 @@ import weakref
 from typing import Optional, List
 
 from dimsdk import DateTime
-from dimsdk import VerifyKey, EncryptKey
 
 from dimsdk import EntityType, ID
-from dimsdk import Meta, Document
+from dimsdk import Meta, Document, Visa, Bulletin
 from dimsdk import User, Group
 from dimsdk import BaseUser, BaseGroup
 
@@ -144,7 +143,7 @@ class CommonArchivist(Barrack, Archivist, Logging):
         #
         #  1. check valid
         #
-        if not self.check_meta(meta=meta, identifier=identifier):
+        if not self._check_meta(meta=meta, identifier=identifier):
             self.warning('meta not valid: %s', identifier)
             return False
         #
@@ -160,8 +159,7 @@ class CommonArchivist(Barrack, Archivist, Logging):
         db = self.database
         return await db.save_meta(meta=meta, identifier=identifier)
 
-    # protected
-    def check_meta(self, meta: Meta, identifier: ID) -> bool:
+    def _check_meta(self, meta: Meta, identifier: ID) -> bool:
         if meta.is_valid:
             return MetaUtils.match_id(identifier=identifier, meta=meta)
         else:
@@ -172,14 +170,14 @@ class CommonArchivist(Barrack, Archivist, Logging):
         #
         #  1. check valid
         #
-        valid = await self.check_document(document=document, identifier=identifier)
+        valid = await self._check_document(document=document, identifier=identifier)
         if not valid:
             self.warning('meta not valid: %s', identifier)
             return False
         #
         #  2. check expired
         #
-        expired = await self.is_document_expired(document=document, identifier=identifier)
+        expired = await self._is_document_expired(document=document, identifier=identifier)
         if expired:
             self.info('drop expired document: %s', document)
             return False
@@ -189,8 +187,7 @@ class CommonArchivist(Barrack, Archivist, Logging):
         db = self.database
         return await db.save_document(document=document, identifier=identifier)
 
-    # protected
-    async def check_document(self, document: Document, identifier: ID) -> bool:
+    async def _check_document(self, document: Document, identifier: ID) -> bool:
         doc_time = document.time
         # check document time
         if doc_time is None:
@@ -203,10 +200,9 @@ class CommonArchivist(Barrack, Archivist, Logging):
                 self.error('document time error: %s, %s', doc_time, identifier)
                 return False
         # check valid
-        return await self.verify_document(document=document, identifier=identifier)
+        return await self._verify_document(document=document, identifier=identifier)
 
-    # protected
-    async def verify_document(self, document: Document, identifier: ID) -> bool:
+    async def _verify_document(self, document: Document, identifier: ID) -> bool:
         # if document.is_valid:
         #     return True
         meta = await self.facebook.get_meta(identifier=identifier)
@@ -215,32 +211,49 @@ class CommonArchivist(Barrack, Archivist, Logging):
         else:
             return document.verify(public_key=meta.public_key)
 
-    # protected
-    async def is_document_expired(self, document: Document, identifier: ID) -> bool:
-        doc_type = DocumentUtils.get_document_type(document=document)
-        if doc_type is None:
-            doc_type = '*'
-        # check old documents with type
+    async def _is_document_expired(self, document: Document, identifier: ID) -> bool:
+        if isinstance(document, Visa):
+            return await self._is_visa_expired(document=document, user=identifier)
+        elif isinstance(document, Bulletin):
+            return await self._is_bulletin_expired(document=document, group=identifier)
+        # get all documents
         docs = await self.facebook.get_documents(identifier=identifier)
         if docs is None or len(docs) == 0:
             return False
+        else:
+            doc_type = DocumentUtils.get_document_type(document=document)
+            if doc_type is None:
+                doc_type = '*'
+        # check last document time
         old = DocumentUtils.last_document(documents=docs, doc_type=doc_type)
         return old is not None and DocumentUtils.is_expired(this_doc=document, old_doc=old)
 
-    # Override
-    async def get_meta_key(self, identifier: ID) -> Optional[VerifyKey]:
-        meta = await self.facebook.get_meta(identifier=identifier)
-        if meta is not None:
-            return meta.public_key
-
-    # Override
-    async def get_visa_key(self, identifier: ID) -> Optional[EncryptKey]:
-        docs = await self.facebook.get_documents(identifier=identifier)
+    # private
+    async def _is_visa_expired(self, document: Visa, user: ID) -> bool:
+        # get all documents
+        docs = await self.facebook.get_documents(identifier=user)
         if docs is None or len(docs) == 0:
-            return None
-        visa = DocumentUtils.last_visa(documents=docs)
-        if visa is not None:
-            return visa.public_key
+            return False
+        else:
+            assert user.is_user, f'user ID error: {user}'
+            terminal = DocumentUtils.get_visa_terminal(document=document)
+            if terminal is None:
+                terminal = '*'
+        # check last document time
+        old = DocumentUtils.last_visa(documents=docs, terminal=terminal)
+        return old is not None and DocumentUtils.is_expired(this_doc=document, old_doc=old)
+
+    # private
+    async def _is_bulletin_expired(self, document: Bulletin, group: ID) -> bool:
+        # get all documents
+        docs = await self.facebook.get_documents(identifier=group)
+        if docs is None or len(docs) == 0:
+            return False
+        else:
+            assert group.is_group, f'group ID error: {group}'
+        # check last document time
+        old = DocumentUtils.last_bulletin(documents=docs)
+        return old is not None and DocumentUtils.is_expired(this_doc=document, old_doc=old)
 
     # Override
     async def get_local_users(self) -> List[ID]:

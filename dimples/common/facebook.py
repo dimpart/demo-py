@@ -123,7 +123,7 @@ class CommonFacebook(Facebook, Logging, ABC):
                 # broadcast message can be decrypted by anyone, so
                 # just return current user here
                 return me
-            elif receiver == me:
+            elif receiver.is_same_as(other=me):
                 return me
         # check local users
         return await super().select_user(receiver=receiver)
@@ -136,8 +136,9 @@ class CommonFacebook(Facebook, Logging, ABC):
             me = user.identifier
             # the messenger will check group info before decrypting message,
             # so we can trust that the group's meta & members MUST exist here.
-            if me in members:
-                return me
+            for did in members:
+                if did.is_same_as(other=me):
+                    return me
         # check local users
         return await super().select_member(members=members)
 

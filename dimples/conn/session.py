@@ -51,7 +51,7 @@ class BaseSession(GateKeeper, Session, ABC):
     def __init__(self, remote: SocketAddress, sock: Optional[socket.socket], database: SessionDBI):
         super().__init__(remote=remote, sock=sock)
         self.__database = database
-        self.__identifier: Optional[ID] = None
+        self.__did: Optional[ID] = None
         self.__terminal: Optional[str] = None
         self.__messenger: Optional[weakref.ReferenceType] = None
 
@@ -71,21 +71,28 @@ class BaseSession(GateKeeper, Session, ABC):
 
     @property  # Override
     def identifier(self) -> Optional[ID]:
-        return self.__identifier
+        did: ID = self.__did
+        if did is None:
+            return None
+        terminal = self.__terminal
+        if terminal is None or len(terminal) == 0:
+            return did
+        elif terminal != did.terminal:
+            # did = ID.create(name=did.name, address=did.address, terminal=terminal)
+            did = did.with_terminal(terminal=terminal)
+            self.__did = did
+        return did
 
     # Override
-    def set_identifier(self, identifier: ID) -> bool:
-        if self.__identifier != identifier:
-            self.__identifier = identifier
+    def set_did(self, did: ID) -> bool:
+        old = self.__did
+        if old is None or old.address != did.address:
+            self.__did = did
             return True
 
-    @property  # Override
-    def terminal(self) -> Optional[str]:
-        return self.__terminal
-
-    @terminal.setter  # Override
-    def terminal(self, location: str):
-        self.__terminal = location
+    # Override
+    def set_device(self, terminal: str):
+        self.__terminal = terminal
 
     @property
     def messenger(self) -> Optional[CommonMessenger]:

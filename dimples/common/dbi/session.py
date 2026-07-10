@@ -27,7 +27,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Any, Dict, List, Tuple
 from typing import Iterable
 
-from dimsdk import ID, Identifier, EVERYWHERE
+from dimsdk import ID
 from dimsdk import ReliableMessage
 
 from ..mkm import Station
@@ -41,9 +41,6 @@ from ..protocol import LoginCommand
 
 
 class ProviderInfo:
-
-    # default service provider
-    GSP = Identifier.new(name='gsp', address=EVERYWHERE)
 
     def __init__(self, identifier: ID, chosen: int):
         super().__init__()

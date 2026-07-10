@@ -33,6 +33,13 @@ from dimsdk import ContentType, Content
 from dimsdk import GroupCommand
 from dimsdk import AsymmetricAlgorithms
 from dimsdk import AsymmetricKey, PrivateKey, PublicKey
+from dimsdk import EncryptedBundle
+from dimsdk import InstantMessage
+from dimsdk import SecureMessage, SecureMessageDelegate
+from dimsdk import MessagePackerFactory, SecureMessagePacker
+
+from dimsdk.msg.helpers import message_extensions
+
 from dimplugins import RSAPrivateKeyFactory, RSAPublicKeyFactory
 from dimplugins import ExtensionLoader
 from dimplugins import PluginLoader
@@ -83,6 +90,16 @@ class LibraryLoader:
 # noinspection PyMethodMayBeStatic
 class CommonExtensionLoader(ExtensionLoader):
     """ Extensions Loader """
+
+    # Override
+    def load(self):
+        super().load()
+        self._load_message_packer_factory()
+
+    def _load_message_packer_factory(self):
+        """ fix for 'message.key' """
+        ext = message_extensions()
+        ext.packer_factory = _MessagePackerFactory()
 
     # Override
     def register_id_factory(self):
@@ -196,6 +213,40 @@ class CommonExtensionLoader(ExtensionLoader):
         self._set_command_factory(cmd=BlockCommand.BLOCK, command_class=BlockCommand)
         # Group command (deprecated)
         self._set_command_factory(cmd=QueryCommand.QUERY, command_class=QueryGroupCommand)
+
+
+class _MessagePackerFactory(MessagePackerFactory):
+
+    # Override
+    def create_secure_message_packer(self, messenger: SecureMessageDelegate):
+        return _SecureMessagePacker(messenger=messenger)
+
+
+class _SecureMessagePacker(SecureMessagePacker):
+
+    # Override
+    async def _decode_keys(self, msg: SecureMessage, receiver: ID) -> Optional[EncryptedBundle]:
+        msg_keys = msg.encrypted_keys
+        if msg_keys is None:
+            # get from 'key'
+            base64 = msg.get('key')
+            if base64 is None:
+                # broadcast message?
+                # reuse key?
+                return None
+            msg_keys = {
+                str(receiver): base64
+            }
+        transformer = self.delegate
+        assert transformer is not None, 'secure message delegate not found'
+        return await transformer.decode_keys(keys=msg_keys, receiver=receiver, msg=msg)
+
+    # Override
+    async def decrypt_message(self, msg: SecureMessage, receiver: ID) -> Optional[InstantMessage]:
+        i_msg = await super().decrypt_message(msg=msg, receiver=receiver)
+        if i_msg is not None:
+            i_msg.pop('key', None)
+        return i_msg
 
 
 # noinspection PyMethodMayBeStatic

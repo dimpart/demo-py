@@ -151,9 +151,9 @@ class HttpClient(Logging):
         if cookies is None:
             self.info(msg='cookies not found')
             return None
-        for key in cookies:
+        for key, value in cookies.items():
             # TODO: store with domain & path
-            self.__cookies[key] = cookies[key]
+            self.__cookies[key] = value
         return cookies
 
     def remove_cache(self, url: str):

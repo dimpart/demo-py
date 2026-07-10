@@ -38,6 +38,9 @@ from dimsdk import Address
 from dimplugins import GeneralIdentifierFactory
 from dimplugins.mem.ext import id_cache
 
+from ..mkm import Station
+from ..mkm import ServiceProvider
+
 from .network import network_to_type
 
 
@@ -61,24 +64,36 @@ class EntityIDFactory(GeneralIdentifierFactory):
 
     # Override
     def _parse(self, identifier: str) -> Optional[ID]:
-        size = 0 if identifier is None else len(identifier)
-        if size < 4 or size > 64:
-            assert False, 'ID error: %s' % identifier
-        elif size == 15:
-            # "anyone@anywhere"
-            if identifier.lower() == 'anyone@anywhere':
-                return ANYONE
-        elif size == 19:
-            # "everyone@everywhere"
-            # "stations@everywhere"
-            if identifier.lower() == 'everyone@everywhere':
-                return EVERYONE
-        elif size == 13:
-            # "moky@anywhere"
-            if identifier.lower() == 'moky@anywhere':
-                return FOUNDER
+        size = len(identifier)
+        if 13 <= size <= 19:
+            # 13 - moky@anywhere
+            # 15 - anyone@anywhere
+            # 19 - everyone@everywhere
+            # 19 - stations@everywhere
+            # 16 - station@anywhere
+            # 14 - gsp@everywhere
+            text = identifier.lower()
+            did = _CONST_IDS.get(text)
+            if did is not None:
+                return did
+        elif size < 4 or 64 < size:
+            assert identifier is None, 'invalid id: %s' % identifier
+            return None
         # normal ID
         return super()._parse(identifier=identifier)
+
+
+_CONST_IDS = {
+
+    'moky@anywhere': FOUNDER,
+    'anyone@anywhere': ANYONE,
+    'everyone@everywhere': EVERYONE,
+
+    'station@anywhere': Station.ANY,
+    'stations@everywhere': Station.EVERY,
+    'gsp@everywhere': ServiceProvider.GSP,
+
+}
 
 
 class EntityID(Identifier):
