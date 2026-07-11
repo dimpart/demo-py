@@ -48,7 +48,8 @@ class UserStorage(Storage, UserDBI, ContactDBI):
 
     def __contacts_path(self, identifier: ID) -> str:
         path = self.private_path(self.contacts_path)
-        return template_replace(path, key='ADDRESS', value=str(identifier.address))
+        address = str(identifier.address)
+        return template_replace(path, key='ADDRESS', value=address)
 
     #
     #   User DBI
@@ -70,7 +71,7 @@ class UserStorage(Storage, UserDBI, ContactDBI):
     async def get_contacts(self, user: ID) -> List[ID]:
         """ load contacts from file """
         path = self.__contacts_path(identifier=user)
-        self.info(msg='Loading contacts from: %s' % path)
+        self.info('Loading contacts from: %s', path)
         contacts = await self.read_json(path=path)
         if contacts is None:
             # contacts not found
@@ -81,5 +82,5 @@ class UserStorage(Storage, UserDBI, ContactDBI):
     async def save_contacts(self, contacts: List[ID], user: ID) -> bool:
         """ save contacts into file """
         path = self.__contacts_path(identifier=user)
-        self.info(msg='Saving contacts into: %s' % path)
+        self.info('Saving contacts into: %s', path)
         return await self.write_json(container=ID.revert(identifiers=contacts), path=path)

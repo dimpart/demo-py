@@ -84,10 +84,10 @@ class BaseSession(GateKeeper, Session, ABC):
         return did
 
     # Override
-    def set_did(self, did: ID) -> bool:
+    def set_did(self, identifier: ID) -> bool:
         old = self.__did
-        if old is None or old.address != did.address:
-            self.__did = did
+        if old is None or old.address != identifier.address:
+            self.__did = identifier
             return True
 
     # Override

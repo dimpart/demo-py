@@ -46,7 +46,6 @@ from dimsdk import ID
 
 from ..utils import Logging
 from ..utils import Singleton
-from ..utils import naked_id
 from ..common import Session
 
 
@@ -88,7 +87,7 @@ class SessionPool(Logging):
         all_keys = set(self.__addresses.keys())
         users = set()
         for key in all_keys:
-            did = naked_id(did=key)
+            did = key.without_terminal()
             users.add(did)
         return users
 
@@ -97,8 +96,8 @@ class SessionPool(Logging):
 
     def add_session(self, session: Session):
         address = session.remote_address
-        assert address is not None, 'session remote address error: %s' % session
-        assert session.identifier is None, 'session ID error: %s' % session
+        assert address is not None, f'session remote address error: {session}'
+        assert session.identifier is None, f'session ID error: {session}'
         self.__sessions[address] = session
 
     def remove_session(self, remote: SocketAddress):
@@ -113,12 +112,12 @@ class SessionPool(Logging):
         for remote in clone_addresses:
             session = self.__sessions.get(remote)
             if session is None:
-                self.warning(msg='session removed: %s, %s' % (identifier, remote))
+                self.warning('session removed: %s, %s', identifier, remote)
                 all_addresses.discard(remote)
                 # self.remove_address(identifier=identifier, remote=remote)
                 continue
             elif session.identifier != identifier:
-                self.warning(msg='session reused: %s, %s, %s' % (identifier, remote, session))
+                self.warning('session reused: %s, %s, %s', identifier, remote, session)
                 all_addresses.discard(remote)
                 # self.remove_address(identifier=identifier, remote=remote)
                 continue
@@ -166,14 +165,14 @@ class SessionCenter:
         if old is not None:
             # set session inactive
             old.set_active(active=False)
-        # assert session.identifier is None, 'new session error: %s' % session
+        # assert session.identifier is None, f'new session error: {session}'
         return True
 
     def remove_session(self, session: Session):
         """ Remove the session """
         identifier = session.identifier
         address = session.remote_address
-        assert address is not None, 'session error: %s' % session
+        assert address is not None, f'session error: {session}'
         with self.__lock:
             # remove session with remote address
             self.__pool.remove_session(remote=address)
@@ -187,24 +186,20 @@ class SessionCenter:
     def update_session(self, session: Session, identifier: ID):
         """ Update ID in this session """
         oid = session.identifier
-        if oid == identifier:
+        # update session ID
+        if not session.set_did(identifier=identifier):
             # nothing changed
             return False
         address = session.remote_address
-        assert address is not None, 'session error: %s' % session
+        assert address is not None, f'session error: {session}'
         with self.__lock:
             if oid is not None:
                 # remove remote address from old ID
                 self.__pool.remove_address(identifier=oid, remote=address)
-            # insert remote address for new ID
-            terminal = session.terminal
-            if terminal is None or len(terminal) == 0:
-                did = identifier
-            else:
-                did = ID.create(name=identifier.name, address=identifier.address, terminal=terminal)
+            # insert remote address for new ID (with terminal)
+            did = session.identifier
             self.__pool.add_address(identifier=did, remote=address)
-        # update session ID
-        session.set_identifier(identifier=identifier)
+        # OK
         return True
 
     def active_sessions(self, identifier: ID) -> Set[Session]:

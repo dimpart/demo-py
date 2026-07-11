@@ -41,7 +41,7 @@ from dimsdk import ReliableMessage
 from ..utils import Log
 from ..utils import get_msg_sig
 from ..common import Station
-from ..common import ProviderInfo
+from ..common import ServiceProvider
 from ..common import MessageDBI, SessionDBI
 from ..common import HandshakeCommand
 
@@ -73,7 +73,7 @@ class OctopusMessenger(ClientMessenger, ABC):
     def octopus(self) -> Optional[Octopus]:
         ref = self.__octopus
         bot = None if ref is None else ref()
-        assert isinstance(bot, Octopus), 'octopus error: %s' % bot
+        assert isinstance(bot, Octopus), f'octopus error: {bot}'
         return bot
 
     @octopus.setter
@@ -104,17 +104,17 @@ class OctopusMessenger(ClientMessenger, ABC):
     async def process_reliable_message(self, msg: ReliableMessage) -> List[ReliableMessage]:
         # check for HandshakeCommand
         if await self.__is_handshaking(msg=msg):
-            self.info(msg='receive handshaking: %s' % msg.sender)
+            self.info('receive handshaking: %s', msg.sender)
             return await super().process_reliable_message(msg=msg)
         # check for cycled message
         if msg.receiver == msg.sender:
-            self.error(msg='drop cycled msg(type=%s): %s -> %s | from %s, traces: %s'
-                       % (msg.type, msg.sender, msg.receiver, get_remote_station(messenger=self), msg.get('traces')))
+            self.error('drop cycled msg(type=%s): %s -> %s | from %s, traces: %s',
+                       msg.type, msg.sender, msg.receiver, get_remote_station(messenger=self), msg.get('traces'))
             return []
         # handshake accepted, redirecting message
         sig = get_msg_sig(msg=msg)
-        self.info(msg='redirect msg(type=%s, sig=%s): %s -> %s | from %s, traces: %s'
-                  % (msg.type, sig, msg.sender, msg.receiver, get_remote_station(messenger=self), msg.get('traces')))
+        self.info('redirect msg(type=%s, sig=%s): %s -> %s | from %s, traces: %s',
+                  msg.type, sig, msg.sender, msg.receiver, get_remote_station(messenger=self), msg.get('traces'))
         return await self._deliver_message(msg=msg)
 
     @abstractmethod
@@ -156,7 +156,7 @@ class OuterMessenger(OctopusMessenger):
     async def process_reliable_message(self, msg: ReliableMessage) -> List[ReliableMessage]:
         local_station = await self.local_station
         if msg.sender == local_station:
-            self.error(msg='cycled message from this station: %s => %s' % (msg.sender, msg.receiver))
+            self.error('cycled message from this station: %s => %s', msg.sender, msg.receiver)
             return []
         return await super().process_reliable_message(msg=msg)
 
@@ -170,15 +170,15 @@ class OuterMessenger(OctopusMessenger):
 
 
 async def update_station(station: Station, database: SessionDBI):
-    Log.info(msg='update station: %s' % station)
+    Log.info('update station: %s', station)
     # SP ID
     provider = station.provider
     if provider is None:
-        provider = ProviderInfo.GSP
+        provider = ServiceProvider.GSP
     # new info
     sid = station.identifier
     host = station.host
     port = station.port
-    assert not sid.is_broadcast, 'station ID error: %s' % sid
-    assert host is not None and port > 0, 'station error: %s, %d' % (host, port)
+    assert not sid.is_broadcast, f'station ID error: {sid}'
+    assert host is not None and port > 0, f'station error: {host}, {port}'
     await database.update_station(identifier=sid, host=host, port=port, provider=provider, chosen=0)

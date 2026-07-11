@@ -61,25 +61,27 @@ class PrivateKeyStorage(Storage, PrivateKeyDBI):
 
     def __id_key_path(self, identifier: ID) -> str:
         path = self.private_path(self.id_key_path)
-        return template_replace(path, key='ADDRESS', value=str(identifier.address))
+        address = str(identifier.address)
+        return template_replace(path, key='ADDRESS', value=address)
 
     def __msg_keys_path(self, identifier: ID) -> str:
         path = self.private_path(self.msg_keys_path)
-        return template_replace(path, key='ADDRESS', value=str(identifier.address))
+        address = str(identifier.address)
+        return template_replace(path, key='ADDRESS', value=address)
 
     async def _save_id_key(self, key: PrivateKey, identifier: ID) -> bool:
         path = self.__id_key_path(identifier=identifier)
-        self.info(msg='Saving identity private key into: %s' % path)
+        self.info('Saving identity private key into: %s', path)
         key_info = key.to_dict()
         return await self.write_json(container=key_info, path=path)
 
     async def _load_id_key(self, identifier: ID) -> Optional[PrivateKey]:
         path = self.__id_key_path(identifier=identifier)
-        self.info(msg='Loading identity private key from: %s' % path)
+        self.info('Loading identity private key from: %s', path)
         info = await self.read_json(path=path)
         if info is None:
             # file not found
-            self.warning(msg='id key file not found: %s' % path)
+            self.warning('id key file not found: %s', path)
         else:
             return PrivateKey.parse(key=info)
 
@@ -91,17 +93,17 @@ class PrivateKeyStorage(Storage, PrivateKeyDBI):
             return False
         plain = [item.to_dict() for item in private_keys]
         path = self.__msg_keys_path(identifier=identifier)
-        self.info(msg='Saving message private keys into: %s' % path)
+        self.info('Saving message private keys into: %s', path)
         return await self.write_json(container=plain, path=path)
 
     async def _load_msg_keys(self, identifier: ID) -> List[PrivateKey]:
         keys = []
         path = self.__msg_keys_path(identifier=identifier)
-        self.info(msg='Loading message private keys from: %s' % path)
+        self.info('Loading message private keys from: %s', path)
         array = await self.read_json(path=path)
         if array is None:
             # file not found
-            self.warning(msg='msg key file not found: %s' % path)
+            self.warning('msg key file not found: %s', path)
         else:
             for item in array:
                 k = PrivateKey.parse(key=item)

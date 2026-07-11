@@ -32,6 +32,7 @@ from dimsdk import ID
 
 from ..utils import Config
 from ..utils import SharedCacheManager
+from ..common import ServiceProvider
 from ..common import ProviderInfo, StationInfo
 from ..common import ProviderDBI, StationDBI
 
@@ -64,7 +65,7 @@ class SpTask(DbTask[str, List[ProviderInfo]]):
         array = await self._dos.all_providers()
         if array is None or len(array) == 0:
             # 4. return default provider then
-            sp = ProviderInfo(identifier=ProviderInfo.GSP, chosen=0)
+            sp = ProviderInfo(identifier=ServiceProvider.GSP, chosen=0)
             array = [sp]  # placeholder
         # 5. update redis server
         await self._redis.save_providers(providers=array)

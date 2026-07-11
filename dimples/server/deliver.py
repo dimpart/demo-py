@@ -170,7 +170,7 @@ async def get_roaming_station(receiver: ID, database: SessionDBI) -> Optional[ID
         terminal = None
     for cmd, msg in records:
         # check terminal
-        if terminal != CommandMessageUtils.get_terminal(content=cmd):
+        if terminal != CommandMessageUtils.get_login_terminal(content=cmd):
             Log.info('skip login record: %s, %s', receiver, cmd)
             continue
         # return station id

@@ -106,11 +106,11 @@ class Terminal(Runner, DeviceMixin, Logging, StateDelegate, ABC):
                 station = session.station
                 if station.port == port and station.host == host:
                     # same target
-                    self.warning(msg='active session connected to %s:%d .' % (host, port))
+                    self.warning('active session connected to %s:%d .', host, port)
                     return old
             await session.stop()
             self.__messenger = None
-        self.info(msg='connecting to %s:%d ...' % (host, port))
+        self.info('connecting to %s:%d ...', host, port)
         facebook = self.facebook
         #
         #  1. create new session with station
@@ -135,7 +135,7 @@ class Terminal(Runner, DeviceMixin, Logging, StateDelegate, ABC):
         #
         user = await self.facebook.current_user
         assert user is not None, 'failed to get current user'
-        session.set_identifier(identifier=user.identifier)
+        session.set_did(identifier=user.identifier)
         return messenger
 
     def _create_station(self, host: str, port: int) -> Station:
@@ -207,7 +207,7 @@ class Terminal(Runner, DeviceMixin, Logging, StateDelegate, ABC):
         try:
             await self._keep_online()
         except Exception as error:
-            self.error(msg='Terminal error: %s' % error)
+            self.error('Terminal error: %s', error)
         return False
 
     # noinspection PyMethodMayBeStatic
@@ -252,7 +252,7 @@ class Terminal(Runner, DeviceMixin, Logging, StateDelegate, ABC):
                 srv_id = None
             else:
                 srv_id = station.identifier
-        self.info(msg='enter state: %s, %s => %s' % (state, sess_id, srv_id))
+        self.info('enter state: %s, %s => %s', state, sess_id, srv_id)
 
     # Override
     async def exit_state(self, state: SessionState, ctx: StateMachine, now: float):
@@ -260,7 +260,7 @@ class Terminal(Runner, DeviceMixin, Logging, StateDelegate, ABC):
         current = ctx.current_state
         session = self.session
         remote = None if session is None else session.remote_address
-        self.info(msg='server state changed: %s -> %s, %s' % (state, current, remote))
+        self.info('server state changed: %s -> %s, %s', state, current, remote)
         index = current.index if isinstance(current, SessionState) else -1
         if index == -1 or index == StateOrder.ERROR:
             self.__last_time = 0
@@ -271,15 +271,15 @@ class Terminal(Runner, DeviceMixin, Logging, StateDelegate, ABC):
             if user is None:
                 self.warning(msg='current user not set')
                 return
-            self.info(msg='connect for user: %s' % user)
+            self.info('connect for user: %s', user)
             if remote is None:
-                self.warning(msg='failed to get remote address: %s' % session)
+                self.warning('failed to get remote address: %s', session)
                 return
             docker = await session.gate.fetch_porter(remote=remote, local=None)
             if docker is None:
-                self.error(msg='failed to connect: %s' % str(remote))
+                self.error('failed to connect: %s', str(remote))
             else:
-                self.info(msg='connected to remote: %s' % str(remote))
+                self.info('connected to remote: %s', str(remote))
         elif index == StateOrder.HANDSHAKING:
             # start handshake
             messenger = self.messenger

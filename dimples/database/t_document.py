@@ -28,7 +28,8 @@ from typing import Optional, List
 
 from aiou.mem import CachePool
 
-from dimsdk import ID, Document
+from dimsdk import ID
+from dimsdk import Document, Visa
 
 from ..utils import Config
 from ..utils import is_before
@@ -84,12 +85,16 @@ class DocTask(DbTask[ID, List[Document]]):
             created_time = new_doc.get_property(name='created_time')
             identifier = DocumentUtils.get_document_id(document=new_doc)
             doc_type = DocumentUtils.get_document_type(document=new_doc)
-            terminal = DocumentUtils.get_terminal(document=new_doc)
+            # terminal = DocumentUtils.get_terminal(document=new_doc)
         if identifier is None:
             self.warning('document id not found: %s', new_doc)
             identifier = self._identifier
         else:
             assert identifier == self._identifier, f'document id error: {identifier}'
+        if isinstance(new_doc, Visa):
+            terminal = DocumentUtils.get_visa_terminal(document=new_doc)
+        else:
+            terminal = None if identifier is None else identifier.terminal
         #
         #   0. check old documents
         #
@@ -112,7 +117,7 @@ class DocTask(DbTask[ID, List[Document]]):
             elif DocumentUtils.get_document_type(document=item) != doc_type:
                 self.info('skip document: %s, "%s", type="%s", sign: %s', identifier, terminal, doc_type, signature)
                 continue
-            elif DocumentUtils.get_terminal(document=item) != terminal:
+            elif isinstance(item, Visa) and DocumentUtils.get_visa_terminal(document=item) != terminal:
                 self.info('skip document: %s, "%s", %s', identifier, terminal, item)
                 continue
             elif is_before(item.time, new_time=new_time):

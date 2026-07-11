@@ -34,7 +34,7 @@ from ..utils import Path, Config
 
 from ..common import DocumentUtils
 from ..common import AccountDBI, MessageDBI, SessionDBI
-from ..common import ProviderInfo
+from ..common import ServiceProvider
 from ..common import CommonArchivist
 from ..common import CommonFacebook
 
@@ -93,7 +93,7 @@ class GlobalVariable:
         man.messenger = transceiver
         # set for entity checker
         checker = self.facebook.checker
-        assert isinstance(checker, ClientChecker), 'entity checker error: %s' % checker
+        assert isinstance(checker, ClientChecker), f'entity checker error: {checker}'
         checker.messenger = transceiver
 
     async def prepare(self, config: Config):
@@ -125,11 +125,11 @@ class GlobalVariable:
         # make sure private keys exists
         sign_key = await facebook.private_key_for_visa_signature(identifier=current_user)
         msg_keys = await facebook.private_keys_for_decryption(identifier=current_user)
-        assert sign_key is not None, 'failed to get sign key for current user: %s' % current_user
-        assert len(msg_keys) > 0, 'failed to get msg keys: %s' % current_user
-        Log.info(msg='set current user: %s' % current_user)
+        assert sign_key is not None, f'failed to get sign key for current user: {current_user}'
+        assert len(msg_keys) > 0, f'failed to get msg keys: {current_user}'
+        Log.info('set current user: %s', current_user)
         user = await facebook.get_user(identifier=current_user)
-        assert user is not None, 'failed to get current user: %s' % current_user
+        assert user is not None, f'failed to get current user: {current_user}'
         docs = await user.documents
         visa = DocumentUtils.last_visa(documents=docs)
         if visa is not None:
@@ -186,10 +186,10 @@ async def create_config(sys_argv: SysArgvParser, default_config: str) -> Optiona
 
 async def refresh_neighbors(config: Config, database: SessionDBI):
     """ Update neighbor stations (default provider) """
-    provider = ProviderInfo.GSP
+    provider = ServiceProvider.GSP
     neighbors = config.neighbors
     if len(neighbors) > 0:
-        Log.info(msg='[DB] checking %d neighbor(s): %s' % (len(neighbors), provider))
+        Log.info('[DB] checking %d neighbor(s): %s', len(neighbors), provider)
         # await sdb.remove_stations(provider=provider)
         # 1. remove vanished neighbors
         old_stations = await database.all_stations(provider=provider)
@@ -200,7 +200,7 @@ async def refresh_neighbors(config: Config, database: SessionDBI):
                     found = True
                     break
             if not found:
-                Log.warning(msg='[DB] removing neighbor station: %s' % old)
+                Log.warning('[DB] removing neighbor station: %s', old)
                 await database.remove_station(host=old.host, port=old.port, provider=provider)
         # 2. add new neighbors
         for node in neighbors:
@@ -210,9 +210,9 @@ async def refresh_neighbors(config: Config, database: SessionDBI):
                     found = True
                     break
             if found:
-                Log.info(msg='[DB] neighbor node exists: %s' % node)
+                Log.info('[DB] neighbor node exists: %s', node)
             else:
-                Log.info(msg='[DB] adding neighbor node: %s' % node)
+                Log.info('[DB] adding neighbor node: %s', node)
                 await database.add_station(identifier=None, host=node.host, port=node.port, provider=provider)
     # OK
     return neighbors

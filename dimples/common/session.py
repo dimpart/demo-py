@@ -121,7 +121,7 @@ class Session(Transmitter, ABC):
         )
 
     @abstractmethod
-    def set_did(self, did: ID) -> bool:
+    def set_did(self, identifier: ID) -> bool:
         """ Update ID and return True on changed """
         raise NotImplementedError(
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.set_did()'

@@ -86,7 +86,7 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
             new_sn = new_cmd.sn
             new_time = new_cmd.time
             identifier = new_cmd.identifier
-            terminal = CommandMessageUtils.get_terminal(content=new_cmd)
+            terminal = CommandMessageUtils.get_login_terminal(content=new_cmd)
         if identifier is None:
             self.warning('login id not found: %s', new_cmd)
             identifier = self._user
@@ -111,7 +111,7 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
             if cmd.sn == new_sn:
                 self.warning('same login command, no need to update:: %s, "%s"', identifier, terminal)
                 return True
-            elif CommandMessageUtils.get_terminal(content=cmd) != terminal:
+            elif CommandMessageUtils.get_login_terminal(content=cmd) != terminal:
                 self.info('skip login record: %s, "%s", %s', identifier, terminal, cmd)
                 continue
             elif is_before(cmd.time, new_time=new_time):

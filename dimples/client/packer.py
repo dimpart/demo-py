@@ -43,7 +43,7 @@ class ClientMessagePacker(CommonMessagePacker):
     @property
     def facebook(self) -> Optional[CommonFacebook]:
         barrack = super().facebook
-        assert isinstance(barrack, CommonFacebook), 'barrack error: %s' % barrack
+        assert isinstance(barrack, CommonFacebook), f'barrack error: {barrack}'
         return barrack
 
     # protected
@@ -135,7 +135,7 @@ class ClientMessagePacker(CommonMessagePacker):
         # check receiver/group with local user
         if not await self._check_group(msg=msg):
             # receiver (group) not ready
-            self.warning(msg='receiver not ready: %s' % msg.receiver)
+            self.warning('receiver not ready: %s', msg.receiver)
             return None
         return await super().verify_message(msg=msg)
 
@@ -143,19 +143,20 @@ class ClientMessagePacker(CommonMessagePacker):
     async def decrypt_message(self, msg: SecureMessage) -> Optional[InstantMessage]:
         try:
             i_msg = await super().decrypt_message(msg=msg)
-        except AssertionError as error:
-            err_msg = '%s' % error
+        except Exception as error:
+            err_msg = str(error)
             if err_msg.find('failed to decrypt message key') >= 0:
                 # Exception from 'SecureMessagePacker::decrypt_message(msg, receiver)'
-                self.warning(msg='decrypt message error: %s' % err_msg)
+                self.warning('decrypt message error: %s', err_msg)
                 # visa.key changed?
                 # push my newest visa to the sender
                 i_msg = None
             elif err_msg.find('receiver error') >= 0:
                 # Exception from 'MessagePacker::decrypt_message(msg)'
-                self.error(msg='decrypt message error: %s' % err_msg)
+                self.error('decrypt message error: %s', err_msg)
                 # not for you?
                 # just ignore it
+                # TODO: group not ready?
                 return None
             else:
                 raise error
@@ -188,7 +189,7 @@ class ClientMessagePacker(CommonMessagePacker):
             return False
         docs = await user.documents
         visa = DocumentUtils.last_visa(documents=docs)
-        assert visa is not None, 'user visa error: %s' % user
+        assert visa is not None, f'user visa error: {user}'
         return await checker.send_visa(visa=visa, receiver=receiver)
 
     # protected
@@ -197,7 +198,7 @@ class ClientMessagePacker(CommonMessagePacker):
         group = msg.group
         msg_type = msg.type
         if msg_type == ContentType.COMMAND or type == ContentType.HISTORY:
-            self.warning(msg='ignore message unable to decrypt (type=%s) from "%s"' % (msg_type, sender))
+            self.warning('ignore message unable to decrypt (type=%s) from "%s"', msg_type, sender)
             return None
         # create text content
         content = TextContent.create(text='Failed to decrypt message.')

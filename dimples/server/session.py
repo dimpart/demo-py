@@ -88,7 +88,7 @@ class ServerSession(BaseSession):
         self.__key = generate_session_key()
         self.__loader = OfflineMessageLoader()
 
-    @property
+    @property  # Override
     def session_key(self) -> str:
         return self.__key
 
@@ -99,9 +99,9 @@ class ServerSession(BaseSession):
             return status != PorterStatus.ERROR
 
     # Override
-    def set_identifier(self, identifier: ID) -> bool:
+    def set_did(self, identifier: ID) -> bool:
         old = self.identifier
-        if super().set_identifier(identifier=identifier):
+        if super().set_did(identifier=identifier):
             session_change_id(session=self, new_id=identifier, old_id=old)
             self.__loader.load_cached_messages(session=self)
             return True

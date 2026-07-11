@@ -56,7 +56,8 @@ class StationStorage(Storage, ProviderDBI, StationDBI):
 
     def __stations_path(self, provider: ID) -> str:
         path = self.public_path(self.stations_path)
-        return template_replace(path, key='ADDRESS', value=str(provider.address))
+        address = str(provider.address)
+        return template_replace(path, key='ADDRESS', value=address)
 
     #
     #   Provider DBI
@@ -66,7 +67,7 @@ class StationStorage(Storage, ProviderDBI, StationDBI):
     async def all_providers(self) -> List[ProviderInfo]:
         """ load providers from file """
         path = self.__providers_path()
-        self.info(msg='Loading providers from: %s' % path)
+        self.info('Loading providers from: %s', path)
         providers = await self.read_json(path=path)
         if providers is None:
             # service providers not found
@@ -76,7 +77,7 @@ class StationStorage(Storage, ProviderDBI, StationDBI):
     async def _save_providers(self, providers: List[ProviderInfo]) -> bool:
         """ save providers into file """
         path = self.__providers_path()
-        self.info(msg='Saving providers into: %s' % path)
+        self.info('Saving providers into: %s', path)
         return await self.write_json(container=ProviderInfo.revert(providers=providers), path=path)
 
     # Override
@@ -85,7 +86,7 @@ class StationStorage(Storage, ProviderDBI, StationDBI):
         providers = await self.all_providers()
         for item in providers:
             if item.identifier == identifier:
-                self.warning(msg='provider exists: %s, %s' % (identifier, providers))
+                self.warning('provider exists: %s, %s', identifier, providers)
                 return True
         providers.insert(0, ProviderInfo(identifier=identifier, chosen=chosen))
         return await self._save_providers(providers=providers)
@@ -98,7 +99,7 @@ class StationStorage(Storage, ProviderDBI, StationDBI):
         for item in providers:
             if item.identifier == identifier:
                 if item.chosen == chosen:
-                    self.warning(msg='provider not change: %s, %d' % (identifier, chosen))
+                    self.warning('provider not change: %s, %d', identifier, chosen)
                     return True
                 info = item
                 break
@@ -130,7 +131,7 @@ class StationStorage(Storage, ProviderDBI, StationDBI):
     async def all_stations(self, provider: ID) -> List[StationInfo]:
         """ load stations with SP ID """
         path = self.__stations_path(provider=provider)
-        self.info(msg='Loading stations from: %s' % path)
+        self.info('Loading stations from: %s', path)
         stations = await self.read_json(path=path)
         if stations is None:
             # stations not found
@@ -140,7 +141,7 @@ class StationStorage(Storage, ProviderDBI, StationDBI):
     async def _save_stations(self, stations: List[StationInfo], provider: ID) -> bool:
         """ save stations into file """
         path = self.__stations_path(provider=provider)
-        self.info(msg='Saving stations into: %s' % path)
+        self.info('Saving stations into: %s', path)
         return await self.write_json(container=StationInfo.revert(stations=stations), path=path)
 
     # Override
@@ -149,7 +150,7 @@ class StationStorage(Storage, ProviderDBI, StationDBI):
         stations = await self.all_stations(provider=provider)
         for item in stations:
             if item.port == port and item.host == host:
-                self.warning(msg='station exists: %s, %d, %s' % (host, port, stations))
+                self.warning('station exists: %s, %d, %s', host, port, stations)
                 return True
         stations.insert(0, StationInfo(identifier=identifier, host=host, port=port, provider=provider, chosen=chosen))
         return await self._save_stations(stations=stations, provider=provider)
@@ -163,7 +164,7 @@ class StationStorage(Storage, ProviderDBI, StationDBI):
         for item in stations:
             if item.port == port and item.host == host:
                 if item.chosen == chosen and item.identifier == identifier:
-                    self.warning(msg='station not change: %s, %d' % (host, port))
+                    self.warning('station not change: %s, %d', host, port)
                     return True
                 info = item
                 break
