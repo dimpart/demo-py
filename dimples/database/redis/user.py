@@ -50,10 +50,11 @@ class UserCache(RedisCache):
         User contacts
         ~~~~~~~~~~~~~
 
-        redis key: 'mkm.user.{ID}.contacts'
+        redis key: 'mkm.user.{ADDRESS}.contacts'
     """
     def __contacts_cache_name(self, identifier: ID) -> str:
-        return '%s.%s.%s.contacts' % (self.db_name, self.tbl_name, identifier)
+        address = str(identifier.address)
+        return '%s.%s.%s.contacts' % (self.db_name, self.tbl_name, address)
 
     async def save_contacts(self, contacts: List[ID], identifier: ID) -> bool:
         assert contacts is not None, 'contacts cannot be empty'

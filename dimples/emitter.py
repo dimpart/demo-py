@@ -75,14 +75,14 @@ class Emitter(Logging, ABC):
         # create text content
         content = TextContent.create(text=text)
         if self.check_markdown(text=text):
-            self.info(msg='send text as markdown: "%s" => %s' % (text, receiver))
+            self.info('send text as markdown: "%s" => %s', text, receiver)
             content['format'] = 'markdown'
         else:
-            self.info(msg='send text as plain: "%s" -> %s' % (text, receiver))
+            self.info('send text as plain: "%s" -> %s', text, receiver)
         # set extra params
         if extra is not None:
-            for key in extra:
-                content[key] = extra[key]
+            for key, value in extra.items():
+                content[key] = value
         return await self.send_content(content=content, sender=None, receiver=receiver)
 
     # noinspection PyMethodMayBeStatic
@@ -124,8 +124,8 @@ class Emitter(Logging, ABC):
         content['duration'] = duration
         # set extra params
         if extra is not None:
-            for key in extra:
-                content[key] = extra[key]
+            for key, value in extra.items():
+                content[key] = value
         return await self.send_file_content(content=content, sender=None, receiver=receiver)
 
     async def send_picture(self, jpeg: bytes, receiver: ID, filename: str,
@@ -150,8 +150,8 @@ class Emitter(Logging, ABC):
         if thumbnail is not None:
             content.thumbnail = thumbnail
         if extra is not None:
-            for key in extra:
-                content[key] = extra[key]
+            for key, value in extra.items():
+                content[key] = value
         return await self.send_file_content(content=content, sender=None, receiver=receiver)
 
     async def send_movie(self, receiver: ID, url: URI,
@@ -176,8 +176,8 @@ class Emitter(Logging, ABC):
         if title is not None:
             content['title'] = title
         if extra is not None:
-            for key in extra:
-                content[key] = extra[key]
+            for key, value in extra.items():
+                content[key] = value
         return await self.send_file_content(content=content, sender=None, receiver=receiver)
 
     async def send_content(self, content: Content, sender: Optional[ID], receiver: ID,
@@ -190,7 +190,7 @@ class Emitter(Logging, ABC):
             sender = user.identifier
         # check receiver
         if receiver.is_group:
-            assert content.group is None or content.group == receiver, 'group ID error: %s, %s' % (receiver, content)
+            assert content.group is None or content.group == receiver, f'group ID error: {receiver}, {content}'
             content.group = receiver
         # check file content
         if isinstance(content, FileContent) and content.data is not None:
@@ -198,7 +198,7 @@ class Emitter(Logging, ABC):
             # you should upload the encrypted data to a CDN server first, and then
             # send the message with a download URL to the receiver.
             ok = await self.send_file_content(content=content, sender=sender, receiver=receiver, priority=priority)
-            assert ok, 'failed to send file content: %s -> %s' % (sender, receiver)
+            assert ok, f'failed to send file content: {sender} -> {receiver}'
             return None, None
         # pack message
         envelope = Envelope.create(sender=sender, receiver=receiver)
@@ -209,14 +209,14 @@ class Emitter(Logging, ABC):
             # OK
             pass
         else:
-            self.warning(msg='not send yet (type=%s): %s' % (content.type, receiver))
+            self.warning('not send yet (type=%s): %s', content.type, receiver)
         return i_msg, r_msg
 
     async def send_instant_message(self, msg: InstantMessage, priority: int = 0) -> Optional[ReliableMessage]:
         """ Send message """
         receiver = msg.receiver
-        assert msg.content.get('data') is None, 'cannot send this message: %s' % msg
-        self.info(msg='sending message (type=%s): %s -> %s' % (msg.content.type, msg.sender, receiver))
+        assert msg.content.get('data') is None, f'cannot send this message: {msg}'
+        self.info('sending message (type=%s): %s -> %s', msg.content.type, msg.sender, receiver)
         if receiver.is_user:
             # send out directly
             return await self.messenger.send_instant_message(msg=msg, priority=priority)
@@ -244,7 +244,7 @@ class Emitter(Logging, ABC):
             sender = user.identifier
         # check receiver
         if receiver.is_group:
-            assert content.group is None or content.group == receiver, 'group ID error: %s, %s' % (receiver, content)
+            assert content.group is None or content.group == receiver, f'group ID error: {receiver}, {content}'
             content.group = receiver
         # check download URL
         if content.url is None:
@@ -264,7 +264,7 @@ class Emitter(Logging, ABC):
         if r_msg is not None or receiver.is_group:
             return True
         else:
-            self.warning(msg='not send yet (type=%s): %s' % (content.type, receiver))
+            self.warning('not send yet (type=%s): %s', content.type, receiver)
             return False
 
     # protected
@@ -272,7 +272,7 @@ class Emitter(Logging, ABC):
         # check filename
         filename = content.filename
         if filename is None:
-            self.error(msg='file content error: %s, %s' % (sender, content))
+            self.error('file content error: %s, %s', sender, content)
             return False
         # check file data
         ted = content.data
@@ -283,17 +283,17 @@ class Emitter(Logging, ABC):
         if data is None:
             data = await self.get_file_data(filename=filename)
             if data is None:
-                self.error(msg='file content error: %s, %s' % (sender, content))
+                self.error('file content error: %s, %s', sender, content)
                 return False
         elif await self.cache_file_data(data=data, filename=filename):
             # file data saved into a cache file, so
             # here we can remove it from the content.
             content.data = None
         else:
-            self.error(msg='failed to cache file: %s, %d byte(s)' % (filename, len(data)))
+            self.error('failed to cache file: %s, %d byte(s)', filename, len(data))
             return False
-        assert content.url is None, 'file content error: %s' % content.url
-        # assert content.password is None, 'file content error: %s' % content.url
+        assert content.url is None, f'file content error: {content.url}'
+        # assert content.password is None, f'file content error: {content.url}'
         #
         #   Step 2: save instant message without 'content.data';
         #
@@ -303,7 +303,7 @@ class Emitter(Logging, ABC):
             # save it temporary
             pass
         else:
-            self.error(msg='failed to save message: %s' % i_msg)
+            self.error('failed to save message: %s', i_msg)
             return False
         #
         #   Step 3: encrypt the data with password;
@@ -320,8 +320,8 @@ class Emitter(Logging, ABC):
             #         here we should generate a new key to encrypt file data,
             #         because this key will be attached into file content,
             #         if this content is forwarded, there is a security risk.
-            self.info(msg='generated new password to upload file: %s, %s, %s' % (sender, filename, password))
-            assert password is not None, 'failed to generate AES key: %s' % sender
+            self.info('generated new password to upload file: %s, %s, %s', sender, filename, password)
+            assert password is not None, f'failed to generate AES key: {sender}'
         encrypted = password.encrypt(plaintext=data, extra=content.to_dict())
         #
         #   Step 4: upload the encrypted data and get a download URL;
@@ -338,11 +338,11 @@ class Emitter(Logging, ABC):
         #
         url = await self.upload_file_data(data=data, filename=filename, sender=sender)
         if url is None:
-            self.error(msg='failed to upload: %s -> %s, %d byte(s)' % (content.filename, filename, len(data)))
+            self.error('failed to upload: %s -> %s, %d byte(s)', content.filename, filename, len(data))
             # TODO: mark message failed
             return False
         else:
-            self.info(msg='uploaded filename: %s -> %s => %s' % (content.filename, filename, url))
+            self.info('uploaded filename: %s -> %s => %s', content.filename, filename, url)
             content.url = url
             content.password = password
         #
@@ -352,7 +352,7 @@ class Emitter(Logging, ABC):
         if r_msg is not None or receiver.is_group:
             return True
         else:
-            self.warning(msg='not send yet (type=%s): %s' % (content.type, receiver))
+            self.warning('not send yet (type=%s): %s', content.type, receiver)
             return False
 
     @abstractmethod

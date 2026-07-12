@@ -117,8 +117,9 @@ class LoginCache(RedisCache):
         all_keys = await self.hkeys(name=name)
         users = set()
         for key in all_keys:
-            did = _naked_id(identifier=key)
+            did = ID.parse(identifier=key)
             if did is not None:
+                did = did.without_terminal()
                 users.add(did)
         return users
 
@@ -133,20 +134,11 @@ class LoginCache(RedisCache):
                 # user logout
                 continue
             string = utf8_decode(data=key)
-            did = _naked_id(identifier=string)
+            did = ID.parse(identifier=string)
             if did is not None:
+                did = did.without_terminal()
                 users.add(did)
         return users
-
-
-def _naked_id(identifier: str) -> Optional[ID]:
-    did = ID.parse(identifier=identifier)
-    if did is None:
-        assert False, f'id error: {identifier}'
-    elif did.terminal is None:
-        return did
-    # get naked id
-    return ID.create(name=did.name, address=did.address)
 
 
 """

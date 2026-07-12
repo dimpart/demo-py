@@ -122,10 +122,11 @@ class StationCache(RedisCache):
         Relay Stations
         ~~~~~~~~~~~~~~
 
-        redis key: 'dim.isp.{ID}.stations'
+        redis key: 'dim.isp.{ADDRESS}.stations'
     """
     def __stations_cache_name(self, provider: ID) -> str:
-        return '%s.%s.%s.stations' % (self.db_name, self.tbl_name, provider)
+        address = str(provider.address)
+        return '%s.%s.%s.stations' % (self.db_name, self.tbl_name, address)
 
     async def load_stations(self, provider: ID) -> Optional[List[StationInfo]]:
         """ get list of (host, port, SP_ID, chosen) """

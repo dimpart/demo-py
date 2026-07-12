@@ -50,19 +50,21 @@ class GroupKeysCache(RedisCache):
         Encrypted keys
         ~~~~~~~~~~~~~~
 
-        redis key: 'dkd.group.{GID}.{UID}.encrypted-keys'
+        redis key: 'dkd.group.{GRP_ADD}.{USR_ADD}.encrypted-keys'
     """
     def __cache_name(self, group: ID, sender: ID) -> str:
-        return '%s.%s.%s.%s.encrypted-keys' % (self.db_name, self.tbl_name, group, sender)
+        ga = str(group.address)
+        ma = str(sender.address)
+        return '%s.%s.%s.%s.encrypted-keys' % (self.db_name, self.tbl_name, ga, ma)
 
     async def get_group_keys(self, group: ID, sender: ID) -> Optional[Dict[str, str]]:
         name = self.__cache_name(group=group, sender=sender)
         value = await self.get(name=name)
         if value is not None:
             js = utf8_decode(data=value)
-            assert js is not None, 'failed to decode string: %s' % value
+            assert js is not None, f'failed to decode string: {value}'
             info = json_decode(string=js)
-            assert info is not None, 'document error: %s' % value
+            assert info is not None, f'document error: {value}'
             return info
 
     async def save_group_keys(self, group: ID, sender: ID, keys: Dict[str, str]) -> bool:

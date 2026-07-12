@@ -52,14 +52,16 @@ class MessageCache(RedisCache):
         Reliable message for Receivers
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        redis key: 'dkd.msg.{ID}.{sig}'
-        redis key: 'dkd.msg.{ID}.messages'
+        redis key: 'dkd.msg.{ADDRESS}.{sig}'
+        redis key: 'dkd.msg.{ADDRESS}.messages'
     """
     def __msg_cache_name(self, identifier: ID, sig: str) -> str:
-        return '%s.%s.%s.%s' % (self.db_name, self.tbl_name, identifier, sig)
+        address = str(identifier.address)
+        return '%s.%s.%s.%s' % (self.db_name, self.tbl_name, address, sig)
 
     def __messages_cache_name(self, identifier: ID) -> str:
-        return '%s.%s.%s.messages' % (self.db_name, self.tbl_name, identifier)
+        address = str(identifier.address)
+        return '%s.%s.%s.messages' % (self.db_name, self.tbl_name, address)
 
     async def save_reliable_message(self, msg: ReliableMessage, receiver: ID) -> bool:
         sig = get_msg_sig(msg=msg)  # last 6 bytes (signature in base64)
@@ -87,14 +89,14 @@ class MessageCache(RedisCache):
         return ok1 and ok2
 
     async def get_reliable_messages(self, receiver: ID, limit: int = 1024) -> List[ReliableMessage]:
-        assert limit > 0, 'message limit error: %d' % limit
+        assert limit > 0, f'message limit error: {limit}'
         # 0. clear expired messages (7 days ago)
         key = self.__messages_cache_name(identifier=receiver)
         expired = int(DateTime.current_timestamp()) - self.EXPIRES
         await self.zremrangebyscore(name=key, min_score=1, max_score=expired)
         # 1. make range
         total = await self.zcard(name=key)
-        assert total >= 0, 'message cache error: %s' % key
+        assert total >= 0, f'message cache error: {key}'
         if total <= limit:
             start = 0
             end = total
@@ -116,5 +118,5 @@ class MessageCache(RedisCache):
                 msg = ReliableMessage.parse(msg=dictionary)
                 array.append(msg)
             except Exception as error:
-                print('[REDIS] message error: %s => %s' % (error, value))
+                self.error('[REDIS] message error: %s => %s', error, value)
         return array

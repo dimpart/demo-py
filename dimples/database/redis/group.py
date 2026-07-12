@@ -50,17 +50,18 @@ class GroupCache(RedisCache):
         Group members
         ~~~~~~~~~~~~~
 
-        redis key: 'mkm.group.{ID}.members'
+        redis key: 'mkm.group.{ADDRESS}.members'
     """
     def __members_cache_name(self, identifier: ID) -> str:
-        return '%s.%s.%s.members' % (self.db_name, self.tbl_name, identifier)
+        address = str(identifier.address)
+        return '%s.%s.%s.members' % (self.db_name, self.tbl_name, address)
 
     async def get_members(self, group: ID) -> Optional[List[ID]]:
         key = self.__members_cache_name(identifier=group)
         value = await self.get(name=key)
         if value is not None:
             text = utf8_decode(data=value)
-            assert text is not None, 'failed to decode string: %s' % value
+            assert text is not None, f'failed to decode string: {value}'
             return ID.convert(array=text.splitlines())
 
     async def save_members(self, members: List[ID], group: ID) -> bool:
@@ -74,17 +75,18 @@ class GroupCache(RedisCache):
         Group administrators
         ~~~~~~~~~~~~~~~~~~~~
 
-        redis key: 'mkm.group.{ID}.administrators'
+        redis key: 'mkm.group.{ADDRESS}.administrators'
     """
     def __administrators_cache_name(self, identifier: ID) -> str:
-        return '%s.%s.%s.administrators' % (self.db_name, self.tbl_name, identifier)
+        address = str(identifier.address)
+        return '%s.%s.%s.administrators' % (self.db_name, self.tbl_name, address)
 
     async def get_administrators(self, group: ID) -> Optional[List[ID]]:
         key = self.__administrators_cache_name(identifier=group)
         value = await self.get(name=key)
         if value is not None:
             text = utf8_decode(data=value)
-            assert text is not None, 'failed to decode string: %s' % value
+            assert text is not None, f'failed to decode string: {value}'
             return ID.convert(array=text.splitlines())
 
     async def save_administrators(self, administrators: List[ID], group: ID) -> bool:

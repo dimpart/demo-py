@@ -123,9 +123,9 @@ class GroupKeysTable(DataCache, GroupKeysDBI):
             return keys
         # 3. same digest, merge keys
         table = table.copy()
-        for member in keys:
+        for member, value in keys.items():
             # update key for member
-            table[member] = keys[member]
+            table[member] = value
         # table['digest'] = new_digest
         # table['time'] = new_time
         return table
@@ -140,7 +140,7 @@ class GroupKeysTable(DataCache, GroupKeysDBI):
         if keys is None:
             return False
         task = self._new_task(group=group, sender=sender)
-        return await task.save(value=keys)
+        return await task.save(keys)
 
     # Override
     async def get_group_keys(self, group: ID, sender: ID) -> Optional[Dict[str, str]]:
