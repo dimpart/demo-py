@@ -27,8 +27,8 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from dimsdk import DateTime
-from dimsdk import Content
-from dimsdk import ReliableMessage
+from dimsdk import Envelope, Content, ArrayContent
+from dimsdk import InstantMessage, ReliableMessage
 from dimsdk import MessageProcessor
 from dimsdk import Facebook, Messenger
 from dimsdk.cpu import ContentProcessorCreator
@@ -53,11 +53,46 @@ class CommonMessageProcessor(MessageProcessor, Logging, ABC):
             f'Not implemented: {type(self).__module__}.{type(self).__name__}._create_creator()'
         )
 
+    # Override
+    async def process_instant_message(self, msg: InstantMessage, r_msg: ReliableMessage) -> List[InstantMessage]:
+        facebook = self.facebook
+        transceiver = self.messenger
+        assert facebook is not None and transceiver is not None, 'twins not ready'
+        # 1. process content from sender
+        responses = await transceiver.process_content(content=msg.content, r_msg=r_msg)
+        if len(responses) == 0:
+            # nothing to respond
+            return []
+        # 2. select a local user to build message
+        sender = msg.sender
+        receiver = msg.receiver
+        user = await self.select_local_user(receiver=receiver)
+        if user is None:
+            # assert False, f'receiver error: {receiver}'
+            return []
+        else:
+            me = user.identifier
+        # 3. pack all responses in one message
+        env = Envelope.create(sender=me, receiver=sender)
+        if len(responses) == 1:
+            msg = InstantMessage.create(head=env, body=responses[0])
+        else:
+            msg = InstantMessage.create(head=env, body=ArrayContent.create(contents=responses))
+        return [msg]
+
+    # Override
+    async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
+        responses = await super().process_content(content=content, r_msg=r_msg)
+        # check sender's document times from the message
+        # to make sure the user info synchronized
+        await self._check_visa_time(content=content, r_msg=r_msg)
+        return responses
+
     # private
     # noinspection PyUnusedLocal
     async def _check_visa_time(self, content: Content, r_msg: ReliableMessage) -> bool:
         facebook = self.facebook
-        assert isinstance(facebook, CommonFacebook), 'facebook error: %s' % facebook
+        assert isinstance(facebook, CommonFacebook), f'facebook error: {facebook}'
         checker = facebook.checker
         if checker is None:
             assert False, 'entity checker lost'
@@ -73,14 +108,6 @@ class CommonMessageProcessor(MessageProcessor, Logging, ABC):
             doc_updated = checker.set_last_document_time(identifier=sender, now=last_doc_time)
             # check whether needs update
             if doc_updated:
-                self.info(msg='checking for new visa: %s' % sender)
+                self.info('checking for new visa: %s', sender)
                 await facebook.get_documents(identifier=sender)
         return doc_updated
-
-    # Override
-    async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
-        responses = await super().process_content(content=content, r_msg=r_msg)
-        # check sender's document times from the message
-        # to make sure the user info synchronized
-        await self._check_visa_time(content=content, r_msg=r_msg)
-        return responses
