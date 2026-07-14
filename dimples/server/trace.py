@@ -27,7 +27,7 @@
 # ==============================================================================
 
 import threading
-from typing import Union, Dict, List, Set
+from typing import Optional, Union, List, Dict
 
 from dimsdk import DateTime
 from dimsdk import Mapper, Dictionary
@@ -47,8 +47,8 @@ class TraceNode(Dictionary):
         return ID.parse(identifier=did)
 
     @property
-    def time(self) -> float:
-        return self.get_float(key='time', default=0.0)
+    def time(self) -> Optional[DateTime]:
+        return self.get_datetime(key='time')
 
     def __eq__(self, other) -> bool:
         """ Return self == other. """
@@ -161,10 +161,8 @@ class TraceList:
         self.__traces = traces
 
     @property
-    def time(self) -> float:
-        value = self.__time
-        if value is not None:
-            return value.timestamp
+    def time(self) -> Optional[DateTime]:
+        return self.__time
 
     @property
     def nodes(self) -> List[TraceNode]:
@@ -186,17 +184,21 @@ class TraceList:
         self.__traces.insert(pos + 1, node)
         return True
 
-    def search(self, node: ID) -> int:
+    def last(self, node: ID) -> Optional[TraceNode]:
         """ search for node ID """
-        pos = 0
+        last_item = None
+        last_time = None
         for item in self.__traces:
-            if item.identifier == node:
-                # got it
-                return pos
-            else:
-                pos += 1
-        # not found
-        return -1
+            if item.identifier != node:
+                continue
+            item_time = item.time
+            if last_item is None or last_time is None:
+                last_item = item
+                last_time = item_time
+            elif item_time is not None and item_time > last_time:
+                last_item = item
+                last_time = item_time
+        return last_item
 
 
 class TracePool:
@@ -227,6 +229,7 @@ class TracePool:
         return True
 
     def get_traces(self, msg: ReliableMessage) -> TraceList:
+        """ get traces for this message """
         sig = msg.get('signature')
         assert sig is not None, 'message error: %s' % msg
         if len(sig) > 16:
@@ -241,8 +244,8 @@ class TracePool:
             self.__caches[tag] = cached
         return cached
 
-    def set_traces(self, msg: ReliableMessage) -> TraceList:
-        """ set traces from msg """
+    def add_traces(self, msg: ReliableMessage) -> TraceList:
+        """ add traces from msg """
         cached = self.get_traces(msg=msg)
         traces = msg.get('traces')
         if traces is not None:
@@ -251,7 +254,7 @@ class TracePool:
                 cached.insert(node=item)
         return cached
 
-    def add_trace(self, msg: ReliableMessage, node: TraceNode) -> TraceList:
+    def add_trace_node(self, msg: ReliableMessage, node: TraceNode) -> TraceList:
         """ add trace node """
         cached = self.get_traces(msg=msg)
         cached.insert(node=node)
@@ -287,38 +290,34 @@ class TraceManager:
         super().__init__()
         self.__pool = LockedPool()
 
-    def is_traced(self, msg: ReliableMessage, node: ID) -> bool:
+    def update_traces(self, msg: ReliableMessage, node: ID) -> Optional[TraceNode]:
         """ merge traces from msg into cached pool,
-            after that, check whether this node exists
+            remove expired traces, and return the last record for current station
         """
         pool = self.__pool
-        cached = pool.set_traces(msg=msg)
-        pos = cached.search(node=node)
+        cached = pool.add_traces(msg=msg)
+        last = cached.last(node=node)
         pool.purge(now=msg.time)  # call when verifying new message
-        return pos >= 0
+        return last
 
-    def get_traces(self, msg: ReliableMessage) -> TraceList:
-        """ merge traces from msg into cached pool """
-        pool = self.__pool
-        return pool.set_traces(msg=msg)
-
-    def set_nodes(self, msg: ReliableMessage, nodes: Set[ID]):
-        """ merge traces from msg into cached pool,
-            after that, check for these nodes, append them if not exists,
-            and then update traces in msg
-        """
-        now = DateTime.now()
-        pool = self.__pool
-        cached = pool.get_traces(msg=msg)
-        for item in nodes:
-            if cached.search(node=item) < 0:
-                cached.insert(node=TraceNode.create(identifier=item, when=now))
-        msg['traces'] = TraceNode.revert(nodes=cached.nodes)
+    # def set_nodes(self, msg: ReliableMessage, nodes: Set[ID]):
+    #     """ merge traces from msg into cached pool,
+    #         after that, check for these nodes, append them if not exists,
+    #         and then update traces in msg
+    #     """
+    #     now = DateTime.now()
+    #     pool = self.__pool
+    #     cached = pool.get_traces(msg=msg)
+    #     for item in nodes:
+    #         last = cached.last(node=item)
+    #         if last is None:
+    #             cached.insert(node=TraceNode.create(identifier=item, when=now))
+    #     msg['traces'] = TraceNode.revert(nodes=cached.nodes)
 
     def add_node(self, msg: ReliableMessage, node: ID):
         """ append this node into cached list,
             and then update traces in msg
         """
         pool = self.__pool
-        cached = pool.add_trace(msg=msg, node=TraceNode.create(identifier=node))
+        cached = pool.add_trace_node(msg=msg, node=TraceNode.create(identifier=node))
         msg['traces'] = TraceNode.revert(nodes=cached.nodes)

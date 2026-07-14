@@ -242,25 +242,36 @@ def _split_message(msg: ReliableMessage, receiver: ID, terminals: Set[str]) -> L
 
 def _is_duplicated(msg: ReliableMessage, node: ID) -> bool:
     """ check duplicated message """
+    man = TraceManager()
+    # check & append current node in msg['traces']
+    prev = man.update_traces(msg=msg, node=node)
+    man.add_node(msg=msg, node=node)
+    if prev is None:
+        # previous trace for current node not found
+        return False
     sender = msg.sender
     receiver = msg.receiver
-    if _is_traced(msg=msg, node=node):
-        # cycled message
-        if sender.type == EntityType.STATION or receiver.type == EntityType.STATION:
-            # ignore cycled station message
-            Log.warning('drop cycled station message: %s -> %s', sender, receiver)
-            return True
-        elif receiver.is_broadcast:
-            # ignore cycled broadcast message
-            Log.warning('drop cycled broadcast message: %s -> %s', sender, receiver)
-            return True
-        Log.warning('cycled message: %s -> %s', sender, receiver)
-        # TODO: check last time?
-
-
-def _is_traced(msg: ReliableMessage, node: ID) -> bool:
-    """ check & append current node in msg['traces'] """
-    tm = TraceManager()
-    is_traced = tm.is_traced(msg=msg, node=node)
-    tm.add_node(msg=msg, node=node)
-    return is_traced
+    # check cycled message
+    if receiver.is_broadcast:
+        # ignore cycled broadcast message
+        Log.warning('drop cycled broadcast message: %s -> %s', sender, receiver)
+        return True
+    elif sender.type == EntityType.STATION or receiver.type == EntityType.STATION:
+        # ignore cycled station message
+        Log.warning('drop cycled station message: %s -> %s', sender, receiver)
+        return True
+    elif sender.type == EntityType.BOT or receiver.type == EntityType.BOT:
+        # ignore cycled bot message
+        Log.warning('drop cycled bot message: %s -> %s', sender, receiver)
+        return True
+    elif msg.time is None:
+        Log.error('message time not found: %s -> %s', sender, receiver)
+        return True
+    # check last time
+    delta = msg.time - prev.time
+    if delta < 60:
+        Log.warning('drop cycled message: %s -> %s', sender, receiver)
+        return True
+    else:
+        Log.info('restart cycled message: %s -> %s', sender, receiver)
+        return False
