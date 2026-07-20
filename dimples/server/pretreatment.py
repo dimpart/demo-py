@@ -171,13 +171,17 @@ class Pretreatment(TwinsHelper, Logging):
         if user is None:
             self.error('user not ready: %s', receiver)
             return None, [msg]
-        terminal = await user.terminals
-        self.info('split message for receiver: %s -> %s', receiver, terminal)
-        array = _split_message(msg=msg, receiver=receiver, terminals=terminal)
+        terminals = await user.terminals
+        self.info('split message for receiver: %s -> %s', receiver, terminals)
+        array = _split_message(msg=msg, receiver=receiver, terminals=terminals)
         return None, array
 
 
 def _split_message(msg: ReliableMessage, receiver: ID, terminals: Set[str]) -> List[ReliableMessage]:
+    rcpt = msg.get('rcpt')  # split flag
+    if rcpt is not None:
+        Log.warning('message already be split by other station: %s -> %s, %s', msg.sender, receiver, msg.group)
+        return [msg]
     candidates = set()
     for target in terminals:
         if target == '' or target == '*':
@@ -186,19 +190,25 @@ def _split_message(msg: ReliableMessage, receiver: ID, terminals: Set[str]) -> L
             did = receiver.with_terminal(terminal=target)
         text = str(did)
         candidates.add(text)
-    Log.info('split message for receiver: %s -> %s', receiver, terminals)
+    Log.info('split message for receiver: %s, %s -> %s', receiver, terminals, candidates)
     #
     #  get message keys
     #
     msg_keys = msg.get('keys')
     if msg_keys is None:
-        key = msg.get('key')
-        if key is None:
+        base64 = msg.get('key')
+        if base64 is None:
             msg_keys = {}
         else:
+            text = str(receiver)
             msg_keys = {
-                str(receiver): key,
+                text: base64,
             }
+            if receiver.terminal is not None:
+                # set msg key for receiver without terminal
+                did = receiver.without_terminal()
+                text = str(did)
+                msg_keys[text] = base64
         md = None
     else:
         assert isinstance(msg_keys, Dict), f'message keys error: {msg_keys}'
@@ -209,31 +219,64 @@ def _split_message(msg: ReliableMessage, receiver: ID, terminals: Set[str]) -> L
     #
     #  split message for keys
     #
-    for key, value in msg_keys.items():
-        candidates.discard(key)
+    for text, base64 in msg_keys.items():
+        candidates.discard(text)
+        did = ID.parse(identifier=text)
+        if did is None:
+            Log.error('receiver in "msg.keys" error: %s -> %s, %s', text, base64, msg_keys)
+            continue
         msg_info = msg.copy_dict()
-        msg_info['receiver'] = key
-        if md is None:
-            msg_info['keys'] = {
-                key: value,
-            }
+        msg_info['receiver'] = text
+        msg_info['rcpt'] = str(did.without_terminal())  # mark for split
+        # build 'keys'
+        if base64 is None:
+            enc_keys = {}
         else:
-            msg_info['keys'] = {
-                key: value,
-                'digest': md,
+            enc_keys = {
+                text: base64,
             }
+        # set key digest
+        if md is not None:
+            enc_keys['digest'] = md
+        if len(enc_keys) > 0:
+            msg_info['keys'] = enc_keys
+        else:
+            Log.warning('message without "keys": %s -> %s, %s', msg.sender, text, msg.group)
+        # OK
         r_msg = ReliableMessage.parse(msg=msg_info)
         messages.append(r_msg)
     #
     #  check for other terminals
     #
-    for did in candidates:
+    for text in candidates:
+        did = ID.parse(identifier=text)
+        if did is None:
+            Log.error('receiver for candidate error: %s', text)
+            continue
+        else:
+            base64 = msg_keys.get(text)
+            if base64 is None and did.terminal is not None:
+                # get msg key for receiver without terminal
+                other = str(did.without_terminal())
+                base64 = msg_keys.get(other)
         msg_info = msg.copy_dict()
-        msg_info['receiver'] = did
-        if md is not None:
-            msg_info['keys'] = {
-                'digest': md,
+        msg_info['receiver'] = text
+        msg_info['rcpt'] = str(did.without_terminal())  # mark for split
+        # build 'keys'
+        if base64 is None:
+            enc_keys = {}
+        else:
+            enc_keys = {
+                text: base64,
             }
+        # set key digest
+        if md is not None:
+            enc_keys['digest'] = md
+        if len(enc_keys) > 0:
+            msg_info['keys'] = enc_keys
+        else:
+            Log.warning('message without "keys": %s -> %s, %s', msg.sender, text, msg.group)
+        # OK
         r_msg = ReliableMessage.parse(msg=msg_info)
         messages.append(r_msg)
     Log.info('split %d message(s) for receiver: %s; %s + %s', len(messages), receiver, msg_keys.keys(), candidates)

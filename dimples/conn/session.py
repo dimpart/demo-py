@@ -86,9 +86,13 @@ class BaseSession(GateKeeper, Session, ABC):
     # Override
     def set_did(self, identifier: ID) -> bool:
         old = self.__did
-        if old is None or old.address != identifier.address:
-            self.__did = identifier
-            return True
+        if old is None:
+            if identifier is None:
+                return False
+        elif old == identifier:
+            return False
+        self.__did = identifier
+        return True
 
     # Override
     def set_device(self, terminal: str):
