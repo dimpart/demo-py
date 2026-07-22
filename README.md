@@ -35,12 +35,12 @@
         # 'pycryptodome',  # 3.14.1
         # 'base58',  # 1.0.3
         # 'ecdsa',   # 0.16.1
-        'dimplugins>=2.4.1',
+        'dimplugins>=2.4.2',
 
-        'dimsdk>=2.4.1',
-        # 'dimp>=2.4.1',
-        # 'dkd>=2.4.1',
-        # 'mkm>=2.4.1',
+        'dimsdk>=2.4.2',
+        # 'dimp>=2.4.2',
+        # 'dkd>=2.4.2',
+        # 'mkm>=2.4.2',
 
         'startrek>=2.3.1',
         'tcp>=2.3.1',

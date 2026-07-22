@@ -75,10 +75,12 @@ class CommonMessageProcessor(MessageProcessor, Logging, ABC):
         # 3. pack all responses in one message
         env = Envelope.create(sender=me, receiver=sender)
         if len(responses) == 1:
-            msg = InstantMessage.create(head=env, body=responses[0])
+            body = responses[0]
         else:
-            msg = InstantMessage.create(head=env, body=ArrayContent.create(contents=responses))
-        return [msg]
+            body = ArrayContent.create(contents=responses)
+        return [
+            InstantMessage.create(head=env, body=body)
+        ]
 
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:

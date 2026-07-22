@@ -52,16 +52,16 @@ class MessageCache(RedisCache):
         Reliable message for Receivers
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        redis key: 'dkd.msg.{ADDRESS}.{sig}'
-        redis key: 'dkd.msg.{ADDRESS}.messages'
+        redis key: 'dkd.msg.{ID}.{sig}'
+        redis key: 'dkd.msg.{ID}.messages'
     """
     def __msg_cache_name(self, identifier: ID, sig: str) -> str:
-        address = str(identifier.address)
-        return '%s.%s.%s.%s' % (self.db_name, self.tbl_name, address, sig)
+        did = str(identifier)
+        return '%s.%s.%s.%s' % (self.db_name, self.tbl_name, did, sig)
 
     def __messages_cache_name(self, identifier: ID) -> str:
-        address = str(identifier.address)
-        return '%s.%s.%s.messages' % (self.db_name, self.tbl_name, address)
+        did = str(identifier)
+        return '%s.%s.%s.messages' % (self.db_name, self.tbl_name, did)
 
     async def save_reliable_message(self, msg: ReliableMessage, receiver: ID) -> bool:
         sig = get_msg_sig(msg=msg)  # last 6 bytes (signature in base64)
