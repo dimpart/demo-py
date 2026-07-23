@@ -75,7 +75,7 @@ class BaseSession(GateKeeper, Session, ABC):
         if did is None:
             return None
         terminal = self.__terminal
-        if terminal is None or len(terminal) == 0:
+        if terminal is None or terminal == '':
             return did
         elif terminal != did.terminal:
             # did = ID.create(name=did.name, address=did.address, terminal=terminal)
@@ -93,6 +93,10 @@ class BaseSession(GateKeeper, Session, ABC):
             return False
         self.__did = identifier
         return True
+
+    @property  # Override
+    def device(self) -> Optional[str]:
+        return self.__terminal
 
     # Override
     def set_device(self, terminal: str):

@@ -111,14 +111,16 @@ class DocumentUtils:
     @classmethod
     def get_visa_terminal(cls, document: Visa) -> Optional[str]:
         terminal = document.get_str(key='terminal')
-        if terminal is None or len(terminal) == 0:
+        if terminal is None or terminal == '':
             did = cls.get_document_id(document=document)
-            if did is not None:
-                terminal = did.terminal
-        if terminal is not None and len(terminal) > 0:
-            return terminal
-        # '*'
-        return None
+            if did is None:
+                return None
+            terminal = did.terminal
+            if terminal is None or terminal == '':
+                # '*'
+                return None
+        # OK
+        return terminal
 
     @classmethod
     def get_document_name(cls, document: Document) -> Optional[str]:
@@ -204,6 +206,30 @@ class DocumentUtils:
             last = item
         return last
 
+    @classmethod
+    def sort_documents(cls, documents: List[Document]) -> List[Document]:
+        """ Sort and remove duplicated item """
+        # 1. sort by time DESC
+        documents.sort(
+            # key=lambda x: -(x.time or 0.0)
+            key=lambda x: 0.0 if x.time is None else -x.time
+        )
+        # 2. remove duplicated item
+        signatures = set()
+        idx = len(documents)
+        while idx > 0:
+            idx -= 1
+            doc = documents[idx]
+            # check signature
+            sig = doc.get('signature')
+            if sig is None or sig in signatures:
+                Log.warning('skip duplicated document: %s, %s', sig, doc)
+                del documents[idx]
+            else:
+                signatures.add(sig)
+        # done
+        return documents
+
     #
     #   Local Storage
     #
@@ -212,29 +238,29 @@ class DocumentUtils:
     def dump_documents(cls, documents: List[Document]) -> Dict:
         """ Serialize documents """
         # sort and remove duplicated item
-        docs = _sort_documents(documents=documents)
-        Log.info('Dump %d/%d document(s)', len(docs), len(documents))
+        Log.info('Dump %d document(s)', len(documents))
+        array = Document.revert(documents=documents)
         return {
-            'documents': [d.to_dict() for d in docs],
+            'documents': array,
         }
 
     @classmethod
     def pump_documents(cls, info: Union[Dict, List]) -> Optional[List[Document]]:
         """ Deserialize documents """
         array = _fetch_documents(info=info)
-        if array is not None:
-            documents = []
-            # convert documents
-            for item in array:
-                doc = cls._create_document(info=item)
-                if doc is not None:
-                    documents.append(doc)
-                else:
-                    Log.error('document error: %s', item)
-            # sort and remove duplicated item
-            docs = _sort_documents(documents=documents)
-            Log.info('Pump %d/%d document(s)', len(docs), len(array))
-            return documents
+        if array is None:
+            return None
+        # convert documents
+        documents = []
+        for item in array:
+            doc = cls._create_document(info=item)
+            if doc is not None:
+                documents.append(doc)
+            else:
+                Log.error('document error: %s', item)
+        # done
+        Log.info('Pump %d document(s)', len(documents))
+        return documents
 
     @classmethod
     def _create_document(cls, info: Dict) -> Optional[Document]:
@@ -299,27 +325,3 @@ def _fetch_documents(info: Union[Dict, List]) -> Optional[List]:
     # error
     Log.error('documents error: %s', info)
     return None
-
-
-def _sort_documents(documents: List[Document]) -> List[Document]:
-    # 1. sort by time DESC
-    sorted_docs = sorted(
-        documents,
-        # key=lambda x: -(x.time or 0.0)
-        key=lambda x: 0.0 if x.time is None else -float(x.time)
-    )
-    # 2. remove duplicated item
-    signatures = set()
-    array = []
-    for doc in sorted_docs:
-        # check signature
-        sig = doc.get('signature')
-        if sig is None or sig in signatures:
-            Log.warning('skip duplicated document: %s, %s', sig, doc)
-            continue
-        else:
-            signatures.add(sig)
-        # next document
-        array.append(doc)
-    # done
-    return array

@@ -42,26 +42,54 @@ class CommandMessageUtils:
     @classmethod
     def get_login_terminal(cls, content: LoginCommand) -> Optional[str]:
         terminal = content.get_str(key='terminal')
-        if terminal is None or len(terminal) == 0:
-            terminal = content.get_str(key='device')
-            if terminal is None or len(terminal) == 0:
-                did = content.identifier
-                if did is not None:
-                    terminal = did.terminal
-        if terminal is not None and len(terminal) > 0:
-            return terminal
-        # '*'
-        return None
+        if terminal is None or terminal == '':
+            did = content.identifier
+            if did is None:
+                return None
+            terminal = did.terminal
+            if terminal is None or terminal == '':
+                # '*'
+                return None
+        # OK
+        return terminal
+
+    @classmethod
+    def sort_commands(cls, records: List[Tuple[Command, ReliableMessage]]) -> List[Tuple[Command, ReliableMessage]]:
+        """ Sort and remove duplicated item """
+        # 1. sort by time DESC
+        records.sort(
+            # key=lambda x: -(x[0].time or 0.0)
+            key=lambda x: 0.0 if x[0].time is None else -x[0].time
+        )
+        cnt = len(records)
+        # 2. remove duplicated item
+        numbers = set()
+        idx = cnt
+        while idx > 0:
+            idx -= 1
+            cmd, msg = records[idx]
+            # check serial number
+            sn = cmd.sn
+            if sn in numbers:
+                Log.warning('skip duplicated command: %s, %s', sn, cmd)
+                del records[idx]
+            else:
+                numbers.add(sn)
+        # done
+        Log.info('Sort %d/%d command message(s)', len(records), cnt)
+        return records
+
+    #
+    #   Local Storage
+    #
 
     @classmethod
     def dump_command_messages(cls, records: List[Tuple[Command, ReliableMessage]]) -> Dict:
         """ Serialize command messages """
-        # sort and remove duplicated item
-        results = _sort_commands(records=records)
-        Log.info('Dump %d/%d command message(s)', len(results), len(records))
+        Log.info('Dump %d command message(s)', len(records))
         # revert command messages
         array = []
-        for cmd, msg in results:
+        for cmd, msg in records:
             array.append({
                 'cmd': cmd.to_dict(),
                 'msg': msg.to_dict(),
@@ -74,23 +102,23 @@ class CommandMessageUtils:
     def pump_command_messages(cls, info: Union[Dict, List]) -> Optional[List[Tuple[Command, ReliableMessage]]]:
         """ Deserialize command messages """
         array = _fetch_command_messages(info=info)
-        if array is not None:
-            records = []
-            # convert command messages
-            for item in array:
-                cmd = item.get('cmd')
-                msg = item.get('msg')
-                cmd = Command.parse(content=cmd)
-                msg = ReliableMessage.parse(msg=msg)
-                if cmd is None or msg is None:
-                    Log.error('command message error: %s', item)
-                else:
-                    rec = (cmd, msg)
-                    records.append(rec)
-            # sort and remove duplicated item
-            results = _sort_commands(records=records)
-            Log.info('Pump %d/%d command message(s)', len(results), len(records))
-            return results
+        if array is None:
+            return None
+        # convert command messages
+        records = []
+        for item in array:
+            cmd = item.get('cmd')
+            msg = item.get('msg')
+            cmd = Command.parse(content=cmd)
+            msg = ReliableMessage.parse(msg=msg)
+            if cmd is None or msg is None:
+                Log.error('command message error: %s', item)
+            else:
+                rec = (cmd, msg)
+                records.append(rec)
+        # done
+        Log.info('Pump %d command message(s)', len(records))
+        return records
 
 
 def _fetch_command_messages(info: Union[Dict, List]) -> Optional[List]:
@@ -105,27 +133,3 @@ def _fetch_command_messages(info: Union[Dict, List]) -> Optional[List]:
     # error
     Log.error('command messages error: %s', info)
     return None
-
-
-def _sort_commands(records: List[Tuple[Command, ReliableMessage]]) -> List[Tuple[Command, ReliableMessage]]:
-    # 1. sort by time DESC
-    sorted_records = sorted(
-        records,
-        # key=lambda x: -(x[0].time or 0.0)
-        key=lambda x: 0.0 if x[0].time is None else -float(x[0].time)
-    )
-    # 2. remove duplicated item
-    numbers = set()
-    array = []
-    for cmd, msg in sorted_records:
-        # check serial number
-        sn = cmd.sn
-        if sn in numbers:
-            Log.warning('skip duplicated command: %s, %s', sn, cmd)
-            continue
-        else:
-            numbers.add(sn)
-        # next document
-        array.append((cmd, msg))
-    # done
-    return array

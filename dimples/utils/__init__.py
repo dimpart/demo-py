@@ -33,6 +33,8 @@
                                              -- Albert Moky @ Jan. 23, 2019
 """
 
+import traceback
+from io import StringIO
 from typing import Optional, List, Dict
 
 from dimsdk import sha256, keccak256, ripemd160
@@ -124,6 +126,12 @@ def template_replace(template: str, key: str, value: str) -> str:
     return template.replace(tag, value)
 
 
+def get_exception_traceback() -> str:
+    buf = StringIO()
+    traceback.print_exc(file=buf)
+    return buf.getvalue()
+
+
 __all__ = [
 
     'md5', 'sha1', 'sha256', 'keccak256', 'ripemd160',
@@ -162,5 +170,7 @@ __all__ = [
     'is_before',
     'get_msg_sig', 'get_msg_info',
     'template_replace',
+
+    'get_exception_traceback',
 
 ]

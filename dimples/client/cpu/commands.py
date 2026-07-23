@@ -39,6 +39,7 @@ from dimsdk import ReceiptCommand
 from dimsdk.cpu import BaseCommandProcessor
 
 from ...utils import Logging
+from ...common import CommandMessageUtils
 from ...common import SessionDBI
 from ...common import AnsCommand
 from ...common import LoginCommand
@@ -76,8 +77,12 @@ class LoginCommandProcessor(BaseCommandProcessor, Logging):
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
         assert isinstance(content, LoginCommand), 'login command error: %s' % content
-        sender = content.identifier
-        assert sender == r_msg.sender, 'sender not match: %s, %s' % (sender, r_msg.sender)
+        sender = r_msg.sender
+        assert sender.is_same_as(other=content.identifier), 'sender not match: %s, %s' % (sender, content.identifier)
+        if sender.terminal is None:
+            terminal = CommandMessageUtils.get_login_terminal(content=content)
+            if terminal is not None:
+                sender = sender.with_terminal(terminal=terminal)
         # save login command to session db
         db = self.database
         if await db.save_login_command_message(user=sender, content=content, msg=r_msg):

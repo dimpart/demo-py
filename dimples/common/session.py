@@ -127,9 +127,17 @@ class Session(Transmitter, ABC):
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.set_did()'
         )
 
+    @property
+    @abstractmethod
+    def device(self) -> Optional[str]:
+        """ Login terminal """
+        raise NotImplementedError(
+            f'Not implemented: {type(self).__module__}.{type(self).__name__}.device getter'
+        )
+
     @abstractmethod
     def set_device(self, terminal: str):
-        """ Update ID terminal """
+        """ Update login terminal """
         raise NotImplementedError(
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.set_device()'
         )

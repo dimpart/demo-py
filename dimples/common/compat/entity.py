@@ -76,7 +76,7 @@ class EntityIDFactory(GeneralIdentifierFactory):
             did = _CONST_IDS.get(text)
             if did is not None:
                 return did
-        elif size < 4 or 64 < size:
+        elif size < 4 or 128 < size:
             assert identifier is None, 'invalid id: %s' % identifier
             return None
         # normal ID

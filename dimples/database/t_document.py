@@ -61,17 +61,21 @@ class DocTask(DbTask[ID, List[Document]]):
     async def _read_data(self) -> Optional[List[Document]]:
         # 1. the redis server will return None when cache not found
         # 2. when redis server return an empty array, no need to check local storage again
-        docs = await self._redis.load_documents(identifier=self._identifier)
-        if docs is not None:
-            return docs
+        array = await self._redis.load_documents(identifier=self._identifier)
+        if array is not None:
+            DocumentUtils.sort_documents(documents=array)
+            return array
         # 3. the local storage will return an empty array, when no document for this id
-        docs = await self._dos.load_documents(identifier=self._identifier)
-        if docs is None:
+        array = await self._dos.load_documents(identifier=self._identifier)
+        if array is not None:
+            DocumentUtils.sort_documents(documents=array)
+            return array
+        else:
             # 4. return empty array as a placeholder for the memory cache
-            docs = []
+            array = []
         # 5. update redis server
-        await self._redis.save_documents(documents=docs, identifier=self._identifier)
-        return docs
+        await self._redis.save_documents(documents=array, identifier=self._identifier)
+        return array
 
     # Override
     async def _write_data(self, documents: List[Document]) -> bool:
@@ -85,16 +89,18 @@ class DocTask(DbTask[ID, List[Document]]):
             created_time = new_doc.get_property(name='created_time')
             identifier = DocumentUtils.get_document_id(document=new_doc)
             doc_type = DocumentUtils.get_document_type(document=new_doc)
-            # terminal = DocumentUtils.get_terminal(document=new_doc)
+        # check did
         if identifier is None:
             self.warning('document id not found: %s', new_doc)
             identifier = self._identifier
-        else:
-            assert identifier == self._identifier, f'document id error: {identifier}'
+        elif not identifier.is_same_as(other=self._identifier):
+            self.error('document id not matched: %s, %s', identifier, self._identifier)
+            return False
+        # get terminal
         if isinstance(new_doc, Visa):
             terminal = DocumentUtils.get_visa_terminal(document=new_doc)
         else:
-            terminal = None if identifier is None else identifier.terminal
+            terminal = identifier.terminal
         #
         #   0. check old documents
         #
@@ -106,12 +112,11 @@ class DocTask(DbTask[ID, List[Document]]):
             assert isinstance(item, Document), f'document error: {identifier}, {item}'
             # check document id
             did = DocumentUtils.get_document_id(document=item)
-            if did is None or did.address != identifier.address:
-                self.error('document error: %s => %s', identifier, item)
+            if did is None or not did.is_same_as(other=identifier):
+                self.error('document not matched: %s => %s', identifier, item)
                 # TODO: remove it?
                 continue
-            # check with new document
-            if item.get('signature') == signature:
+            elif item.get('signature') == signature:
                 self.warning('same document, no need to update: %s, "%s", type="%s"', identifier, terminal, doc_type)
                 return True
             elif DocumentUtils.get_document_type(document=item) != doc_type:
@@ -132,6 +137,8 @@ class DocTask(DbTask[ID, List[Document]]):
             # same type + terminal not found
             self.info('insert document: %s, "%s", type="%s", created=%s', identifier, terminal, doc_type, created_time)
             documents.append(new_doc)
+        # sort after changed
+        DocumentUtils.sort_documents(documents=documents)
         #
         #   1. store into redis server
         #
@@ -155,6 +162,15 @@ class DocumentTable(DataCache, DocumentDBI):
         self._dos.show_info()
 
     def _new_task(self, identifier: ID, new_document: Document = None) -> DocTask:
+        terminal = identifier.terminal
+        if terminal is not None:
+            assert identifier.is_user, f'did error: {identifier}'
+            old = new_document.get('terminal')
+            if old is None or old == '':
+                new_document['terminal'] = terminal
+            # Naked ID
+            identifier = identifier.without_terminal()
+        # create task with naked id
         return DocTask(identifier=identifier, new_document=new_document,
                        redis=self._redis, storage=self._dos,
                        mutex_lock=self._mutex_lock, cache_pool=self._cache_pool)
@@ -168,7 +184,11 @@ class DocumentTable(DataCache, DocumentDBI):
         #
         #   0. check valid
         #
-        if not document.is_valid:
+        did = DocumentUtils.get_document_id(document=document)
+        if not identifier.is_same_as(other=did):
+            self.error('document id not matched: %s, %s', did, identifier)
+            return False
+        elif not document.is_valid:
             self.error('document not valid: %s', identifier)
             return False
         #

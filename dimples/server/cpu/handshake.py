@@ -37,7 +37,8 @@ from dimsdk import ID, Content, ReliableMessage
 
 from dimsdk.cpu import BaseCommandProcessor
 
-from ...utils import Logging
+from ...utils import Log, Logging
+from ...common import DocumentUtils, MessageUtils
 from ...common import HandshakeCommand
 from ...common import CommonMessenger, Session
 
@@ -79,15 +80,15 @@ class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
         # set/update session in session server with new session key
         messenger = self.messenger
         session = messenger.session
-        sess_id = session.identifier
+        _update_session_terminal(session=session, msg=r_msg)
         sender = r_msg.sender
-        if sess_id is not None:
-            assert sess_id == sender, 'sender error: %s, %s' % (sender, sess_id)
+        sess_id = session.identifier
+        assert sess_id is None or sess_id.is_same_as(other=sender), 'sender error: %s, %s' % (sender, sess_id)
         if session.session_key == content.session:
             # session key match
             self.info('handshake accepted: %s, session: %s', sender, session.session_key)
             # verified success
-            await handshake_accepted(identifier=sender, when=content.time, session=session, messenger=messenger)
+            await handshake_accepted(sender=sender, when=content.time, session=session, messenger=messenger)
             res = HandshakeCommand.success(session=session.session_key)
         else:
             # session key not match
@@ -97,11 +98,30 @@ class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
         return [res]
 
 
-async def handshake_accepted(identifier: ID, when: Optional[DateTime], session: Session, messenger: CommonMessenger):
+def _update_session_terminal(session: Session, msg: ReliableMessage):
+    visa = MessageUtils.get_visa(msg=msg)
+    Log.info('fetch terminal: %s, %s', msg.sender, visa)
+    if visa is None:
+        return False
+    terminal = DocumentUtils.get_visa_terminal(document=visa)
+    if terminal is None or terminal == '':
+        return False
+    device = session.device
+    if device is None or device == '':
+        Log.info('update session terminal (device): "%s" -> "%s", %s', device, terminal, msg.sender)
+        session.set_device(terminal=terminal)
+        return True
+    # TODO:
+    Log.error('session terminal (device) conflicts: "%s" -> "%s", %s', device, terminal, msg.sender)
+    session.set_device(terminal=terminal)
+    return False
+
+
+async def handshake_accepted(sender: ID, when: Optional[DateTime], session: Session, messenger: CommonMessenger):
     from ..session_center import SessionCenter
     center = SessionCenter()
     # 1. update session ID
-    center.update_session(session=session, identifier=identifier)
+    center.update_session(session=session, identifier=sender)
     # 2. update session flag
     session.set_active(active=True, when=when)
     # 3. callback

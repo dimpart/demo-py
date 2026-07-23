@@ -66,10 +66,13 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
         # 2. when redis server return a tuple with None values, no need to check local storage again
         array = await self._redis.load_login_command_messages(user=self._user)
         if array is not None:
+            CommandMessageUtils.sort_commands(records=array)
             return array
         # 3. the local storage will return a tuple with None values, when command not found
         array = await self._dos.load_login_command_messages(user=self._user)
-        if array is None:
+        if array is not None:
+            CommandMessageUtils.sort_commands(records=array)
+        else:
             # 4. return a tuple with None values as a placeholder for the memory cache
             array = []
         # 5. update redis server
@@ -87,11 +90,10 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
             new_time = new_cmd.time
             identifier = new_cmd.identifier
             terminal = CommandMessageUtils.get_login_terminal(content=new_cmd)
-        if identifier is None:
-            self.warning('login id not found: %s', new_cmd)
-            identifier = self._user
-        else:
-            assert identifier == self._user, f'login id error: {identifier}'
+        # check did
+        if not identifier.is_same_as(other=self._user):
+            self.error('login id not matched: %s, %s', identifier, self._user)
+            return False
         #
         #   0. check old records
         #
@@ -103,12 +105,11 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
             assert isinstance(cmd, LoginCommand), f'login command error: {cmd}'
             # check login id
             did = cmd.identifier
-            if did is None or did.address != identifier.address:
-                self.error('login command error: %s => %s', identifier, cmd)
+            if not did.is_same_as(other=identifier):
+                self.error('login command not matched: %s => %s', identifier, cmd)
                 # TODO: remove it?
                 continue
-            # check with new record
-            if cmd.sn == new_sn:
+            elif cmd.sn == new_sn:
                 self.warning('same login command, no need to update:: %s, "%s"', identifier, terminal)
                 return True
             elif CommandMessageUtils.get_login_terminal(content=cmd) != terminal:
@@ -127,6 +128,8 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
             self.info('insert login record: %s, "%s"', identifier, terminal)
             rec = (new_cmd, new_msg)
             records.append(rec)
+        # sort after changed
+        CommandMessageUtils.sort_commands(records=records)
         #
         #   1. store into redis server
         #
@@ -150,14 +153,18 @@ class LoginTable(DataCache, LoginDBI):
         self._dos.show_info()
 
     def _new_task(self, user: ID, new_cmd: LoginCommand = None, new_msg: ReliableMessage = None) -> CmdTask:
+        terminal = user.terminal
+        if terminal is not None:
+            if new_cmd is not None:
+                old = new_cmd.get('terminal')
+                if old is None or old == '':
+                    new_cmd['terminal'] = terminal
+            # Naked ID
+            user = user.without_terminal()
+        # create task with naked id
         return CmdTask(user=user, new_cmd=new_cmd, new_msg=new_msg,
                        redis=self._redis, storage=self._dos,
                        mutex_lock=self._mutex_lock, cache_pool=self._cache_pool)
-
-    async def _load_login_command_messages(self, user: ID) -> List[Tuple[LoginCommand, ReliableMessage]]:
-        task = self._new_task(user=user)
-        array = await task.load()
-        return [] if array is None else array
 
     #
     #   Login DBI
@@ -168,9 +175,9 @@ class LoginTable(DataCache, LoginDBI):
         #
         #  0. check valid
         #
-        identifier = content.identifier
-        if identifier is None or identifier.address != user.address:
-            self.error('login id not matched: %s, %s', identifier, user)
+        did = content.identifier
+        if not user.is_same_as(other=did):
+            self.error('login id not matched: %s, %s', did, user)
             return False
         #
         #  1. load old records

@@ -39,6 +39,7 @@ from dimsdk import Content
 from dimsdk.cpu import BaseCommandProcessor
 
 from ...utils import Logging
+from ...common import CommandMessageUtils
 from ...common import LoginCommand
 from ...common import CommonFacebook, CommonMessenger
 
@@ -60,7 +61,12 @@ class LoginCommandProcessor(BaseCommandProcessor, Logging):
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
         assert isinstance(content, LoginCommand), 'command error: %s' % content
-        sender = content.identifier
+        sender = r_msg.sender
+        assert sender.is_same_as(other=content.identifier), 'sender not match: %s, %s' % (sender, content.identifier)
+        if sender.terminal is None:
+            terminal = CommandMessageUtils.get_login_terminal(content=content)
+            if terminal is not None:
+                sender = sender.with_terminal(terminal=terminal)
         # 1. check roaming station
         station = content.station
         if not isinstance(station, Dict):
