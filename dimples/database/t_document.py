@@ -137,7 +137,7 @@ class DocTask(DbTask[ID, List[Document]]):
             # same type + terminal not found
             self.info('insert document: %s, "%s", type="%s", created=%s', identifier, terminal, doc_type, created_time)
             documents.append(new_doc)
-        # sort after changed
+        # if document list changed, sort before saving
         DocumentUtils.sort_documents(documents=documents)
         #
         #   1. store into redis server
@@ -165,9 +165,12 @@ class DocumentTable(DataCache, DocumentDBI):
         terminal = identifier.terminal
         if terminal is not None:
             assert identifier.is_user, f'did error: {identifier}'
-            old = new_document.get('terminal')
-            if old is None or old == '':
-                new_document['terminal'] = terminal
+            if new_document is not None:
+                assert isinstance(new_document, Visa), f'visa error: {identifier}, {new_document}'
+                # old = DocumentUtils.get_visa_terminal(document=new_document)
+                old = new_document.get('terminal')
+                if old is None or old == '':
+                    new_document['terminal'] = terminal
             # Naked ID
             identifier = identifier.without_terminal()
         # create task with naked id

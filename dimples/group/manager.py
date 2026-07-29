@@ -355,7 +355,7 @@ class GroupManager(TripletsHelper):
         # 2. send to all receivers
         messenger = self.messenger
         for receiver in members:
-            if me == receiver:
+            if receiver.is_same_as(other=me):
                 self.info(msg='skip cycled message: %s => %s' % (me, receiver))
                 continue
             await messenger.send_content(sender=me, receiver=receiver, content=content, priority=1)

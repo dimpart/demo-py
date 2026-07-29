@@ -150,7 +150,7 @@ class ClientChecker(EntityChecker, Logging):
         # querying members from admins
         self.info(msg='querying members from admins: %s, group: %s' % (admins, group))
         for receiver in admins:
-            if receiver == sender:
+            if receiver.is_same_as(other=sender):
                 self.warning(msg='ignore cycled querying: %s, group: %s' % (receiver, group))
                 continue
             _, r_msg = await messenger.send_content(sender=sender, receiver=receiver, content=command, priority=1)

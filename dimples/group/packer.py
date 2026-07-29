@@ -65,7 +65,7 @@ class GroupPacker(TripletsHelper):
         messages = []
         sender = msg.sender
         for receiver in members:
-            if sender == receiver:
+            if receiver.is_same_as(other=sender):
                 self.info(msg='skip cycled message: %s, %s' % (receiver, msg.group))
                 continue
             else:
@@ -93,7 +93,7 @@ class GroupPacker(TripletsHelper):
             keys = {}
             # TODO: get key digest
         for receiver in members:
-            if sender == receiver:
+            if receiver.is_same_as(other=sender):
                 self.info(msg='skip cycled message: %s, %s' % (receiver, msg.group))
                 continue
             else:

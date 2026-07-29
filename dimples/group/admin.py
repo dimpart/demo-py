@@ -131,7 +131,7 @@ class AdminManager(TripletsHelper):
             self.error(msg='failed to get group members: %s' % group)
             return False
         for item in members:
-            if me == item:
+            if item.is_same_as(other=me):
                 self.info(msg='skip cycled message: %s' % item)
                 continue
             await messenger.send_content(sender=me, receiver=item, content=content, priority=1)
