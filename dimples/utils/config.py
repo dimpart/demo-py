@@ -71,7 +71,7 @@ class Config(IConfig, Logging):
             self.error(msg='failed to load stations: %s, %s' % (error, parser))
         return self
 
-    def to_dict(self) -> Optional[Dict]:
+    def to_map(self) -> Optional[Dict]:
         parser = self.__parser
         if parser is None or self.__ready:
             return self.__info
@@ -81,11 +81,11 @@ class Config(IConfig, Logging):
 
     # Override
     def __str__(self) -> str:
-        return 'Config: %s' % self.to_dict()
+        return 'Config: %s' % self.to_map()
 
     # Override
     def __repr__(self) -> str:
-        return 'Config: %s' % self.to_dict()
+        return 'Config: %s' % self.to_map()
 
     # Override
     def get_section(self, section: str) -> Optional[Dict]:

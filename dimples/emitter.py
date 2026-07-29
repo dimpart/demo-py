@@ -322,7 +322,7 @@ class Emitter(Logging, ABC):
             #         if this content is forwarded, there is a security risk.
             self.info('generated new password to upload file: %s, %s, %s', sender, filename, password)
             assert password is not None, f'failed to generate AES key: {sender}'
-        encrypted = password.encrypt(plaintext=data, extra=content.to_dict())
+        encrypted = password.encrypt(plaintext=data, extra=content.to_map())
         #
         #   Step 4: upload the encrypted data and get a download URL;
         #   Step 5: resend the instant message with the download URL.

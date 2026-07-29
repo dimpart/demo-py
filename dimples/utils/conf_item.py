@@ -108,7 +108,7 @@ class MessageTransferAgent(Dictionary):
         elif isinstance(node, MessageTransferAgent):
             return node
         elif isinstance(node, Dictionary):
-            node = node.to_dict()
+            node = node.to_map()
         host = node.get('host')
         port = node.get('port')
         if host is not None and port is not None and port > 0:
@@ -128,7 +128,7 @@ class MessageTransferAgent(Dictionary):
         array = []
         for node in stations:
             assert isinstance(node, MessageTransferAgent), 'station node error: %s' % node
-            info = node.to_dict()
+            info = node.to_map()
             array.append(info)
         return array
 

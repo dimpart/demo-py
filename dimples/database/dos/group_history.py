@@ -81,8 +81,8 @@ class GroupHistoryStorage(Storage):
             cmd = his[0]
             msg = his[1]
             item = {
-                'cmd': cmd.to_dict(),
-                'msg': msg.to_dict(),
+                'cmd': cmd.to_map(),
+                'msg': msg.to_map(),
             }
             array.append(item)
         path = self.__history_path(group=group)

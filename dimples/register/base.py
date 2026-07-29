@@ -159,7 +159,7 @@ class BaseAccount(Logging, ABC):
         doc = DocumentUtils.last_document(documents=documents)
         if doc is not None:
             # clone for editing
-            doc = Document.parse(document=doc.copy_dict())
+            doc = Document.parse(document=doc.copy_map())
             ok = doc.verify(public_key=meta.public_key)
             assert ok, 'document error: %s, %s' % (identifier, doc)
         self.__id = identifier

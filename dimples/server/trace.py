@@ -135,7 +135,7 @@ class TraceNode(Dictionary):
         array = []
         for item in nodes:
             if isinstance(item, Mapper):
-                array.append(item.to_dict())
+                array.append(item.to_map())
             elif isinstance(item, Dict):
                 array.append(item)
             elif isinstance(item, ID):

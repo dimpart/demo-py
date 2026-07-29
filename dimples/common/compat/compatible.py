@@ -217,21 +217,21 @@ class CompatibleOutgoing:
     @classmethod
     def fix_content(cls, content: Content):
         # 0. change 'type' value from string to int
-        cls._fix_type(content=content.to_dict())
+        cls._fix_type(content=content.to_map())
 
         if isinstance(content, FileContent):
             # 1. 'key' <-> 'password'
-            _fix_file_content(content=content.to_dict())
+            _fix_file_content(content=content.to_map())
             return
 
         if isinstance(content, NameCard):
             # 1. 'ID' <-> 'did'
-            _fix_did(content=content.to_dict())
+            _fix_did(content=content.to_map())
             return
 
         if isinstance(content, Command):
             # 1. 'cmd' <-> 'command'
-            _fix_cmd(content=content.to_dict())
+            _fix_cmd(content=content.to_map())
 
         if isinstance(content, ReceiptCommand):
             # 2. check for v2.0
@@ -240,7 +240,7 @@ class CompatibleOutgoing:
 
         if isinstance(content, LoginCommand):
             # 2. 'ID' <-> 'did'
-            _fix_did(content=content.to_dict())
+            _fix_did(content=content.to_map())
             # 3. fix station
             station = content.get('station')
             if isinstance(station, Dict):
@@ -262,7 +262,7 @@ class CompatibleOutgoing:
             cls._fix_docs(content=content)
         if isinstance(content, MetaCommand):
             # 4. 'ID' <-> 'did'
-            _fix_did(content=content.to_dict())
+            _fix_did(content=content.to_map())
             meta = content.get('meta')
             if meta is not None:
                 # 5. 'type' <-> 'version'
@@ -289,7 +289,7 @@ class CompatibleOutgoing:
             docs = Document.convert(array=array)
             last = DocumentUtils.last_document(documents=docs)
             if last is not None:
-                content['document'] = _fix_doc_id(document=last.to_dict())
+                content['document'] = _fix_doc_id(document=last.to_map())
             if len(docs) == 1:
                 content.pop('documents', None)
         doc = content.get('document')

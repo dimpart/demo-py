@@ -72,7 +72,7 @@ class PrivateKeyStorage(Storage, PrivateKeyDBI):
     async def _save_id_key(self, key: PrivateKey, identifier: ID) -> bool:
         path = self.__id_key_path(identifier=identifier)
         self.info('Saving identity private key into: %s', path)
-        key_info = key.to_dict()
+        key_info = key.to_map()
         return await self.write_json(container=key_info, path=path)
 
     async def _load_id_key(self, identifier: ID) -> Optional[PrivateKey]:
@@ -91,7 +91,7 @@ class PrivateKeyStorage(Storage, PrivateKeyDBI):
         if private_keys is None:
             # nothing changed
             return False
-        plain = [item.to_dict() for item in private_keys]
+        plain = [item.to_map() for item in private_keys]
         path = self.__msg_keys_path(identifier=identifier)
         self.info('Saving message private keys into: %s', path)
         return await self.write_json(container=plain, path=path)

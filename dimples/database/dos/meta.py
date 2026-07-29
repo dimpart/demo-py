@@ -60,7 +60,7 @@ class MetaStorage(Storage, MetaDBI):
         """ save meta into file """
         path = self.__meta_path(identifier=identifier)
         self.info('Saving meta into: %s', path)
-        info = meta.to_dict()
+        info = meta.to_map()
         return await self.write_json(container=info, path=path)
 
     # Override

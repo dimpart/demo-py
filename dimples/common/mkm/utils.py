@@ -50,7 +50,7 @@ class MetaUtils:
     @classmethod
     def get_meta_type(cls, meta: Union[Dict, Meta]) -> Optional[str]:
         if isinstance(meta, Meta):
-            meta = meta.to_dict()
+            meta = meta.to_map()
         helper = account_helper()
         return helper.get_meta_type(meta=meta)
 
@@ -97,14 +97,14 @@ class DocumentUtils:
     @classmethod
     def get_document_type(cls, document: Union[Dict, Document]) -> Optional[str]:
         if isinstance(document, Document):
-            document = document.to_dict()
+            document = document.to_map()
         helper = account_helper()
         return helper.get_document_type(document=document)
 
     @classmethod
     def get_document_id(cls, document: Union[Dict, Document]) -> Optional[ID]:
         if isinstance(document, Document):
-            document = document.to_dict()
+            document = document.to_map()
         helper = account_helper()
         return helper.get_document_id(document=document)
 

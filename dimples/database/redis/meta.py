@@ -75,7 +75,7 @@ class MetaCache(RedisCache):
             self.error('meta error: %s, %s', error, info)
 
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
-        info = meta.to_dict()
+        info = meta.to_map()
         js = json_encode(container=info)
         value = utf8_encode(string=js)
         key = self.__cache_name(identifier=identifier)

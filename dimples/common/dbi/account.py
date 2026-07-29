@@ -87,7 +87,7 @@ class PrivateKeyDBI(ABC):
     def revert_private_keys(cls, keys: Iterable[PrivateKey]) -> List[Dict]:
         array = []
         for item in keys:
-            key_info = item.to_dict()
+            key_info = item.to_map()
             array.append(key_info)
         return array
 

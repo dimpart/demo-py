@@ -80,7 +80,7 @@ class AdminManager(TripletsHelper):
             return False
         else:
             # clone for modifying
-            clone = Document.parse(document=doc.copy_dict())
+            clone = Document.parse(document=doc.copy_map())
             if isinstance(clone, Bulletin):
                 doc = clone
             else:

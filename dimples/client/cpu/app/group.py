@@ -76,7 +76,7 @@ class GroupHistoryHandler(BaseCustomizedContentHandler):
 
     async def __transform_query_command(self, content: CustomizedContent, msg: ReliableMessage,
                                         messenger: Messenger) -> List[Content]:
-        info = content.copy_dict()
+        info = content.copy_map()
         info['type'] = ContentType.COMMAND
         info['command'] = QueryCommand.QUERY
         query = Content.parse(content=info)

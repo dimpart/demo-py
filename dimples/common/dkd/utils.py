@@ -91,8 +91,8 @@ class CommandMessageUtils:
         array = []
         for cmd, msg in records:
             array.append({
-                'cmd': cmd.to_dict(),
-                'msg': msg.to_dict(),
+                'cmd': cmd.to_map(),
+                'msg': msg.to_map(),
             })
         return {
             'records': array,

@@ -132,7 +132,7 @@ class Pretreatment(TwinsHelper, Logging):
             #     current station is it's receiver too.
             messages = []
             for sid in neighbors:
-                msg_info = msg.copy_dict()
+                msg_info = msg.copy_map()
                 msg_info['group'] = str(receiver)
                 msg_info['receiver'] = str(sid)
                 r_msg = ReliableMessage.parse(msg=msg_info)
@@ -155,7 +155,7 @@ class Pretreatment(TwinsHelper, Logging):
                 return None, []
             else:
                 self.info('forward to bot: %s -> %s', name, bot)
-                msg_info = msg.copy_dict()
+                msg_info = msg.copy_map()
                 msg_info['group'] = str(EVERYONE)
                 msg_info['receiver'] = str(bot)
                 r_msg = ReliableMessage.parse(msg=msg_info)
@@ -225,7 +225,7 @@ def _split_message(msg: ReliableMessage, receiver: ID, terminals: Set[str]) -> L
         if did is None:
             Log.error('receiver in "msg.keys" error: %s -> %s, %s', text, base64, msg_keys)
             continue
-        msg_info = msg.copy_dict()
+        msg_info = msg.copy_map()
         msg_info['receiver'] = text
         msg_info['rcpt'] = str(did.without_terminal())  # mark for split
         # build 'keys'
@@ -259,7 +259,7 @@ def _split_message(msg: ReliableMessage, receiver: ID, terminals: Set[str]) -> L
                 # get msg key for receiver without terminal
                 other = str(did.without_terminal())
                 base64 = msg_keys.get(other)
-        msg_info = msg.copy_dict()
+        msg_info = msg.copy_map()
         msg_info['receiver'] = text
         msg_info['rcpt'] = str(did.without_terminal())  # mark for split
         # build 'keys'
