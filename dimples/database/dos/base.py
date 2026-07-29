@@ -23,6 +23,7 @@
 # SOFTWARE.
 # ==============================================================================
 
+from collections.abc import Mapping
 from typing import Optional, Union
 
 from ...utils import template_replace
@@ -131,7 +132,7 @@ class Storage(Logging):
             Log.error(msg='Storage >\t%s' % error)
 
     @classmethod
-    async def write_json(cls, container: Union[dict, list], path: str) -> bool:
+    async def write_json(cls, container: Union[list, dict, Mapping], path: str) -> bool:
         try:
             return await JSONFile(path=path).write(container=container)
         except Exception as error:

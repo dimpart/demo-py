@@ -25,7 +25,8 @@
 
 import weakref
 from abc import ABC, abstractmethod
-from typing import Optional, Any, Set, List, Dict
+from collections.abc import Mapping, MutableMapping
+from typing import Optional, Any, Set, List
 from typing import Iterable
 
 from aiou import JSONFile
@@ -43,7 +44,7 @@ from .http import HttpClient
 class IConfig(ABC):
 
     @abstractmethod
-    def get_section(self, section: str) -> Optional[Dict]:
+    def get_section(self, section: str) -> Optional[Mapping]:
         raise NotImplementedError(
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_section()'
         )
@@ -124,7 +125,7 @@ class MessageTransferAgent(Dictionary):
         return stations
 
     @classmethod
-    def revert(cls, stations: Iterable) -> List[Dict]:
+    def revert(cls, stations: Iterable) -> List[MutableMapping]:
         array = []
         for node in stations:
             assert isinstance(node, MessageTransferAgent), 'station node error: %s' % node
@@ -225,7 +226,7 @@ class NeighborLoader(Logging):
         except Exception as error:
             self.error(msg='failed to download stations: %s, %s' % (error, url))
             return None
-        if isinstance(stations, Dict):
+        if isinstance(stations, Mapping):
             stations = stations.get('stations')
         if isinstance(stations, List):
             return MessageTransferAgent.convert(array=stations)
@@ -237,7 +238,7 @@ class NeighborLoader(Logging):
         except Exception as error:
             self.error(msg='failed to load stations: %s, %s' % (error, path))
             return None
-        if isinstance(stations, Dict):
+        if isinstance(stations, Mapping):
             stations = stations.get('stations')
         if isinstance(stations, List):
             return MessageTransferAgent.convert(array=stations)

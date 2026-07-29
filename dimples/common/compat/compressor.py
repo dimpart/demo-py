@@ -23,7 +23,8 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Dict
+from collections.abc import Mapping, MutableMapping
+from typing import Optional
 
 from dimsdk import MessageCompressor
 from dimsdk import MessageShortener
@@ -37,14 +38,16 @@ class CompatibleCompressor(MessageCompressor):
         super().__init__(shortener=CompatibleShortener())
 
     # # Override
-    # def compress_content(self, content: Dict, key: Dict) -> bytes:
+    # def compress_content(self, content: Mapping, key: Mapping) -> bytes:
     #     # CompatibleOutgoing.fix_content(content=content);
     #     return super().compress_content(content=content, key=key)
 
     # Override
-    def extract_content(self, data: bytes, key: Dict) -> Optional[Dict]:
+    def extract_content(self, data: bytes, key: Mapping) -> Optional[Mapping]:
         content = super().extract_content(data=data, key=key)
         if content is not None:
+            if not isinstance(content, MutableMapping):
+                content = dict(content)
             CompatibleIncoming.fix_content(content=content)
         return content
 
@@ -52,48 +55,44 @@ class CompatibleCompressor(MessageCompressor):
 class CompatibleShortener(MessageShortener):
 
     # Override
-    def _move_key(self, from_key: str, to_key: str, info: Dict):
-        value = info.get(from_key)
-        if value is not None:
-            if info.get(to_key) is not None:
-                # assert False, 'keys conflicted: "%s" -> "%s", %s' % (from_key, to_key, info)
-                return
-            assert to_key not in info, 'keys conflicted: "%s" -> "%s", %s' % (from_key, to_key, info)
-            info.pop(from_key, None)
-            info[to_key] = value
-
-    # Override
-    def compress_content(self, content: Dict) -> Dict:
+    def compress_content(self, content: Mapping) -> Mapping:
         # DON'T COMPRESS NOW
         return content
 
     # Override
-    def compress_symmetric_key(self, key: Dict) -> Dict:
+    def compress_symmetric_key(self, key: Mapping) -> Mapping:
         # DON'T COMPRESS NOW
         return key
 
     # Override
-    def compress_reliable_message(self, msg: Dict) -> Dict:
+    def compress_reliable_message(self, msg: Mapping) -> Mapping:
         # DON'T COMPRESS NOW
         return msg
 
     # Override
-    def extract_reliable_message(self, msg: Dict) -> Dict:
-        keys = msg.get('K')
-        if keys is None:
-            # assert 'data' in msg, f'message data should not empty: {msg}'
-            pass
-        elif isinstance(keys, Dict):
-            assert 'keys' not in msg, f'message keys duplicated: {msg}'
-            msg.pop('K', None)
-            # msg.pop('key', None)
-            msg['keys'] = keys
-        elif isinstance(keys, str):
-            assert 'key' not in msg, f'message key duplicated: {msg}'
-            msg.pop('K', None)
-            # msg.pop('keys', None)
-            msg['key'] = keys
-        else:
-            assert False, f'message key error: {msg}'
-        # restore message keys
+    def extract_reliable_message(self, msg: Mapping) -> Mapping:
+        if not isinstance(msg, MutableMapping):
+            msg = dict(msg)
+        msg = _fix_key(msg=msg)
         return super().extract_reliable_message(msg=msg)
+
+
+def _fix_key(msg: MutableMapping) -> Mapping:
+    keys = msg.get('K')
+    if keys is None:
+        # assert 'data' in msg, f'message data should not empty: {msg}'
+        pass
+    elif isinstance(keys, Mapping):
+        assert 'keys' not in msg, f'message keys duplicated: {msg}'
+        msg.pop('K', None)
+        # msg.pop('key', None)
+        msg['keys'] = keys
+    elif isinstance(keys, str):
+        assert 'key' not in msg, f'message key duplicated: {msg}'
+        msg.pop('K', None)
+        # msg.pop('keys', None)
+        msg['key'] = keys
+    else:
+        assert False, f'message key error: {msg}'
+    # OK
+    return msg

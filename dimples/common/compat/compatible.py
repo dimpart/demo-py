@@ -23,7 +23,8 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import List, Dict
+from collections.abc import MutableMapping
+from typing import List
 
 from dimsdk import Converter
 from dimsdk import Document
@@ -56,7 +57,7 @@ class Compatible:
             _fix_meta_version(meta=meta)
 
     @classmethod
-    def fix_meta_version(cls, meta: Dict):
+    def fix_meta_version(cls, meta: MutableMapping):
         _fix_meta_version(meta=meta)
 
     @classmethod
@@ -66,11 +67,11 @@ class Compatible:
             _fix_doc_id(document=visa)
 
     @classmethod
-    def fix_document_id(cls, document: Dict):
+    def fix_document_id(cls, document: MutableMapping):
         _fix_doc_id(document=document)
 
 
-def _fix_cmd(content: Dict):
+def _fix_cmd(content: MutableMapping):
     cmd = content.get('command')
     if cmd is None:
         # 'command' not exists, copy the value from 'cmd'
@@ -87,7 +88,7 @@ def _fix_cmd(content: Dict):
         content['cmd'] = cmd
 
 
-def _fix_did(content: Dict):
+def _fix_did(content: MutableMapping):
     did = content.get('did')
     if did is None:
         # 'did' not exists, copy the value from 'ID'
@@ -104,13 +105,13 @@ def _fix_did(content: Dict):
         content['ID'] = did
 
 
-def _fix_doc_id(document: Dict):
+def _fix_doc_id(document: MutableMapping):
     # 'ID' <-> 'did'
     _fix_did(document)
     return document
 
 
-def _fix_meta_version(meta: Dict):
+def _fix_meta_version(meta: MutableMapping):
     version = meta.get('type')
     if version is None:
         version = meta.get('version')  # compatible with MKM 0.9.*
@@ -125,7 +126,7 @@ def _fix_meta_version(meta: Dict):
         meta['version'] = version
 
 
-def _fix_file_content(content: Dict):
+def _fix_file_content(content: MutableMapping):
     pwd = content.get('key')
     if pwd is not None:
         # Tarsier version > 1.3.7
@@ -151,7 +152,7 @@ _file_types = [
 class CompatibleIncoming:
 
     @classmethod
-    def fix_content(cls, content: Dict):
+    def fix_content(cls, content: MutableMapping):
         # get content type
         msg_type = content.get('type')
         msg_type = Converter.get_str(value=msg_type)
@@ -199,7 +200,7 @@ class CompatibleIncoming:
                 _fix_meta_version(meta=meta)
 
     @classmethod
-    def _fix_docs(cls, content: Dict):
+    def _fix_docs(cls, content: MutableMapping):
         # cmd: 'document' -> 'documents'
         cmd = content.get('command')
         if cmd == 'document':
@@ -243,11 +244,11 @@ class CompatibleOutgoing:
             _fix_did(content=content.to_map())
             # 3. fix station
             station = content.get('station')
-            if isinstance(station, Dict):
+            if isinstance(station, MutableMapping):
                 _fix_did(station)
             # 4. fix provider
             provider = content.get('provider')
-            if isinstance(provider, Dict):
+            if isinstance(provider, MutableMapping):
                 _fix_did(provider)
             return
 
@@ -269,7 +270,7 @@ class CompatibleOutgoing:
                 _fix_meta_version(meta=meta)
 
     @classmethod
-    def _fix_type(cls, content: Dict):
+    def _fix_type(cls, content: MutableMapping):
         msg_type = content.get('type')
         if isinstance(msg_type, str):
             num_type = Converter.get_int(value=msg_type)
@@ -293,7 +294,7 @@ class CompatibleOutgoing:
             if len(docs) == 1:
                 content.pop('documents', None)
         doc = content.get('document')
-        if isinstance(doc, Dict):
+        if isinstance(doc, MutableMapping):
             _fix_doc_id(document=doc)
 
 

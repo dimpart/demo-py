@@ -28,7 +28,8 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Union, Iterable, List, Dict
+from collections.abc import Mapping, MutableMapping
+from typing import Optional, Union, Iterable, List
 
 from dimsdk import utf8_encode
 from dimsdk import Converter
@@ -48,7 +49,7 @@ from ...utils import Log
 class MetaUtils:
 
     @classmethod
-    def get_meta_type(cls, meta: Union[Dict, Meta]) -> Optional[str]:
+    def get_meta_type(cls, meta: Union[Mapping, Meta]) -> Optional[str]:
         if isinstance(meta, Meta):
             meta = meta.to_map()
         helper = account_helper()
@@ -95,14 +96,14 @@ class MetaUtils:
 class DocumentUtils:
 
     @classmethod
-    def get_document_type(cls, document: Union[Dict, Document]) -> Optional[str]:
+    def get_document_type(cls, document: Union[Mapping, Document]) -> Optional[str]:
         if isinstance(document, Document):
             document = document.to_map()
         helper = account_helper()
         return helper.get_document_type(document=document)
 
     @classmethod
-    def get_document_id(cls, document: Union[Dict, Document]) -> Optional[ID]:
+    def get_document_id(cls, document: Union[Mapping, Document]) -> Optional[ID]:
         if isinstance(document, Document):
             document = document.to_map()
         helper = account_helper()
@@ -235,7 +236,7 @@ class DocumentUtils:
     #
 
     @classmethod
-    def dump_documents(cls, documents: List[Document]) -> Dict:
+    def dump_documents(cls, documents: List[Document]) -> Mapping:
         """ Serialize documents """
         # sort and remove duplicated item
         Log.info('Dump %d document(s)', len(documents))
@@ -245,7 +246,7 @@ class DocumentUtils:
         }
 
     @classmethod
-    def pump_documents(cls, info: Union[Dict, List]) -> Optional[List[Document]]:
+    def pump_documents(cls, info: Union[Mapping, List]) -> Optional[List[Document]]:
         """ Deserialize documents """
         array = _fetch_documents(info=info)
         if array is None:
@@ -263,7 +264,7 @@ class DocumentUtils:
         return documents
 
     @classmethod
-    def _create_document(cls, info: Dict) -> Optional[Document]:
+    def _create_document(cls, info: MutableMapping) -> Optional[Document]:
         """ Local creation  """
         _fix_did(content=info)
         # 0. check document id
@@ -296,7 +297,7 @@ class DocumentUtils:
         return doc
 
 
-def _fix_did(content: Dict):
+def _fix_did(content: MutableMapping):
     did = content.get('did')
     if did is None:
         # 'did' not exists, copy the value from 'ID'
@@ -313,10 +314,10 @@ def _fix_did(content: Dict):
         content['ID'] = did
 
 
-def _fetch_documents(info: Union[Dict, List]) -> Optional[List]:
+def _fetch_documents(info: Union[Mapping, List]) -> Optional[List]:
     if isinstance(info, List):
         return info
-    elif isinstance(info, Dict):
+    elif isinstance(info, Mapping):
         docs = info.get('documents')
         if isinstance(docs, List):
             return docs

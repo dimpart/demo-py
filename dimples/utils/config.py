@@ -23,8 +23,9 @@
 # SOFTWARE.
 # ==============================================================================
 
+from collections.abc import Mapping, MutableMapping
 from configparser import ConfigParser
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from aiou import RedisConnector
 
@@ -71,7 +72,7 @@ class Config(IConfig, Logging):
             self.error(msg='failed to load stations: %s, %s' % (error, parser))
         return self
 
-    def to_map(self) -> Optional[Dict]:
+    def to_map(self) -> Optional[MutableMapping]:
         parser = self.__parser
         if parser is None or self.__ready:
             return self.__info
@@ -88,7 +89,7 @@ class Config(IConfig, Logging):
         return 'Config: %s' % self.to_map()
 
     # Override
-    def get_section(self, section: str) -> Optional[Dict]:
+    def get_section(self, section: str) -> Optional[Mapping]:
         parser = self.__parser
         if parser is not None:
             return _section_options(parser=parser, section=section)
@@ -225,7 +226,7 @@ class Config(IConfig, Logging):
     #
 
     @property
-    def ans_records(self) -> Optional[Dict[str, str]]:
+    def ans_records(self) -> Optional[Mapping[str, str]]:
         return self.get_section(section='ans')
 
     #
@@ -251,7 +252,7 @@ class Config(IConfig, Logging):
         return neighbor_stations
 
 
-def _update_sections(info: Dict, parser: ConfigParser) -> Dict:
+def _update_sections(info: MutableMapping, parser: ConfigParser) -> MutableMapping:
     sections = parser.sections()
     for name in sections:
         options = _section_options(parser=parser, section=name)
@@ -261,7 +262,7 @@ def _update_sections(info: Dict, parser: ConfigParser) -> Dict:
     return info
 
 
-def _section_options(parser: ConfigParser, section: str) -> Optional[Dict]:
+def _section_options(parser: ConfigParser, section: str) -> Optional[Mapping]:
     try:
         array = parser.items(section=section)
     except Exception as error:

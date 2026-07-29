@@ -24,7 +24,8 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Optional, Union, Dict, List, Tuple
+from collections.abc import MutableMapping
+from typing import Optional, Union, List, Tuple
 from typing import Iterable
 
 from dimsdk import PrivateKey, SignKey, DecryptKey
@@ -84,7 +85,7 @@ class PrivateKeyDBI(ABC):
         return private_keys
 
     @classmethod
-    def revert_private_keys(cls, keys: Iterable[PrivateKey]) -> List[Dict]:
+    def revert_private_keys(cls, keys: Iterable[PrivateKey]) -> List[MutableMapping]:
         array = []
         for item in keys:
             key_info = item.to_map()
