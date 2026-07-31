@@ -24,7 +24,8 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Optional, Any, Dict, List, Tuple
+from typing import Optional, Any, List, Tuple
+from typing import Mapping, MutableMapping
 from typing import Iterable
 
 from dimsdk import ID
@@ -58,12 +59,12 @@ class ProviderInfo:
         return '<%s ID="%s" chosen=%d />' % (clazz, self.identifier, self.chosen)
 
     @classmethod
-    def convert(cls, array: Iterable[Dict[str, Any]]):  # -> List[ProviderInfo]:
+    def convert(cls, array: Iterable[Mapping[str, Any]]):  # -> List[ProviderInfo]:
         gf = ProviderFactoryManager.general_factory
         return gf.convert_providers(array=array)
 
     @classmethod
-    def revert(cls, providers) -> List[Dict[str, Any]]:
+    def revert(cls, providers) -> List[MutableMapping[str, Any]]:
         gf = ProviderFactoryManager.general_factory
         return gf.revert_providers(providers=providers)
 
@@ -93,12 +94,12 @@ class StationInfo:
                                                                        self.provider, self.chosen)
 
     @classmethod
-    def convert(cls, array: Iterable[Dict[str, Any]]):  # -> List[StationInfo]:
+    def convert(cls, array: Iterable[Mapping[str, Any]]):  # -> List[StationInfo]:
         gf = ProviderFactoryManager.general_factory
         return gf.convert_stations(array=array)
 
     @classmethod
-    def revert(cls, stations) -> List[Dict[str, Any]]:
+    def revert(cls, stations) -> List[MutableMapping[str, Any]]:
         gf = ProviderFactoryManager.general_factory
         return gf.revert_stations(stations=stations)
 
@@ -109,7 +110,7 @@ class ProviderGeneralFactory:
         super().__init__()
 
     # noinspection PyMethodMayBeStatic
-    def convert_providers(self, array: Iterable[Dict[str, Any]]) -> List[ProviderInfo]:
+    def convert_providers(self, array: Iterable[Mapping[str, Any]]) -> List[ProviderInfo]:
         providers = []
         for item in array:
             did = item.get('did')
@@ -125,7 +126,7 @@ class ProviderGeneralFactory:
         return providers
 
     # noinspection PyMethodMayBeStatic
-    def revert_providers(self, providers: Iterable[ProviderInfo]) -> List[Dict[str, Any]]:
+    def revert_providers(self, providers: Iterable[ProviderInfo]) -> List[MutableMapping[str, Any]]:
         array = []
         for item in providers:
             array.append({
@@ -136,7 +137,7 @@ class ProviderGeneralFactory:
         return array
 
     # noinspection PyMethodMayBeStatic
-    def convert_stations(self, array: Iterable[Dict[str, Any]]) -> List[StationInfo]:
+    def convert_stations(self, array: Iterable[Mapping[str, Any]]) -> List[StationInfo]:
         stations = []
         for item in array:
             did = item.get('did')
@@ -157,7 +158,7 @@ class ProviderGeneralFactory:
         return stations
 
     # noinspection PyMethodMayBeStatic
-    def revert_stations(self, stations: Iterable[StationInfo]) -> List[Dict[str, Any]]:
+    def revert_stations(self, stations: Iterable[StationInfo]) -> List[MutableMapping[str, Any]]:
         array = []
         for item in stations:
             array.append({

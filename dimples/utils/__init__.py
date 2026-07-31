@@ -35,17 +35,10 @@
 
 import traceback
 from io import StringIO
-from typing import Optional, List, Dict
+from typing import Optional, List
 
-from dimsdk import sha256, keccak256, ripemd160
-from dimsdk import base64_encode, base64_decode, base58_encode, base58_decode
-from dimsdk import hex_encode, hex_decode
-from dimsdk import utf8_encode, utf8_decode
-from dimsdk import json_encode, json_decode
-
-from dimsdk import Converter
-from dimsdk import DateTime
-from dimsdk import ReliableMessage
+from dimsdk.core.compress_keys import StringPairing
+from dimsdk import *
 
 from dimplugins.crypto.aes import random_bytes
 from dimplugins.mem import MemoryCache, ThanosCache
@@ -94,10 +87,10 @@ def get_msg_traces(msg: ReliableMessage) -> List:
     traces = msg.get('traces')
     if traces is None:
         return []
-    assert isinstance(traces, List), f'traces error: {traces}'
+    assert isinstance(traces, list), f'traces error: {traces}'
     stations = []
     for item in traces:
-        if isinstance(item, Dict):
+        if isinstance(item, dict):
             sid = item.get('did')
             if sid is None:
                 sid = item.get('ID')
@@ -143,8 +136,14 @@ __all__ = [
     'random_bytes',
     'MemoryCache', 'ThanosCache',
 
+    'StrMap', 'MutableStrMap',
+    'AnyList', 'StrList',
+
+    'StringPairing',
+
+    'URI', 'DateTime',
+
     'Converter',
-    'DateTime',
 
     'Runnable', 'Runner', 'Daemon',
     'StateDelegate',

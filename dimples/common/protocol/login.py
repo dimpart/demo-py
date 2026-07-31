@@ -35,10 +35,12 @@
     As receipt returned to sender to proofing the message's received
 """
 
-from typing import Optional, Union, Dict
+from typing import Optional, Union
 
 from dimsdk import ID
 from dimsdk import BaseCommand
+
+from ...utils import StrMap
 
 from ..mkm import Station, ServiceProvider
 
@@ -71,7 +73,7 @@ class LoginCommand(BaseCommand):
     """
     LOGIN = 'login'
 
-    def __init__(self, content: Dict = None, identifier: ID = None):
+    def __init__(self, content: StrMap = None, identifier: ID = None):
         if content is None:
             # 1. new command with ID
             assert identifier is not None, 'login ID should not empty'
@@ -80,7 +82,7 @@ class LoginCommand(BaseCommand):
             self['did'] = str(identifier)
         else:
             # 2. command info from network
-            assert identifier is None, 'params error: %s, %s' % (content, identifier)
+            assert identifier is None, f'params error: {identifier}, {content}'
             super().__init__(content)
 
     #
@@ -119,11 +121,11 @@ class LoginCommand(BaseCommand):
     #   Server Info
     #
     @property
-    def station(self) -> Optional[Dict]:
+    def station(self) -> Optional[StrMap]:
         return self.get('station')
 
     @station.setter
-    def station(self, info: Union[Dict, Station]):
+    def station(self, info: Union[StrMap, Station]):
         if isinstance(info, Station):
             sid = info.identifier
             if sid.is_broadcast:
@@ -137,24 +139,24 @@ class LoginCommand(BaseCommand):
                     'host': info.host,
                     'port': info.port,
                 }
-        elif isinstance(info, Dict):
+        elif isinstance(info, dict):
             self['station'] = info
         else:
-            assert info is None, 'station info error: %s' % info
+            assert info is None, f'station info error: {info}'
             self.pop('station', None)
 
     @property
-    def provider(self) -> Optional[Dict]:
+    def provider(self) -> Optional[StrMap]:
         return self.get('provider')
 
     @provider.setter
-    def provider(self, value: Union[Dict, ServiceProvider]):
+    def provider(self, value: Union[StrMap, ServiceProvider]):
         if value is None:
             self.pop('provider', None)
-        elif isinstance(value, Dict):
+        elif isinstance(value, dict):
             self['provider'] = value
         else:
-            assert isinstance(value, ServiceProvider), 'SP error: %s' % value
+            assert isinstance(value, ServiceProvider), f'SP error: {value}'
             self['provider'] = {
                 'did': str(value.identifier),
             }

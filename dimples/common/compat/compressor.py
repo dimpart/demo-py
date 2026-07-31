@@ -23,11 +23,13 @@
 # SOFTWARE.
 # ==============================================================================
 
-from collections.abc import Mapping, MutableMapping
+from collections.abc import MutableMapping
 from typing import Optional
 
 from dimsdk import MessageCompressor
 from dimsdk import MessageShortener
+
+from ...utils import StrMap, MutableStrMap
 
 from .compatible import CompatibleIncoming
 
@@ -38,12 +40,12 @@ class CompatibleCompressor(MessageCompressor):
         super().__init__(shortener=CompatibleShortener())
 
     # # Override
-    # def compress_content(self, content: Mapping, key: Mapping) -> bytes:
+    # def compress_content(self, content: StrMap, key: StrMap) -> bytes:
     #     # CompatibleOutgoing.fix_content(content=content);
     #     return super().compress_content(content=content, key=key)
 
     # Override
-    def extract_content(self, data: bytes, key: Mapping) -> Optional[Mapping]:
+    def extract_content(self, data: bytes, key: StrMap) -> Optional[StrMap]:
         content = super().extract_content(data=data, key=key)
         if content is not None:
             if not isinstance(content, MutableMapping):
@@ -55,34 +57,34 @@ class CompatibleCompressor(MessageCompressor):
 class CompatibleShortener(MessageShortener):
 
     # Override
-    def compress_content(self, content: Mapping) -> Mapping:
+    def compress_content(self, content: StrMap) -> StrMap:
         # DON'T COMPRESS NOW
         return content
 
     # Override
-    def compress_symmetric_key(self, key: Mapping) -> Mapping:
+    def compress_symmetric_key(self, key: StrMap) -> StrMap:
         # DON'T COMPRESS NOW
         return key
 
     # Override
-    def compress_reliable_message(self, msg: Mapping) -> Mapping:
+    def compress_reliable_message(self, msg: StrMap) -> StrMap:
         # DON'T COMPRESS NOW
         return msg
 
     # Override
-    def extract_reliable_message(self, msg: Mapping) -> Mapping:
+    def extract_reliable_message(self, msg: StrMap) -> StrMap:
         if not isinstance(msg, MutableMapping):
             msg = dict(msg)
         msg = _fix_key(msg=msg)
         return super().extract_reliable_message(msg=msg)
 
 
-def _fix_key(msg: MutableMapping) -> Mapping:
+def _fix_key(msg: MutableStrMap) -> StrMap:
     keys = msg.get('K')
     if keys is None:
         # assert 'data' in msg, f'message data should not empty: {msg}'
         pass
-    elif isinstance(keys, Mapping):
+    elif isinstance(keys, dict):
         assert 'keys' not in msg, f'message keys duplicated: {msg}'
         msg.pop('K', None)
         # msg.pop('key', None)

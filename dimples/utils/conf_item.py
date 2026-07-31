@@ -25,11 +25,13 @@
 
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from typing import Optional, Any, Set, List
 from typing import Iterable
 
 from aiou import JSONFile
+
+from dimsdk import StrMap, MutableStrMap
 
 from dimsdk import JSON
 from dimsdk import Dictionary
@@ -44,7 +46,7 @@ from .http import HttpClient
 class IConfig(ABC):
 
     @abstractmethod
-    def get_section(self, section: str) -> Optional[Mapping]:
+    def get_section(self, section: str) -> Optional[StrMap]:
         raise NotImplementedError(
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_section()'
         )
@@ -125,10 +127,10 @@ class MessageTransferAgent(Dictionary):
         return stations
 
     @classmethod
-    def revert(cls, stations: Iterable) -> List[MutableMapping]:
+    def revert(cls, stations: Iterable) -> List[MutableStrMap]:
         array = []
         for node in stations:
-            assert isinstance(node, MessageTransferAgent), 'station node error: %s' % node
+            assert isinstance(node, MessageTransferAgent), f'station node error: {node}'
             info = node.to_map()
             array.append(info)
         return array
@@ -177,10 +179,10 @@ class Supervisor(Logging):
                 if self.check_user(identifier=item):
                     all_users.add(item)
                 continue
-            assert item.is_group, 'group ID error: %s' % item
+            assert item.is_group, f'group ID error: {item}'
             group_members = await facebook.get_members(identifier=item)
             if group_members is None or len(group_members) == 0:
-                self.warning(msg='failed to get members for group: %s' % item)
+                self.warning('failed to get members for group: %s', item)
                 continue
             for member in group_members:
                 if self.check_user(identifier=member):
@@ -213,40 +215,40 @@ class NeighborLoader(Logging):
         return stations
 
     async def _download_stations(self, url: str) -> Optional[List[MessageTransferAgent]]:
-        self.info(msg='downloading stations: %s' % url)
+        self.info('downloading stations: %s', url)
         http = self.__http
         try:
             response = http.cache_get(url=url)
             if response is None or response.status_code != 200:
-                self.error(msg='failed to get URL: %s response: %s' % (url, response))
+                self.error('failed to get URL: %s response: %s', url, response)
                 return None
             else:
                 text = response.text
                 stations = JSON.decode(string=text)
         except Exception as error:
-            self.error(msg='failed to download stations: %s, %s' % (error, url))
+            self.error('failed to download stations: %s, %s', error, url)
             return None
         if isinstance(stations, Mapping):
             stations = stations.get('stations')
-        if isinstance(stations, List):
+        if isinstance(stations, list):
             return MessageTransferAgent.convert(array=stations)
 
     async def _load_stations(self, path: str) -> Optional[List[MessageTransferAgent]]:
-        self.info(msg='loading stations: %s' % path)
+        self.info('loading stations: %s', path)
         try:
             stations = await JSONFile(path=path).read()
         except Exception as error:
-            self.error(msg='failed to load stations: %s, %s' % (error, path))
+            self.error('failed to load stations: %s, %s', error, path)
             return None
         if isinstance(stations, Mapping):
             stations = stations.get('stations')
-        if isinstance(stations, List):
+        if isinstance(stations, list):
             return MessageTransferAgent.convert(array=stations)
 
     async def _save_stations(self, stations: List[MessageTransferAgent], path: str) -> bool:
         info = MessageTransferAgent.revert(stations=stations)
-        self.info(msg='saving %d station(s): %s' % (len(stations), path))
+        self.info('saving %d station(s): %s', len(stations), path)
         try:
             return await JSONFile(path=path).write(info)
         except Exception as error:
-            self.error(msg='failed to save stations: %s, %s' % (error, path))
+            self.error('failed to save stations: %s, %s', error, path)

@@ -23,10 +23,11 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Dict
+from typing import Optional
 
 from dimsdk import ID
 
+from ...utils import StringPairing
 from ...utils import template_replace
 from ...common import GroupKeysDBI
 
@@ -57,15 +58,15 @@ class GroupKeysStorage(Storage, GroupKeysDBI):
     #
 
     # Override
-    async def get_group_keys(self, group: ID, sender: ID) -> Optional[Dict[str, str]]:
+    async def get_group_keys(self, group: ID, sender: ID) -> Optional[StringPairing]:
         """ load group keys from file """
         path = self.__keys_path(group=group, sender=sender)
-        self.info(msg='Loading group keys from: %s' % path)
+        self.info('Loading group keys from: %s', path)
         return await self.read_json(path=path)
 
     # Override
-    async def save_group_keys(self, group: ID, sender: ID, keys: Dict[str, str]) -> bool:
+    async def save_group_keys(self, group: ID, sender: ID, keys: StringPairing) -> bool:
         """ save group keys into file """
         path = self.__keys_path(group=group, sender=sender)
-        self.info(msg='Saving group keys into: %s' % path)
+        self.info('Saving group keys into: %s', path)
         return await self.write_json(container=keys, path=path)

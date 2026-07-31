@@ -24,10 +24,11 @@
 # ==============================================================================
 
 import threading
-from typing import List, Dict
+from typing import List
 
 from dimsdk import InstantMessage, ReliableMessage
 
+from ..utils import StrMap
 from ..utils import Logging
 
 
@@ -45,28 +46,28 @@ class SuspendedMessageQueue(Logging):
         self.__incoming_messages: List[ReliableMessage] = []
         self.__outgoing_messages: List[InstantMessage] = []
 
-    def suspend_reliable_message(self, msg: ReliableMessage, error: Dict):
+    def suspend_reliable_message(self, msg: ReliableMessage, error: StrMap):
         """
         Add income message in a queue for waiting sender's visa
 
         :param msg:   incoming message
         :param error: error info
         """
-        self.warning(msg='suspend message: %s -> %s, %s' % (msg.sender, msg.receiver, error))
+        self.warning('suspend message: %s -> %s, %s', msg.sender, msg.receiver, error)
         msg['error'] = error
         with self.__suspend_lock:
             if len(self.__incoming_messages) > self.__capacity:
                 self.__incoming_messages.pop(0)
             self.__incoming_messages.append(msg)
 
-    def suspend_instant_message(self, msg: InstantMessage, error: Dict):
+    def suspend_instant_message(self, msg: InstantMessage, error: StrMap):
         """
         Add outgo message in a queue for waiting receiver's visa
 
         :param msg:   outgo message
         :param error: error info
         """
-        self.warning(msg='suspend message: %s -> %s, %s' % (msg.sender, msg.receiver, error))
+        self.warning('suspend message: %s -> %s, %s', msg.sender, msg.receiver, error)
         msg['error'] = error
         with self.__suspend_lock:
             if len(self.__outgoing_messages) > self.__capacity:

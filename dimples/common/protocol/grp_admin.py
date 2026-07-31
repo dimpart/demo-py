@@ -38,10 +38,12 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from dimsdk import ID
 from dimsdk import GroupCommand, BaseGroupCommand
+
+from ...utils import StrMap
 
 
 """
@@ -104,7 +106,7 @@ class ResignCommand(GroupCommand, ABC):
 
 class HireGroupCommand(BaseGroupCommand, HireCommand):
 
-    def __init__(self, content: Dict = None, group: ID = None,
+    def __init__(self, content: StrMap = None, group: ID = None,
                  administrators: List[ID] = None):
         cmd = GroupCommand.HIRE if content is None else None
         super().__init__(content, cmd=cmd, group=group)
@@ -115,10 +117,10 @@ class HireGroupCommand(BaseGroupCommand, HireCommand):
     @property  # Override
     def administrators(self) -> Optional[List[ID]]:
         users = self.get('administrators')
-        if isinstance(users, List):
+        if isinstance(users, list):
             # convert all items to ID objects
             return ID.convert(array=users)
-        assert users is None, 'ID list error: %s' % users
+        assert users is None, f'ID list error: {users}'
 
     @administrators.setter  # Override
     def administrators(self, users: List[ID]):
@@ -130,7 +132,7 @@ class HireGroupCommand(BaseGroupCommand, HireCommand):
 
 class FireGroupCommand(BaseGroupCommand, FireCommand):
 
-    def __init__(self, content: Dict = None, group: ID = None,
+    def __init__(self, content: StrMap = None, group: ID = None,
                  administrators: List[ID] = None):
         cmd = GroupCommand.FIRE if content is None else None
         super().__init__(content=content, cmd=cmd, group=group)
@@ -141,10 +143,10 @@ class FireGroupCommand(BaseGroupCommand, FireCommand):
     @property  # Override
     def administrators(self) -> Optional[List[ID]]:
         users = self.get('administrators')
-        if isinstance(users, List):
+        if isinstance(users, list):
             # convert all items to ID objects
             return ID.convert(array=users)
-        assert users is None, 'ID list error: %s' % users
+        assert users is None, f'ID list error: {users}'
 
     @administrators.setter  # Override
     def administrators(self, users: List[ID]):
@@ -156,6 +158,6 @@ class FireGroupCommand(BaseGroupCommand, FireCommand):
 
 class ResignGroupCommand(BaseGroupCommand, ResignCommand):
 
-    def __init__(self, content: Dict = None, group: ID = None):
+    def __init__(self, content: StrMap = None, group: ID = None):
         cmd = GroupCommand.RESIGN if content is None else None
         super().__init__(content=content, cmd=cmd, group=group)

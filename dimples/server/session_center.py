@@ -38,7 +38,7 @@
 import threading
 import weakref
 from typing import MutableMapping, MutableSet
-from typing import Optional, Dict, Set
+from typing import Optional, Set
 
 from startrek.types import SocketAddress
 
@@ -54,7 +54,7 @@ class SessionPool(Logging):
     def __init__(self):
         super().__init__()
         # ID => remote addresses
-        self.__addresses: Dict[ID, MutableSet[SocketAddress]] = {}
+        self.__addresses: MutableMapping[ID, MutableSet[SocketAddress]] = {}
         # remote address => session
         self.__sessions: MutableMapping[SocketAddress, Session] = weakref.WeakValueDictionary()
 
@@ -130,7 +130,7 @@ class SessionPool(Logging):
 
 
 @Singleton
-class SessionCenter:
+class SessionCenter(Logging):
 
     def __init__(self):
         super().__init__()
@@ -200,6 +200,7 @@ class SessionCenter:
             did = session.identifier
             self.__pool.add_address(identifier=did, remote=address)
         # OK
+        self.info('update session (%s): %s -> %s, socket: %s', identifier, oid, did, address)
         return True
 
     def active_sessions(self, identifier: ID) -> Set[Session]:
@@ -210,6 +211,7 @@ class SessionCenter:
             for session in all_sessions:
                 if session.active:
                     actives.add(session)
+        self.info('got %d/%d active session(s) for: %s', len(actives), len(all_sessions), identifier)
         return actives
 
     # def is_active(self, identifier: ID) -> bool:

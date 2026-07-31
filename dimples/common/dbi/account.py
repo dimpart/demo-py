@@ -24,7 +24,6 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from collections.abc import MutableMapping
 from typing import Optional, Union, List, Tuple
 from typing import Iterable
 
@@ -32,6 +31,8 @@ from dimsdk import PrivateKey, SignKey, DecryptKey
 from dimsdk import ID, Meta, Document
 from dimsdk import ReliableMessage
 from dimsdk import GroupCommand, ResetCommand
+
+from ...utils import MutableStrMap
 
 
 class PrivateKeyDBI(ABC):
@@ -85,7 +86,7 @@ class PrivateKeyDBI(ABC):
         return private_keys
 
     @classmethod
-    def revert_private_keys(cls, keys: Iterable[PrivateKey]) -> List[MutableMapping]:
+    def revert_private_keys(cls, keys: Iterable[PrivateKey]) -> List[MutableStrMap]:
         array = []
         for item in keys:
             key_info = item.to_map()

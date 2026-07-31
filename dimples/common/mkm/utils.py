@@ -28,8 +28,8 @@
 # SOFTWARE.
 # ==============================================================================
 
-from collections.abc import Mapping, MutableMapping
-from typing import Optional, Union, Iterable, List
+from typing import Optional, Union, List
+from typing import Iterable
 
 from dimsdk import utf8_encode
 from dimsdk import Converter
@@ -43,13 +43,14 @@ from dimsdk import Document, Visa, Bulletin
 
 from dimplugins.mem.ext import account_helper
 
+from ...utils import StrMap, MutableStrMap
 from ...utils import Log
 
 
 class MetaUtils:
 
     @classmethod
-    def get_meta_type(cls, meta: Union[Mapping, Meta]) -> Optional[str]:
+    def get_meta_type(cls, meta: StrMap) -> Optional[str]:
         if isinstance(meta, Meta):
             meta = meta.to_map()
         helper = account_helper()
@@ -57,7 +58,7 @@ class MetaUtils:
 
     @classmethod
     def match_id(cls, identifier: ID, meta: Meta) -> bool:
-        assert meta.is_valid, 'meta not valid: %s' % meta
+        assert meta.is_valid, f'meta not valid: {meta}'
         # check ID.name
         seed = meta.seed
         name = identifier.name
@@ -73,7 +74,7 @@ class MetaUtils:
 
     @classmethod
     def match_public_key(cls, key: VerifyKey, meta: Meta) -> bool:
-        assert meta.is_valid, 'meta not valid: %s' % meta
+        assert meta.is_valid, f'meta not valid: {meta}'
         # check whether the public key equals to meta.key
         if key == meta.public_key:
             return True
@@ -96,14 +97,14 @@ class MetaUtils:
 class DocumentUtils:
 
     @classmethod
-    def get_document_type(cls, document: Union[Mapping, Document]) -> Optional[str]:
+    def get_document_type(cls, document: StrMap) -> Optional[str]:
         if isinstance(document, Document):
             document = document.to_map()
         helper = account_helper()
         return helper.get_document_type(document=document)
 
     @classmethod
-    def get_document_id(cls, document: Union[Mapping, Document]) -> Optional[ID]:
+    def get_document_id(cls, document: StrMap) -> Optional[ID]:
         if isinstance(document, Document):
             document = document.to_map()
         helper = account_helper()
@@ -236,7 +237,7 @@ class DocumentUtils:
     #
 
     @classmethod
-    def dump_documents(cls, documents: List[Document]) -> Mapping:
+    def dump_documents(cls, documents: List[Document]) -> StrMap:
         """ Serialize documents """
         # sort and remove duplicated item
         Log.info('Dump %d document(s)', len(documents))
@@ -246,7 +247,7 @@ class DocumentUtils:
         }
 
     @classmethod
-    def pump_documents(cls, info: Union[Mapping, List]) -> Optional[List[Document]]:
+    def pump_documents(cls, info: Union[StrMap, List]) -> Optional[List[Document]]:
         """ Deserialize documents """
         array = _fetch_documents(info=info)
         if array is None:
@@ -264,7 +265,7 @@ class DocumentUtils:
         return documents
 
     @classmethod
-    def _create_document(cls, info: MutableMapping) -> Optional[Document]:
+    def _create_document(cls, info: MutableStrMap) -> Optional[Document]:
         """ Local creation  """
         _fix_did(content=info)
         # 0. check document id
@@ -297,7 +298,7 @@ class DocumentUtils:
         return doc
 
 
-def _fix_did(content: MutableMapping):
+def _fix_did(content: MutableStrMap):
     did = content.get('did')
     if did is None:
         # 'did' not exists, copy the value from 'ID'
@@ -305,21 +306,21 @@ def _fix_did(content: MutableMapping):
         if did is not None:
             content['did'] = did
         # else:
-        #     assert False, 'did not exists: %s' % content
+        #     assert False, f'did not exists: {content}'
     elif 'ID' in content:
         # these two values must be equal
-        assert content.get('ID') == did, 'did error: %s' % content
+        assert content.get('ID') == did, f'did error: {content}'
     else:
         # copy value from 'did' to 'ID'
         content['ID'] = did
 
 
-def _fetch_documents(info: Union[Mapping, List]) -> Optional[List]:
-    if isinstance(info, List):
+def _fetch_documents(info: Union[StrMap, List]) -> Optional[List]:
+    if isinstance(info, list):
         return info
-    elif isinstance(info, Mapping):
+    elif isinstance(info, dict):
         docs = info.get('documents')
-        if isinstance(docs, List):
+        if isinstance(docs, list):
             return docs
         elif 'data' in info and 'signature' in info:
             return [info]

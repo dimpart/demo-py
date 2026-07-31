@@ -23,12 +23,13 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from dimsdk import SymmetricKey
 from dimsdk import ID
 from dimsdk import ReliableMessage
 
+from ..utils import StringPairing
 from ..utils import Config
 from ..common import MessageDBI
 
@@ -58,11 +59,11 @@ class MessageDatabase(MessageDBI):
     #   GroupKeys DBI
 
     # Override
-    async def get_group_keys(self, group: ID, sender: ID) -> Optional[Dict[str, str]]:
+    async def get_group_keys(self, group: ID, sender: ID) -> Optional[StringPairing]:
         return await self._group_keys_table.get_group_keys(group=group, sender=sender)
 
     # Override
-    async def save_group_keys(self, group: ID, sender: ID, keys: Dict[str, str]) -> bool:
+    async def save_group_keys(self, group: ID, sender: ID, keys: StringPairing) -> bool:
         return await self._group_keys_table.save_group_keys(group=group, sender=sender, keys=keys)
 
     #

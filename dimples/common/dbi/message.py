@@ -24,9 +24,11 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, List
+from typing import Optional, List
 
 from dimsdk import ID, ReliableMessage, CipherKeyDelegate
+
+from ...utils import StringPairing
 
 
 class ReliableMessageDBI(ABC):
@@ -70,13 +72,13 @@ class GroupKeysDBI(ABC):
     """ Group Keys Table """
 
     @abstractmethod
-    async def get_group_keys(self, group: ID, sender: ID) -> Optional[Dict[str, str]]:
+    async def get_group_keys(self, group: ID, sender: ID) -> Optional[StringPairing]:
         raise NotImplementedError(
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_group_keys()'
         )
 
     @abstractmethod
-    async def save_group_keys(self, group: ID, sender: ID, keys: Dict[str, str]) -> bool:
+    async def save_group_keys(self, group: ID, sender: ID, keys: StringPairing) -> bool:
         raise NotImplementedError(
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.save_group_keys()'
         )

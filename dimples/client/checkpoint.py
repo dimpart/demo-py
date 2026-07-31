@@ -64,7 +64,7 @@ class SigPool:
         assert sig is not None, 'message error: %s' % msg
         if len(sig) > 16:
             sig = sig[-16:]
-        add = msg.receiver.address
+        add = msg.receiver  # .address
         tag = '%s:%s' % (sig, add)
         cached = self.__caches.get(tag)
         if cached is not None:

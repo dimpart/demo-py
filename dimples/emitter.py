@@ -29,7 +29,7 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple
 
 from dimsdk import URI
 from dimsdk import SymmetricAlgorithms
@@ -39,6 +39,7 @@ from dimsdk import ID, User
 from dimsdk import Envelope, Content, TextContent, FileContent
 from dimsdk import InstantMessage, ReliableMessage
 
+from .utils import StrMap
 from .utils import Logging
 from .common import Password
 from .common import Transmitter
@@ -62,7 +63,7 @@ class Emitter(Logging, ABC):
         )
 
     async def send_text(self, text: str, receiver: ID,
-                        extra: Dict = None) -> Tuple[Optional[InstantMessage], Optional[ReliableMessage]]:
+                        extra: StrMap = None) -> Tuple[Optional[InstantMessage], Optional[ReliableMessage]]:
         """
         Send text message to receiver
 
@@ -104,7 +105,7 @@ class Emitter(Logging, ABC):
             if nxt != '`':
                 return text.find('```', pos + 1) > 0
 
-    async def send_voice(self, mp4: bytes, receiver: ID, filename: str, duration: float, extra: Dict = None) -> bool:
+    async def send_voice(self, mp4: bytes, receiver: ID, filename: str, duration: float, extra: StrMap = None) -> bool:
         """
         Send voice message to receiver
 
@@ -124,12 +125,11 @@ class Emitter(Logging, ABC):
         content['duration'] = duration
         # set extra params
         if extra is not None:
-            for key, value in extra.items():
-                content[key] = value
+            content.update(extra)
         return await self.send_file_content(content=content, sender=None, receiver=receiver)
 
     async def send_picture(self, jpeg: bytes, receiver: ID, filename: str,
-                           thumbnail: Optional[PortableNetworkFile], extra: Dict = None) -> bool:
+                           thumbnail: Optional[PortableNetworkFile], extra: StrMap = None) -> bool:
         """
         Send picture to receiver
 
@@ -156,7 +156,7 @@ class Emitter(Logging, ABC):
 
     async def send_movie(self, receiver: ID, url: URI,
                          snapshot: Optional[PortableNetworkFile], title: Optional[str],
-                         filename: str = None, extra: Dict = None) -> bool:
+                         filename: str = None, extra: StrMap = None) -> bool:
         """
         Send movie to receiver
 

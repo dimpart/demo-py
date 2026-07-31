@@ -35,7 +35,8 @@
     Check for querying meta, document & group members
 """
 
-from typing import Generic, TypeVar, Optional, Dict
+from typing import Optional
+from typing import Generic, TypeVar
 
 from startrek.types import Duration
 from dimsdk import DateTime
@@ -44,13 +45,23 @@ from dimsdk import DateTime
 K = TypeVar('K')
 
 
+try:
+    import collections.abc as abc
+    FloatMap = abc.MutableMapping[K, float]
+    TimeMap = abc.MutableMapping[K, DateTime]
+except TypeError:
+    import typing
+    FloatMap = typing.MutableMapping[K, float]
+    TimeMap = typing.MutableMapping[K, DateTime]
+
+
 class FrequencyChecker(Generic[K]):
     """ Frequency checker for duplicated queries """
 
     def __init__(self, expires: Duration):
         super().__init__()
         self.__expires = expires
-        self.__records: Dict[K, float] = {}  # ID -> seconds
+        self.__records: FloatMap = {}  # ID -> seconds
 
     def __force_expired(self, key: K, now: DateTime):
         self.__records[key] = now + self.__expires
@@ -82,7 +93,7 @@ class RecentTimeChecker(Generic[K]):
 
     def __init__(self):
         super().__init__()
-        self.__times: Dict[K, DateTime] = {}  # ID -> DateTime
+        self.__times: TimeMap = {}  # ID -> DateTime
 
     def set_last_time(self, key: K, now: Optional[DateTime]):
         if now is None:

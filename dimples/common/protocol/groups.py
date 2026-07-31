@@ -29,11 +29,14 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from dimsdk import DateTime
 from dimsdk import ID
 from dimsdk import GroupCommand, BaseGroupCommand
+
+from ...utils import StrMap
+from ...utils import StringPairing
 
 from .app import CustomizedContent
 
@@ -64,7 +67,7 @@ class QueryCommand(GroupCommand, ABC):
 
 class QueryGroupCommand(BaseGroupCommand, QueryCommand):
 
-    def __init__(self, content: Dict = None, group: ID = None, last_time: DateTime = None):
+    def __init__(self, content: StrMap = None, group: ID = None, last_time: DateTime = None):
         cmd = QueryCommand.QUERY if content is None else None
         super().__init__(content, cmd=cmd, group=group)
         if last_time is not None:
@@ -105,7 +108,7 @@ class GroupHistory:
     @classmethod
     def query_group_history(cls, group: ID, last_time: DateTime = None) -> CustomizedContent:
         """ QueryCommand is deprecated, use this method instead. """
-        assert group.is_group, 'group ID error: %s' % group
+        assert group.is_group, f'group ID error: {group}'
         content = CustomizedContent.create(app=cls.APP, mod=cls.MOD, act=cls.ACT_QUERY)
         content.group = group
         if last_time is not None:
@@ -165,9 +168,9 @@ class GroupKeys:
     @classmethod
     def create(cls, action: str, group: ID, sender: ID,
                members: List[ID] = None, digest: str = None,
-               encoded_keys: Dict[str, str] = None) -> CustomizedContent:
-        assert group.is_group, 'group ID error: %s' % group
-        assert sender.is_user, 'user ID error: %s' % sender
+               encoded_keys: StringPairing = None) -> CustomizedContent:
+        assert group.is_group, f'group ID error: {group}'
+        assert sender.is_user, f'user ID error: {sender}'
         # 1. create group command
         content = CustomizedContent.create(app=cls.APP, mod=cls.MOD, act=action)
         content.group = group
@@ -191,7 +194,7 @@ class GroupKeys:
 
     # 2. sender -> bot: 'update'
     @classmethod
-    def update_group_keys(cls, group: ID, sender: ID, encoded_keys: Dict[str, str]) -> CustomizedContent:
+    def update_group_keys(cls, group: ID, sender: ID, encoded_keys: StringPairing) -> CustomizedContent:
         """ Update group keys from sender """
         return cls.create(action=cls.ACT_UPDATE, group=group, sender=sender, encoded_keys=encoded_keys)
 

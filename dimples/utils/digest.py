@@ -32,9 +32,11 @@
 
 import hashlib
 
+from dimsdk import final
 from dimsdk import MessageDigester
 
 
+@final
 class MD5:
     digester: MessageDigester = None
 
@@ -44,6 +46,7 @@ class MD5:
         return cls.digester.digest(data=data)
 
 
+@final
 class SHA1:
     digester: MessageDigester = None
 
@@ -53,6 +56,7 @@ class SHA1:
         return cls.digester.digest(data=data)
 
 
+@final
 class MD5Digester(MessageDigester):
 
     # Override
@@ -63,6 +67,7 @@ class MD5Digester(MessageDigester):
         return hash_obj.digest()
 
 
+@final
 class SHA1Digester(MessageDigester):
 
     # Override

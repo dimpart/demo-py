@@ -29,7 +29,7 @@
 
 """
 
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from dimsdk import EntityType, ID
 from dimsdk import ReliableMessage
@@ -113,7 +113,7 @@ async def get_login_msg(doc_id: ID, sender: ID, node: ID, database: SessionDBI) 
             # if the user is not roaming to this station, just ignore it,
             # let the target station to respond.
             roaming = cmd.station
-            if not isinstance(roaming, Dict):
+            if not isinstance(roaming, dict):
                 Log.error('[CPU] login command error: %s -> %s', doc_id, cmd)
                 Log.error('[CPU] login command error: %s -> %s', doc_id, msg)
                 continue

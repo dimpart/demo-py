@@ -30,7 +30,7 @@
     A dispatcher to decide which way to deliver message.
 """
 
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from dimsdk import EntityType, ID
 from dimsdk import Content, ReceiptCommand
@@ -175,7 +175,7 @@ async def get_roaming_station(receiver: ID, database: SessionDBI) -> Optional[ID
             continue
         # return station id
         station = cmd.station
-        if isinstance(station, Dict):
+        if isinstance(station, dict):
             sid = station.get('did')
             if sid is None:
                 sid = station.get('ID')

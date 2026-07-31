@@ -35,9 +35,9 @@
     Report for online/offline, ...
 """
 
-from typing import Dict
-
 from dimsdk import BaseCommand
+
+from ...utils import StrMap
 
 
 class ReportCommand(BaseCommand):
@@ -61,7 +61,7 @@ class ReportCommand(BaseCommand):
     ONLINE = 'online'
     OFFLINE = 'offline'
 
-    def __init__(self, content: Dict = None, title: str = None):
+    def __init__(self, content: StrMap = None, title: str = None):
         if content is None:
             # 1. new command with title
             cmd = ReportCommand.REPORT
@@ -70,7 +70,7 @@ class ReportCommand(BaseCommand):
                 self['title'] = title
         else:
             # 2. command info from network
-            assert title is None, 'params error: %s, %s' % (content, title)
+            assert title is None, f'params error: {title}, {content}'
             super().__init__(content)
 
     #

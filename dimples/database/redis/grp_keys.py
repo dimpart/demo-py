@@ -23,10 +23,11 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Dict
+from typing import Optional
 
 from dimsdk import ID
 
+from ...utils import StringPairing
 from ...utils import json_encode, json_decode, utf8_encode, utf8_decode
 
 from .base import RedisCache
@@ -57,7 +58,7 @@ class GroupKeysCache(RedisCache):
         ma = str(sender.address)
         return '%s.%s.%s.%s.encrypted-keys' % (self.db_name, self.tbl_name, ga, ma)
 
-    async def get_group_keys(self, group: ID, sender: ID) -> Optional[Dict[str, str]]:
+    async def get_group_keys(self, group: ID, sender: ID) -> Optional[StringPairing]:
         name = self.__cache_name(group=group, sender=sender)
         value = await self.get(name=name)
         if value is not None:
@@ -67,7 +68,7 @@ class GroupKeysCache(RedisCache):
             assert info is not None, f'document error: {value}'
             return info
 
-    async def save_group_keys(self, group: ID, sender: ID, keys: Dict[str, str]) -> bool:
+    async def save_group_keys(self, group: ID, sender: ID, keys: StringPairing) -> bool:
         js = json_encode(container=keys)
         value = utf8_encode(string=js)
         name = self.__cache_name(group=group, sender=sender)

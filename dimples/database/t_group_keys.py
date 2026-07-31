@@ -24,12 +24,13 @@
 # ==============================================================================
 
 import threading
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple
 
 from aiou.mem import CachePool
 
 from dimsdk import ID
 
+from ..utils import StringPairing
 from ..utils import Config
 from ..common import GroupKeysDBI
 
@@ -39,7 +40,7 @@ from .redis import GroupKeysCache
 from .t_base import DbTask, DataCache
 
 
-class PwdTask(DbTask[Tuple[ID, ID], Dict[str, str]]):
+class PwdTask(DbTask[Tuple[ID, ID], StringPairing]):
 
     def __init__(self, group: ID, sender: ID,
                  redis: GroupKeysCache, storage: GroupKeysStorage,
@@ -55,7 +56,7 @@ class PwdTask(DbTask[Tuple[ID, ID], Dict[str, str]]):
         return self._group, self._sender
 
     # Override
-    async def _read_data(self) -> Optional[Dict[str, str]]:
+    async def _read_data(self) -> Optional[StringPairing]:
         # 1. the redis server will return None when cache not found
         # 2. when redis server return an empty array, no need to check local storage again
         keys = await self._redis.get_group_keys(group=self._group, sender=self._sender)
@@ -71,7 +72,7 @@ class PwdTask(DbTask[Tuple[ID, ID], Dict[str, str]]):
         return keys
 
     # Override
-    async def _write_data(self, value: Dict[str, str]) -> bool:
+    async def _write_data(self, value: StringPairing) -> bool:
         # 1. store into redis server
         ok1 = await self._redis.save_group_keys(group=self._group, sender=self._sender, keys=value)
         # 2. save into local storage
@@ -95,7 +96,7 @@ class GroupKeysTable(DataCache, GroupKeysDBI):
                        redis=self._redis, storage=self._dos,
                        mutex_lock=self._mutex_lock, cache_pool=self._cache_pool)
 
-    async def _merge_keys(self, group: ID, sender: ID, keys: Dict[str, str]) -> Optional[Dict[str, str]]:
+    async def _merge_keys(self, group: ID, sender: ID, keys: StringPairing) -> Optional[StringPairing]:
         # 0. load old records
         table = await self.get_group_keys(group=group, sender=sender)
         if table is None:
@@ -122,7 +123,7 @@ class GroupKeysTable(DataCache, GroupKeysDBI):
             # key changed
             return keys
         # 3. same digest, merge keys
-        table = table.copy()
+        table = dict(table)  # .copy()
         for member, value in keys.items():
             # update key for member
             table[member] = value
@@ -135,7 +136,7 @@ class GroupKeysTable(DataCache, GroupKeysDBI):
     #
 
     # Override
-    async def save_group_keys(self, group: ID, sender: ID, keys: Dict[str, str]) -> bool:
+    async def save_group_keys(self, group: ID, sender: ID, keys: StringPairing) -> bool:
         keys = await self._merge_keys(group=group, sender=sender, keys=keys)
         if keys is None:
             return False
@@ -143,6 +144,6 @@ class GroupKeysTable(DataCache, GroupKeysDBI):
         return await task.save(keys)
 
     # Override
-    async def get_group_keys(self, group: ID, sender: ID) -> Optional[Dict[str, str]]:
+    async def get_group_keys(self, group: ID, sender: ID) -> Optional[StringPairing]:
         task = self._new_task(group=group, sender=sender)
         return await task.load()

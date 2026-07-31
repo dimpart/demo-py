@@ -61,7 +61,7 @@ class Station(User):
         if identifier is None:
             identifier = self.ANY
         else:
-            assert identifier.type == EntityType.STATION, 'Station ID type error: %s' % identifier
+            assert identifier.type == EntityType.STATION, f'Station ID type error: {identifier}'
         self.__user = BaseUser(identifier=identifier)
         self.__host = host
         self.__port = port
@@ -108,7 +108,7 @@ class Station(User):
             port = doc.get_property(name='port')
             port = Converter.get_int(value=port)
             if port is not None and port > 0:
-                assert 16 < port < 65536, 'station port error: %d' % port
+                assert 16 < port < 65536, f'station port error: {port}'
                 self.__port = port
             isp = doc.get_property(name='provider')
             isp = ID.parse(identifier=isp)
@@ -218,7 +218,7 @@ class ServiceProvider(BaseGroup):
 
     def __init__(self, identifier: ID):
         super().__init__(identifier=identifier)
-        assert identifier.type == EntityType.ISP, 'Service Provider ID type error: %s' % identifier
+        assert identifier.type == EntityType.ISP, f'Service Provider ID type error: {identifier}'
 
     @property
     async def profile(self) -> Optional[Document]:
@@ -231,7 +231,7 @@ class ServiceProvider(BaseGroup):
         doc = await self.profile
         if doc is not None:
             array = doc.get_property(name='stations')
-            if isinstance(array, List):
+            if isinstance(array, list):
                 return array
         # TODO: load from local storage
         return []

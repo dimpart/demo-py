@@ -36,9 +36,11 @@
     If value of 'list' is None, means querying block-list from station
 """
 
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from dimsdk import ID, BaseCommand
+
+from ...utils import StrMap
 
 
 class BlockCommand(BaseCommand):
@@ -57,7 +59,7 @@ class BlockCommand(BaseCommand):
 
     BLOCK = 'block'
 
-    def __init__(self, content: Optional[Dict] = None):
+    def __init__(self, content: Optional[StrMap] = None):
         if content is None:
             super().__init__(cmd=BlockCommand.BLOCK)
         else:

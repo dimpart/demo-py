@@ -23,14 +23,14 @@
 # SOFTWARE.
 # ==============================================================================
 
-from abc import ABC
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from dimsdk import EncryptKey
 from dimsdk import ID
 from dimsdk import InstantMessage, SecureMessage, ReliableMessage
 from dimsdk import MessagePacker
 
+from ..utils import StrMap
 from ..utils import Logging
 
 from .mkm import DocumentUtils
@@ -43,7 +43,7 @@ from .messenger import CommonMessenger
 from .queue import SuspendedMessageQueue
 
 
-class CommonMessagePacker(MessagePacker, Logging, ABC):
+class CommonMessagePacker(MessagePacker, Logging):
 
     def __init__(self, facebook: CommonFacebook, messenger: CommonMessenger):
         super().__init__(facebook=facebook, messenger=messenger)
@@ -55,10 +55,10 @@ class CommonMessagePacker(MessagePacker, Logging, ABC):
         assert isinstance(transceiver, CommonMessenger), f'transceiver error: {transceiver}'
         return transceiver
 
-    def suspend_reliable_message(self, msg: ReliableMessage, error: Dict):
+    def suspend_reliable_message(self, msg: ReliableMessage, error: StrMap):
         self.__queue.suspend_reliable_message(msg=msg, error=error)
 
-    def suspend_instant_message(self, msg: InstantMessage, error: Dict):
+    def suspend_instant_message(self, msg: InstantMessage, error: StrMap):
         self.__queue.suspend_instant_message(msg=msg, error=error)
 
     def resume_reliable_messages(self) -> List[ReliableMessage]:

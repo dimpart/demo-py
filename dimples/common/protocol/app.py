@@ -29,10 +29,11 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Dict
 
 from dimsdk import ContentType, Content
 from dimsdk import BaseContent
+
+from ...utils import StrMap
 
 
 class AppContent(Content, ABC):
@@ -107,13 +108,13 @@ class CustomizedContent(Content, ABC):
 
 class AppCustomizedContent(BaseContent, AppContent, CustomizedContent):
 
-    def __init__(self, content: Dict = None,
+    def __init__(self, content: StrMap = None,
                  msg_type: str = None,
                  app: str = None, mod: str = None, act: str = None):
         if content is None:
             # 1. new content with type, application, module & action
             assert app is not None and mod is not None and act is not None, \
-                'customized content error: %s, %s, %s, %s' % (msg_type, app, mod, act)
+                f'customized content error: {msg_type}, {app}, {mod}, {act}'
             if msg_type is None:
                 msg_type = ContentType.CUSTOMIZED
             super().__init__(None, msg_type)
@@ -123,7 +124,7 @@ class AppCustomizedContent(BaseContent, AppContent, CustomizedContent):
         else:
             # 2. content info from network
             assert msg_type is None and app is None and mod is None and act is None, \
-                'params error: %s, %s, %s, %s, %s' % (content, msg_type, app, mod, act)
+                f'params error: {content}, {msg_type}, {app}, {mod}, {act}'
             super().__init__(content)
 
     @property  # Override

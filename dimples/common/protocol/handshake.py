@@ -40,9 +40,11 @@
 
 from abc import ABC, abstractmethod
 from enum import IntEnum
-from typing import Optional, Dict
+from typing import Optional
 
 from dimsdk import Command, BaseCommand
+
+from ...utils import StrMap
 
 
 class HandshakeState(IntEnum):
@@ -158,10 +160,10 @@ class HandshakeCommand(Command, ABC):
 
 class BaseHandshakeCommand(BaseCommand, HandshakeCommand):
 
-    def __init__(self, content: Dict = None, title: str = None, session: str = None):
+    def __init__(self, content: StrMap = None, title: str = None, session: str = None):
         if content is None:
             # 1. new command with title & session key
-            assert title is not None, 'handshake command error: %s' % session
+            assert title is not None, f'handshake command error: {session}'
             cmd = self.HANDSHAKE
             super().__init__(cmd=cmd)
             self['title'] = title
@@ -170,7 +172,7 @@ class BaseHandshakeCommand(BaseCommand, HandshakeCommand):
                 self['session'] = session
         else:
             # 2. command info from network
-            assert title is None and session is None, 'params error: %s, %s, %s' % (content, title, session)
+            assert title is None and session is None, f'params error: {content}, {title}, {session}'
             super().__init__(content)
 
     @property

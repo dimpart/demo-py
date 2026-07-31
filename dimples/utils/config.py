@@ -23,11 +23,13 @@
 # SOFTWARE.
 # ==============================================================================
 
-from collections.abc import Mapping, MutableMapping
 from configparser import ConfigParser
 from typing import Optional, List
 
 from aiou import RedisConnector
+
+from dimsdk.core.compress_keys import StringPairing
+from dimsdk import StrMap, MutableStrMap
 
 from dimsdk import ID
 
@@ -72,7 +74,7 @@ class Config(IConfig, Logging):
             self.error(msg='failed to load stations: %s, %s' % (error, parser))
         return self
 
-    def to_map(self) -> Optional[MutableMapping]:
+    def to_map(self) -> Optional[MutableStrMap]:
         parser = self.__parser
         if parser is None or self.__ready:
             return self.__info
@@ -89,7 +91,7 @@ class Config(IConfig, Logging):
         return 'Config: %s' % self.to_map()
 
     # Override
-    def get_section(self, section: str) -> Optional[Mapping]:
+    def get_section(self, section: str) -> Optional[StrMap]:
         parser = self.__parser
         if parser is not None:
             return _section_options(parser=parser, section=section)
@@ -226,7 +228,7 @@ class Config(IConfig, Logging):
     #
 
     @property
-    def ans_records(self) -> Optional[Mapping[str, str]]:
+    def ans_records(self) -> Optional[StringPairing]:
         return self.get_section(section='ans')
 
     #
@@ -252,7 +254,7 @@ class Config(IConfig, Logging):
         return neighbor_stations
 
 
-def _update_sections(info: MutableMapping, parser: ConfigParser) -> MutableMapping:
+def _update_sections(info: MutableStrMap, parser: ConfigParser) -> MutableStrMap:
     sections = parser.sections()
     for name in sections:
         options = _section_options(parser=parser, section=name)
@@ -262,7 +264,7 @@ def _update_sections(info: MutableMapping, parser: ConfigParser) -> MutableMappi
     return info
 
 
-def _section_options(parser: ConfigParser, section: str) -> Optional[Mapping]:
+def _section_options(parser: ConfigParser, section: str) -> Optional[StrMap]:
     try:
         array = parser.items(section=section)
     except Exception as error:

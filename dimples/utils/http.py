@@ -23,11 +23,13 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Union, Dict
+from typing import Optional, Union
 
 import requests
 from requests import Response, Session
 from requests.cookies import RequestsCookieJar
+
+from dimsdk.core.compress_keys import StringPairing
 
 from dimsdk import DateTime
 
@@ -36,7 +38,7 @@ from startrek.utils import Logging
 from .cache import SharedCacheManager
 
 
-def fetch_cookies(response: Response) -> Optional[Dict]:
+def fetch_cookies(response: Response) -> Optional[StringPairing]:
     cookies = response.cookies
     if isinstance(cookies, RequestsCookieJar):
         return cookies.get_dict()
@@ -52,7 +54,7 @@ def fetch_cookies(response: Response) -> Optional[Dict]:
 
 class HttpSession:
 
-    def __init__(self, long_connection: bool = False, proxies: Dict[str, str] = None, verify: bool = True):
+    def __init__(self, long_connection: bool = False, proxies: StringPairing = None, verify: bool = True):
         super().__init__()
         self.__long_connection = long_connection
         self.__session = None
@@ -68,11 +70,11 @@ class HttpSession:
         return network
 
     @property
-    def proxies(self) -> Optional[Dict[str, str]]:
+    def proxies(self) -> Optional[StringPairing]:
         return self.__proxies
 
     @proxies.setter
-    def proxies(self, values: Dict[str, str]):
+    def proxies(self, values: StringPairing):
         self.__proxies = values
 
     def set_proxy(self, scheme: str, proxy: Optional[str]):
@@ -84,7 +86,7 @@ class HttpSession:
         elif values is not None:
             values.pop(scheme, None)
 
-    def http_get(self, url: str, headers: Dict = None, cookies: Dict = None) -> Response:
+    def http_get(self, url: str, headers: StringPairing = None, cookies: StringPairing = None) -> Response:
         network = self.session if self.__long_connection else requests
         proxies = self.__proxies
         verify = self.__verify
@@ -92,7 +94,8 @@ class HttpSession:
                                headers=headers, cookies=cookies,
                                proxies=proxies, verify=verify)
 
-    def http_post(self, url: str, data: Union[Dict, bytes], headers: Dict = None, cookies: Dict = None) -> Response:
+    def http_post(self, url: str, data: Union[StringPairing, bytes],
+                  headers: StringPairing = None, cookies: StringPairing = None) -> Response:
         network = self.session if self.__long_connection else requests
         proxies = self.__proxies
         verify = self.__verify
@@ -107,7 +110,7 @@ class HttpClient(Logging):
     CACHE_REFRESHING = 32  # seconds
 
     def __init__(self, session: HttpSession = None,
-                 long_connection: bool = False, proxies: Dict[str, str] = None, verify: bool = True,
+                 long_connection: bool = False, proxies: StringPairing = None, verify: bool = True,
                  base_url: str = None):
         super().__init__()
         if session is None:
@@ -123,18 +126,18 @@ class HttpClient(Logging):
         return self.__base
 
     @property
-    def proxies(self) -> Optional[Dict[str, str]]:
+    def proxies(self) -> Optional[StringPairing]:
         return self.__session.proxies
 
     @proxies.setter
-    def proxies(self, values: Dict[str, str]):
+    def proxies(self, values: StringPairing):
         self.__session.proxies = values
 
     def set_proxy(self, scheme: str, proxy: Optional[str]):
         self.__session.set_proxy(scheme=scheme, proxy=proxy)
 
     @property
-    def cookies(self) -> Dict:
+    def cookies(self) -> StringPairing:
         return self.__cookies
 
     def set_cookie(self, key: str, value: str):
@@ -159,7 +162,7 @@ class HttpClient(Logging):
     def remove_cache(self, url: str):
         self.__web_cache.erase(key=url)
 
-    def cache_get(self, url: str, headers: Dict = None) -> Optional[Response]:
+    def cache_get(self, url: str, headers: StringPairing = None) -> Optional[Response]:
         now = DateTime.now()
         # 1. check memory cache
         value, holder = self.__web_cache.fetch(key=url, now=now)
@@ -181,14 +184,14 @@ class HttpClient(Logging):
         # OK, return cached value
         return value
 
-    def http_get(self, url: str, headers: Dict = None) -> Response:
+    def http_get(self, url: str, headers: StringPairing = None) -> Response:
         url = self._get_url(url=url)
         self.info(msg='GET %s' % url)
         response = self.__session.http_get(url=url, headers=headers, cookies=self.cookies)
         self._update_cookies(response=response)
         return response
 
-    def http_post(self, url: str, data: Union[Dict, bytes], headers: Dict = None) -> Response:
+    def http_post(self, url: str, data: Union[StringPairing, bytes], headers: StringPairing = None) -> Response:
         url = self._get_url(url=url)
         self.info(msg='POST %s' % url)
         response = self.__session.http_post(url=url, data=data, headers=headers, cookies=self.cookies)

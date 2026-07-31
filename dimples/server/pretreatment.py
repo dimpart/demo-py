@@ -23,7 +23,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Tuple, List, Set, Dict
+from typing import Optional, Tuple, List, Set
 
 from dimsdk import ID, ANYONE, EVERYONE
 from dimsdk import EntityType
@@ -211,7 +211,7 @@ def _split_message(msg: ReliableMessage, receiver: ID, terminals: Set[str]) -> L
                 msg_keys[text] = base64
         md = None
     else:
-        assert isinstance(msg_keys, Dict), f'message keys error: {msg_keys}'
+        assert isinstance(msg_keys, dict), f'message keys error: {msg_keys}'
         md = msg_keys.get('digest')
         if md is not None:
             msg_keys.pop('digest')

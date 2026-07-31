@@ -35,9 +35,12 @@
     Query/respond ANS records
 """
 
-from typing import Union, List, Dict
+from typing import Union, List
 
 from dimsdk import Command, BaseCommand
+
+from ...utils import StrMap
+from ...utils import StringPairing
 
 
 class AnsCommand(BaseCommand):
@@ -59,7 +62,7 @@ class AnsCommand(BaseCommand):
 
     ANS = 'ans'
 
-    def __init__(self, content: Dict = None, names: str = None):
+    def __init__(self, content: StrMap = None, names: str = None):
         if content is None:
             # 1. new command with names
             assert names is not None, 'ANS command error'
@@ -68,7 +71,7 @@ class AnsCommand(BaseCommand):
             self['names'] = names
         else:
             # 2. command info from network
-            assert names is None, 'params error: %s, %s' % (content, names)
+            assert names is None, f'params error: {content}, {names}'
             super().__init__(content)
 
     #
@@ -80,12 +83,12 @@ class AnsCommand(BaseCommand):
         return [] if string is None else string.split()
 
     @property
-    def records(self) -> Dict[str, str]:
+    def records(self) -> StringPairing:
         dictionary = self.get('records')
         return {} if dictionary is None else dictionary
 
     @records.setter
-    def records(self, value: Dict[str, str]):
+    def records(self, value: StringPairing):
         """ get map for (name => ID string) """
         self['records'] = value
 
@@ -95,13 +98,13 @@ class AnsCommand(BaseCommand):
 
     @classmethod
     def query(cls, names: Union[str, List[str]]) -> Command:
-        if isinstance(names, List):
+        if isinstance(names, list):
             names = ' '.join(names)
         return cls(names=names)
 
     @classmethod
-    def response(cls, names: Union[str, List[str]], records: Dict[str, str]) -> Command:
-        if isinstance(names, List):
+    def response(cls, names: Union[str, List[str]], records: StringPairing) -> Command:
+        if isinstance(names, list):
             names = ' '.join(names)
         command = cls(names=names)
         command.records = records

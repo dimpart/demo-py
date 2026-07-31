@@ -31,10 +31,12 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from dimsdk import Address, ID, IDFactory
 from dimsdk import ANYONE, EVERYONE, FOUNDER
+
+from ..utils import StringPairing
 
 
 class AddressNameService(ABC):
@@ -169,7 +171,7 @@ class AddressNameServer(AddressNameService):
             # TODO: save new record into database
             return True
 
-    def fix(self, records: Dict[str, str]) -> int:
+    def fix(self, records: StringPairing) -> int:
         """ remove the keywords temporary before save new records """
         count = 0
         # self.__reserved['apns'] = False
@@ -183,7 +185,7 @@ class AddressNameServer(AddressNameService):
             if value is None or len(value) == 0:
                 continue
             identifier = ID.parse(identifier=value)
-            assert identifier is not None, 'record error: %s => %s' % (alias, value)
+            assert identifier is not None, f'record error: {alias} => {value}'
             if self.save(name=alias, identifier=identifier):
                 count += 1
         # self.__reserved['station'] = True

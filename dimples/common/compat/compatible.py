@@ -23,9 +23,6 @@
 # SOFTWARE.
 # ==============================================================================
 
-from collections.abc import MutableMapping
-from typing import List
-
 from dimsdk import Converter
 from dimsdk import Document
 from dimsdk import ContentType
@@ -33,6 +30,8 @@ from dimsdk import Content, FileContent, NameCard
 from dimsdk import Command, MetaCommand, DocumentCommand
 from dimsdk import ReceiptCommand
 from dimsdk import ReliableMessage
+
+from ...utils import MutableStrMap
 
 from ..mkm import DocumentUtils
 from ..protocol import LoginCommand
@@ -57,7 +56,7 @@ class Compatible:
             _fix_meta_version(meta=meta)
 
     @classmethod
-    def fix_meta_version(cls, meta: MutableMapping):
+    def fix_meta_version(cls, meta: MutableStrMap):
         _fix_meta_version(meta=meta)
 
     @classmethod
@@ -67,11 +66,11 @@ class Compatible:
             _fix_doc_id(document=visa)
 
     @classmethod
-    def fix_document_id(cls, document: MutableMapping):
+    def fix_document_id(cls, document: MutableStrMap):
         _fix_doc_id(document=document)
 
 
-def _fix_cmd(content: MutableMapping):
+def _fix_cmd(content: MutableStrMap):
     cmd = content.get('command')
     if cmd is None:
         # 'command' not exists, copy the value from 'cmd'
@@ -79,16 +78,16 @@ def _fix_cmd(content: MutableMapping):
         if cmd is not None:
             content['command'] = cmd
         else:
-            assert False, 'command error: %s' % content
+            assert False, f'command error: {content}'
     elif 'cmd' in content:
         # these two values must be equal
-        assert content.get('cmd') == cmd, 'command error: %s' % content
+        assert content.get('cmd') == cmd, f'command error: {content}'
     else:
         # copy value from 'command' to 'cmd'
         content['cmd'] = cmd
 
 
-def _fix_did(content: MutableMapping):
+def _fix_did(content: MutableStrMap):
     did = content.get('did')
     if did is None:
         # 'did' not exists, copy the value from 'ID'
@@ -96,22 +95,22 @@ def _fix_did(content: MutableMapping):
         if did is not None:
             content['did'] = did
         # else:
-        #     assert False, 'did not exists: %s' % content
+        #     assert False, f'did not exists: {content}'
     elif 'ID' in content:
         # these two values must be equal
-        assert content.get('ID') == did, 'did error: %s' % content
+        assert content.get('ID') == did, f'did error: {content}'
     else:
         # copy value from 'did' to 'ID'
         content['ID'] = did
 
 
-def _fix_doc_id(document: MutableMapping):
+def _fix_doc_id(document: MutableStrMap):
     # 'ID' <-> 'did'
     _fix_did(document)
     return document
 
 
-def _fix_meta_version(meta: MutableMapping):
+def _fix_meta_version(meta: MutableStrMap):
     version = meta.get('type')
     if version is None:
         version = meta.get('version')  # compatible with MKM 0.9.*
@@ -126,7 +125,7 @@ def _fix_meta_version(meta: MutableMapping):
         meta['version'] = version
 
 
-def _fix_file_content(content: MutableMapping):
+def _fix_file_content(content: MutableStrMap):
     pwd = content.get('key')
     if pwd is not None:
         # Tarsier version > 1.3.7
@@ -152,7 +151,7 @@ _file_types = [
 class CompatibleIncoming:
 
     @classmethod
-    def fix_content(cls, content: MutableMapping):
+    def fix_content(cls, content: MutableStrMap):
         # get content type
         msg_type = content.get('type')
         msg_type = Converter.get_str(value=msg_type)
@@ -200,7 +199,7 @@ class CompatibleIncoming:
                 _fix_meta_version(meta=meta)
 
     @classmethod
-    def _fix_docs(cls, content: MutableMapping):
+    def _fix_docs(cls, content: MutableStrMap):
         # cmd: 'document' -> 'documents'
         cmd = content.get('command')
         if cmd == 'document':
@@ -244,11 +243,11 @@ class CompatibleOutgoing:
             _fix_did(content=content.to_map())
             # 3. fix station
             station = content.get('station')
-            if isinstance(station, MutableMapping):
+            if isinstance(station, dict):
                 _fix_did(station)
             # 4. fix provider
             provider = content.get('provider')
-            if isinstance(provider, MutableMapping):
+            if isinstance(provider, dict):
                 _fix_did(provider)
             return
 
@@ -270,7 +269,7 @@ class CompatibleOutgoing:
                 _fix_meta_version(meta=meta)
 
     @classmethod
-    def _fix_type(cls, content: MutableMapping):
+    def _fix_type(cls, content: MutableStrMap):
         msg_type = content.get('type')
         if isinstance(msg_type, str):
             num_type = Converter.get_int(value=msg_type)
@@ -286,7 +285,7 @@ class CompatibleOutgoing:
             content['command'] = 'document'
         # 'documents' -> 'document'
         array = content.get('documents')
-        if isinstance(array, List):
+        if isinstance(array, list):
             docs = Document.convert(array=array)
             last = DocumentUtils.last_document(documents=docs)
             if last is not None:
@@ -294,7 +293,7 @@ class CompatibleOutgoing:
             if len(docs) == 1:
                 content.pop('documents', None)
         doc = content.get('document')
-        if isinstance(doc, MutableMapping):
+        if isinstance(doc, dict):
             _fix_doc_id(document=doc)
 
 

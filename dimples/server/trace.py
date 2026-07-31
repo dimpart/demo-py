@@ -33,6 +33,7 @@ from dimsdk import DateTime
 from dimsdk import Mapper, Dictionary
 from dimsdk import ID, ReliableMessage
 
+from ..utils import MutableStrMap
 from ..utils import Singleton
 
 
@@ -118,7 +119,7 @@ class TraceNode(Dictionary):
                 'ID': node,
                 'did': node,
             }
-        # assert isinstance(node, dict), 'trace node error: %s' % node
+        # assert isinstance(node, dict), f'trace node error: {node}'
         return cls(dictionary=node)
 
     @classmethod
@@ -131,12 +132,12 @@ class TraceNode(Dictionary):
         return nodes
 
     @classmethod
-    def revert(cls, nodes: List) -> List[Dict]:
+    def revert(cls, nodes: List) -> List[MutableStrMap]:
         array = []
         for item in nodes:
             if isinstance(item, Mapper):
                 array.append(item.to_map())
-            elif isinstance(item, Dict):
+            elif isinstance(item, dict):
                 array.append(item)
             elif isinstance(item, ID):
                 array.append({
@@ -231,10 +232,10 @@ class TracePool:
     def get_traces(self, msg: ReliableMessage) -> TraceList:
         """ get traces for this message """
         sig = msg.get('signature')
-        assert sig is not None, 'message error: %s' % msg
+        assert sig is not None, f'message error: {msg}'
         if len(sig) > 16:
             sig = sig[-16:]
-        add = msg.receiver.address
+        add = msg.receiver  # .address
         tag = '%s:%s' % (sig, add)
         cached = self.__caches.get(tag)
         if cached is None:
