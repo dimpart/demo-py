@@ -38,7 +38,6 @@ from dimsdk import ID, Document, Visa
 from dimsdk import Command, MetaCommand, DocumentCommand
 from dimsdk import Envelope, InstantMessage
 
-from ..utils import Logging
 from ..common import DocumentUtils
 from ..common import AccountDBI
 from ..common import Station
@@ -62,7 +61,7 @@ def session_center():
     return SessionCenter()
 
 
-class ServerChecker(EntityChecker, Logging):
+class ServerChecker(EntityChecker):
 
     def __init__(self, database: AccountDBI, facebook: CommonFacebook):
         super().__init__(database=database)
@@ -128,7 +127,7 @@ class ServerChecker(EntityChecker, Logging):
         proactive_neighbors = self.active_stations
         for sid in proactive_neighbors:
             if sid is None or sid.is_broadcast:
-                self.error(msg='neighbor station ID error: %s' % sid)
+                self.error('neighbor station ID error: %s', sid)
                 continue
             neighbors.add(sid)
         return neighbors
@@ -137,7 +136,7 @@ class ServerChecker(EntityChecker, Logging):
         facebook = self.facebook
         messenger = self.messenger
         if facebook is None or messenger is None:
-            self.error(msg='facebook messenger not ready yet: %s, %s' % (facebook, messenger))
+            self.error('facebook messenger not ready yet: %s, %s', facebook, messenger)
             return False
         user = await facebook.current_user
         sid = user.identifier
@@ -149,12 +148,12 @@ class ServerChecker(EntityChecker, Logging):
         # dispatch
         dispatcher = get_dispatcher()
         neighbors = await self.all_neighbors
-        self.info(msg='broadcast command "%s" to neighbors: %s' % (command.cmd, neighbors))
+        self.info('broadcast command "%s" to neighbors: %s', command.cmd, neighbors)
         # # avoid the new recipients redirect it to same targets
         # r_msg['recipients'] = ID.revert(identifiers=neighbors)
         for receiver in neighbors:
             if receiver == sid:
-                self.debug(msg='skip cycled message: %s -> %s' % (sid, receiver))
+                self.debug('skip cycled message: %s -> %s', sid, receiver)
                 continue
             await dispatcher.deliver_message(msg=r_msg, receiver=receiver)
         return len(neighbors) > 0
@@ -163,9 +162,9 @@ class ServerChecker(EntityChecker, Logging):
     async def query_meta(self, identifier: ID) -> bool:
         if not self.is_meta_query_expired(identifier=identifier):
             # query not expired yet
-            self.info(msg='meta query not expired yet: %s' % identifier)
+            self.info('meta query not expired yet: %s', identifier)
             return False
-        self.info(msg='querying meta for: %s' % identifier)
+        self.info('querying meta for: %s', identifier)
         command = MetaCommand.query(identifier=identifier)
         return await self._broadcast_command(command=command)
 
@@ -173,34 +172,34 @@ class ServerChecker(EntityChecker, Logging):
     async def query_documents(self, identifier: ID, documents: List[Document]) -> bool:
         if not self.is_document_query_expired(identifier=identifier):
             # query not expired yet
-            self.info(msg='document query not expired yet: %s' % identifier)
+            self.info('document query not expired yet: %s', identifier)
             return False
         last_time = self.get_last_document_time(identifier=identifier, documents=documents)
-        self.info(msg='querying document for: %s, last time: %s' % (identifier, last_time))
+        self.info('querying document for: %s, last time: %s', identifier, last_time)
         command = DocumentCommand.query(identifier=identifier, last_time=last_time)
         return await self._broadcast_command(command=command)
 
     # Override
     async def query_members(self, group: ID, members: List[ID]) -> bool:
         # station will never process group info
-        self.error(msg='DON\'t call me!')
+        self.error('DON\'t call me!')
         return False
 
     # Override
     async def send_visa(self, visa: Visa, receiver: ID, updated: bool = False) -> bool:
         me = DocumentUtils.get_document_id(document=visa)
         if me == receiver:
-            self.warning(msg='skip cycled message: %s, %s' % (receiver, visa))
+            self.warning('skip cycled message: %s, %s', receiver, visa)
             return False
         messenger = self.messenger
         if messenger is None:
-            self.error(msg='messenger not ready yet')
+            self.error('messenger not ready yet')
             return False
         elif not self.is_document_response_expired(identifier=receiver, force=updated):
             # response not expired yet
-            self.debug(msg='visa response not expired yet: %s' % receiver)
+            self.debug('visa response not expired yet: %s', receiver)
             return False
-        self.info(msg='push visa document: %s => %s' % (me, receiver))
+        self.info('push visa document: %s => %s', me, receiver)
         content = DocumentCommand.response(identifier=me, meta=None, documents=[visa])
         _, r_msg = await messenger.send_content(content=content, sender=me, receiver=receiver, priority=1)
         return r_msg is not None

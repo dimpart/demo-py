@@ -33,17 +33,27 @@
 from typing import Optional, List
 
 from dimsdk import DateTime
-from dimsdk import ID, Content, ReliableMessage
+from dimsdk import ID, Visa
+from dimsdk import Content
+from dimsdk import DocumentCommand
+from dimsdk import ReliableMessage
 
 from dimsdk.cpu import BaseCommandProcessor
 
 from ...utils import Log, Logging
 from ...common import DocumentUtils, MessageUtils
 from ...common import HandshakeCommand
-from ...common import CommonMessenger, Session
+from ...common import CommonFacebook, CommonMessenger
+from ...common import Session
 
 
 class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
+
+    @property  # Override
+    def facebook(self) -> CommonFacebook:
+        barrack = super().facebook
+        assert isinstance(barrack, CommonFacebook), 'facebook error: %s' % barrack
+        return barrack
 
     @property
     def messenger(self) -> CommonMessenger:
@@ -53,7 +63,13 @@ class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
 
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
+        facebook = self.facebook
+        messenger = self.messenger
+        session = messenger.session
         assert isinstance(content, HandshakeCommand), 'handshake command error: %s' % content
+        #
+        #   check command title
+        #
         title = content.title
         if title == 'DIM?' or title == 'DIM!':
             # S -> C
@@ -66,8 +82,6 @@ class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
             })
         elif title == HandshakeCommand.SAY_HI:
             # C -> S: Nice to meet you!
-            messenger = self.messenger
-            session = messenger.session
             res = HandshakeCommand.respond(session=content.session)
             res['remote_address'] = session.remote_address
             return [res]
@@ -77,47 +91,61 @@ class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
         else:
             # C -> S: Hello world!
             assert 'Hello world!' == title, 'Handshake command error: %s' % content
-        # set/update session in session server with new session key
-        messenger = self.messenger
-        session = messenger.session
-        _update_session_terminal(session=session, msg=r_msg)
-        sender = r_msg.sender
-        sess_id = session.identifier
-        assert sess_id is None or sess_id.is_same_as(other=sender), 'sender error: %s, %s' % (sender, sess_id)
-        if session.session_key == content.session:
-            # session key match
-            self.info('handshake accepted: %s, session: %s', sender, session.session_key)
-            # verified success
-            await handshake_accepted(sender=sender, when=content.time, session=session, messenger=messenger)
-            res = HandshakeCommand.success(session=session.session_key)
-        else:
+            sender = r_msg.sender
+            # set/update session.terminal(device) with visa.terminal
+            visa = MessageUtils.get_visa(msg=r_msg)
+            if visa is not None:
+                _update_session_terminal(session=session, visa=visa, sender=sender)
+        #
+        #   check session key
+        #
+        if session.session_key != content.session:
             # session key not match
             # ask client to sign it with the new session key
             res = HandshakeCommand.again(session=session.session_key)
-        res['remote_address'] = session.remote_address
-        return [res]
+            res['remote_address'] = session.remote_address
+            return [res]
+        else:
+            # session key match
+            self.info('handshake accepted: %s, session: %s', sender, session.session_key)
+            # verified success
+            await _handshake_accepted(sender=sender, when=content.time, session=session, messenger=messenger)
+            res = HandshakeCommand.success(session=session.session_key)
+            res['remote_address'] = session.remote_address
+        #
+        #   check visa terminal
+        #
+        sess_id = session.identifier
+        assert sess_id.is_same_as(other=sender), 'sender error: %s, %s' % (sender, session)
+        visa_documents = await _filter_visa_documents(identifier=sess_id, facebook=facebook)
+        cnt = len(visa_documents)
+        Log.warning('got %d extra visa document(s) after handshake: %s', cnt, sender)
+        if cnt == 0:
+            return [res]
+        else:
+            return [
+                res,
+                # respond with other visa documents
+                DocumentCommand.response(documents=visa_documents, identifier=sender),
+            ]
 
 
-def _update_session_terminal(session: Session, msg: ReliableMessage):
-    visa = MessageUtils.get_visa(msg=msg)
-    Log.info('fetch terminal: %s, %s', msg.sender, visa)
-    if visa is None:
-        return False
+def _update_session_terminal(session: Session, visa: Visa, sender: ID) -> bool:
     terminal = DocumentUtils.get_visa_terminal(document=visa)
-    if terminal is None or terminal == '':
-        return False
+    Log.info('new terminal: "%s", sender: %s', terminal, sender)
+    # check old value
     device = session.device
     if device is None or device == '':
-        Log.info('update session terminal (device): "%s" -> "%s", %s', device, terminal, msg.sender)
+        Log.info('update session terminal (device): "%s" -> "%s", sender: %s', device, terminal, sender)
         session.set_device(terminal=terminal)
         return True
     # TODO:
-    Log.error('session terminal (device) conflicts: "%s" -> "%s", %s', device, terminal, msg.sender)
+    Log.error('session terminal (device) conflicts: "%s" -> "%s", sender: %s', device, terminal, sender)
     session.set_device(terminal=terminal)
     return False
 
 
-async def handshake_accepted(sender: ID, when: Optional[DateTime], session: Session, messenger: CommonMessenger):
+async def _handshake_accepted(sender: ID, when: Optional[DateTime], session: Session, messenger: CommonMessenger):
     from ..session_center import SessionCenter
     center = SessionCenter()
     # 1. update session ID
@@ -128,3 +156,24 @@ async def handshake_accepted(sender: ID, when: Optional[DateTime], session: Sess
     from ..messenger import ServerMessenger
     assert isinstance(messenger, ServerMessenger)
     await messenger.handshake_success()
+
+
+async def _filter_visa_documents(identifier: ID, facebook: CommonFacebook) -> List[Visa]:
+    documents = await facebook.get_documents(identifier=identifier)
+    if len(documents) < 1:
+        return []
+    else:
+        terminal = identifier.terminal
+    other_visa_documents = []
+    for doc in documents:
+        if not isinstance(doc, Visa):
+            Log.warning('visa document error: %s => %s', identifier, doc)
+            continue
+        device = DocumentUtils.get_visa_terminal(document=doc)
+        if device == terminal:
+            # skip for current device
+            continue
+        Log.info('got another visa (terminal: "%s") for session: %s', device, identifier)
+        other_visa_documents.append(doc)
+    # OK
+    return other_visa_documents

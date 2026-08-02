@@ -28,7 +28,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Optional, List, Dict
 
 from dimsdk import DateTime
@@ -131,7 +131,7 @@ class EntityChecker(Logging, ABC):
         elif meta is None:
             # meta not found, sure to query
             return True
-        # assert MetaUtils.match_identifier(identifier, meta), 'meta not match: %s, %s' % (identifier, meta)
+        # assert MetaUtils.match_id(identifier=identifier, meta=meta), f'meta not match: {identifier}, {meta}'
         return False
 
     #
@@ -215,8 +215,8 @@ class EntityChecker(Logging, ABC):
         for cmd, _ in array:
             his_time = cmd.time
             if his_time is None:
-                # assert False, 'group command error: %s' % cmd
-                self.warning(msg='group command time error: %s' % cmd)
+                # assert False, f'group command error: {cmd}'
+                self.warning('group command time error: %s', cmd)
             elif last_time is None or last_time < his_time:
                 last_time = his_time
         # OK
@@ -226,6 +226,7 @@ class EntityChecker(Logging, ABC):
     #   Querying
     #
 
+    @abstractmethod
     async def query_meta(self, identifier: ID) -> bool:
         """
         Request for meta with entity ID
@@ -238,6 +239,7 @@ class EntityChecker(Logging, ABC):
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.query_meta()'
         )
 
+    @abstractmethod
     async def query_documents(self, identifier: ID, documents: List[Document]) -> bool:
         """
         Request for documents with entity ID
@@ -251,6 +253,7 @@ class EntityChecker(Logging, ABC):
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.query_documents()'
         )
 
+    @abstractmethod
     async def query_members(self, group: ID, members: List[ID]) -> bool:
         """
         Request for group members with group ID
@@ -268,6 +271,7 @@ class EntityChecker(Logging, ABC):
     #   Responding
     #
 
+    @abstractmethod
     async def send_visa(self, visa: Visa, receiver: ID, updated: bool = False) -> bool:
         """
         Send my visa document to contact

@@ -35,7 +35,6 @@ from dimsdk import ID, Document, Visa
 from dimsdk import Content
 from dimsdk import MetaCommand, DocumentCommand
 
-from ..utils import Logging
 from ..common import DocumentUtils
 from ..common import Station
 from ..common import QueryCommand
@@ -44,7 +43,7 @@ from ..common import AccountDBI
 from ..common import CommonFacebook, CommonMessenger
 
 
-class ClientChecker(EntityChecker, Logging):
+class ClientChecker(EntityChecker):
 
     def __init__(self, database: AccountDBI, facebook: CommonFacebook):
         super().__init__(database=database)
@@ -69,13 +68,13 @@ class ClientChecker(EntityChecker, Logging):
     async def query_meta(self, identifier: ID) -> bool:
         messenger = self.messenger
         if messenger is None:
-            self.error(msg='messenger not ready yet')
+            self.error('messenger not ready yet')
             return False
         elif not self.is_meta_query_expired(identifier=identifier):
             # query not expired yet
-            self.debug(msg='meta query not expired yet: %s' % identifier)
+            self.debug('meta query not expired yet: %s', identifier)
             return False
-        self.info(msg='querying meta for: %s' % identifier)
+        self.info('querying meta for: %s', identifier)
         content = MetaCommand.query(identifier=identifier)
         _, r_msg = await messenger.send_content(content=content, sender=None, receiver=Station.ANY, priority=1)
         return r_msg is not None
@@ -84,14 +83,14 @@ class ClientChecker(EntityChecker, Logging):
     async def query_documents(self, identifier: ID, documents: List[Document]) -> bool:
         messenger = self.messenger
         if messenger is None:
-            self.error(msg='messenger not ready yet')
+            self.error('messenger not ready yet')
             return False
         elif not self.is_document_query_expired(identifier=identifier):
             # query not expired yet
-            self.debug(msg='document query not expired yet: %s' % identifier)
+            self.debug('document query not expired yet: %s', identifier)
             return False
         last_time = self.get_last_document_time(identifier=identifier, documents=documents)
-        self.info(msg='querying document for: %s, last time: %s' % (identifier, last_time))
+        self.info('querying document for: %s, last time: %s', identifier, last_time)
         content = DocumentCommand.query(identifier=identifier, last_time=last_time)
         _, r_msg = await messenger.send_content(content=content, sender=None, receiver=Station.ANY, priority=1)
         return r_msg is not None
@@ -101,19 +100,19 @@ class ClientChecker(EntityChecker, Logging):
         facebook = self.facebook
         messenger = self.messenger
         if facebook is None or messenger is None:
-            self.error(msg='facebook messenger not ready yet')
+            self.error('facebook messenger not ready yet')
             return False
         elif not self.is_members_query_expired(identifier=group):
             # query not expired yet
-            self.debug('members query not expired yet: %s' % group)
+            self.debug('members query not expired yet: %s', group)
             return False
         user = await facebook.current_user
         if user is None:
-            self.error(msg='failed to get current user')
+            self.error('failed to get current user')
             return False
         me = user.identifier
         last_time = await self.get_last_group_history_time(group=group)
-        self.info(msg='querying members for group: %s, last time: %s' % (group, last_time))
+        self.info('querying members for group: %s, last time: %s', group, last_time)
         # build query command for group members
         # TODO: use 'GroupHistory.queryGroupHistory(group, lastTime)' instead
         command = QueryCommand.query(group=group, last_time=last_time)
@@ -130,9 +129,9 @@ class ClientChecker(EntityChecker, Logging):
         if last_member is None:
             r_msg = None
         else:
-            self.info(msg='querying members from: %s, group: %s' % (last_member, group))
+            self.info('querying members from: %s, group: %s', last_member, group)
             _, r_msg = await messenger.send_content(sender=me, receiver=last_member, content=command, priority=1)
-        self.error(msg='group not ready: %s' % group)
+        self.error('group not ready: %s', group)
         return r_msg is not None
 
     # protected
@@ -140,18 +139,18 @@ class ClientChecker(EntityChecker, Logging):
         facebook = self.facebook
         messenger = self.messenger
         if facebook is None or messenger is None:
-            self.error(msg='facebook messenger not ready yet')
+            self.error('facebook messenger not ready yet')
             return False
         admins = await facebook.get_administrators(group)
         if len(admins) == 0:
-            self.warning(msg='administrators not found for group: %s' % group)
+            self.warning('administrators not found for group: %s', group)
             return False
         success = 0
         # querying members from admins
-        self.info(msg='querying members from admins: %s, group: %s' % (admins, group))
+        self.info('querying members from admins: %s, group: %s', admins, group)
         for receiver in admins:
             if receiver.is_same_as(other=sender):
-                self.warning(msg='ignore cycled querying: %s, group: %s' % (receiver, group))
+                self.warning('ignore cycled querying: %s, group: %s', receiver, group)
                 continue
             _, r_msg = await messenger.send_content(sender=sender, receiver=receiver, content=command, priority=1)
             if r_msg is not None:
@@ -164,7 +163,7 @@ class ClientChecker(EntityChecker, Logging):
             # last active member is an admin, already queried
             pass
         else:
-            self.info(msg='querying members from: %s, group: %s' % (last_member, group))
+            self.info('querying members from: %s, group: %s', last_member, group)
             await messenger.send_content(sender=sender, receiver=last_member, content=command, priority=1)
         return True
 
@@ -173,17 +172,17 @@ class ClientChecker(EntityChecker, Logging):
         facebook = self.facebook
         messenger = self.messenger
         if facebook is None or messenger is None:
-            self.error(msg='facebook messenger not ready yet')
+            self.error('facebook messenger not ready yet')
             return False
         owner = await facebook.get_owner(group)
         if owner is None:
-            self.warning(msg='owner not found for group: %s' % group)
+            self.warning('owner not found for group: %s', group)
             return False
         elif owner == sender:
-            self.error(msg='you are the owner of group: %s' % group)
+            self.error('you are the owner of group: %s', group)
             return False
         # querying members from owner
-        self.info(msg='querying members from owner: %s, group: %s' % (owner, group))
+        self.info('querying members from owner: %s, group: %s', owner, group)
         _, r_msg = await messenger.send_content(sender=sender, receiver=owner, content=command, priority=1)
         if r_msg is None:
             # failed
@@ -193,7 +192,7 @@ class ClientChecker(EntityChecker, Logging):
             # last active member is the owner, already queried
             pass
         else:
-            self.info(msg='querying members from: %s, group: %s' % (last_member, group))
+            self.info('querying members from: %s, group: %s', last_member, group)
             await messenger.send_content(sender=sender, receiver=last_member, content=command, priority=1)
         return True
 
@@ -201,17 +200,17 @@ class ClientChecker(EntityChecker, Logging):
     async def send_visa(self, visa: Visa, receiver: ID, updated: bool = False) -> bool:
         me = DocumentUtils.get_document_id(document=visa)
         if me == receiver:
-            self.warning(msg='skip cycled message: %s, %s' % (receiver, visa))
+            self.warning('skip cycled message: %s, %s', receiver, visa)
             return False
         messenger = self.messenger
         if messenger is None:
-            self.error(msg='messenger not ready yet')
+            self.error('messenger not ready yet')
             return False
         elif not self.is_document_response_expired(identifier=receiver, force=updated):
             # response not expired yet
-            self.debug(msg='visa response not expired yet: %s' % receiver)
+            self.debug('visa response not expired yet: %s', receiver)
             return False
-        self.info(msg='push visa document: %s => %s' % (me, receiver))
+        self.info('push visa document: %s => %s', me, receiver)
         content = DocumentCommand.response(identifier=me, meta=None, documents=[visa])
         _, r_msg = await messenger.send_content(content=content, sender=me, receiver=receiver, priority=1)
         return r_msg is not None
