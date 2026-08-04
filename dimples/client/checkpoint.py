@@ -24,12 +24,13 @@
 # ==============================================================================
 
 import threading
-from typing import Dict
+from typing import MutableMapping
 
 from dimsdk import DateTime
 from dimsdk import ReliableMessage
 
 from ..utils import Singleton
+from ..common import MessageUtils
 
 
 class SigPool:
@@ -40,7 +41,7 @@ class SigPool:
     def __init__(self):
         super().__init__()
         self._next_time = 0
-        self.__caches: Dict[str, float] = {}  # signature:receiver => timestamp
+        self.__caches: MutableMapping[str, float] = {}  # signature:receiver => timestamp
 
     def purge(self, now: DateTime):
         """ remove expired traces """
@@ -64,8 +65,10 @@ class SigPool:
         assert sig is not None, 'message error: %s' % msg
         if len(sig) > 16:
             sig = sig[-16:]
-        add = msg.receiver  # .address
-        tag = '%s:%s' % (sig, add)
+        rcpt = MessageUtils.rcpt_to(msg=msg)
+        if rcpt is None:
+            rcpt = msg.receiver
+        tag = '%s:%s' % (sig, rcpt)
         cached = self.__caches.get(tag)
         if cached is not None:
             return True

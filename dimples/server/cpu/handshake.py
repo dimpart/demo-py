@@ -41,7 +41,7 @@ from dimsdk import ReliableMessage
 from dimsdk.cpu import BaseCommandProcessor
 
 from ...utils import Log, Logging
-from ...common import DocumentUtils, MessageUtils
+from ...common import DocumentUtils
 from ...common import HandshakeCommand
 from ...common import CommonFacebook, CommonMessenger
 from ...common import Session
@@ -92,10 +92,6 @@ class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
             # C -> S: Hello world!
             assert 'Hello world!' == title, 'Handshake command error: %s' % content
             sender = r_msg.sender
-            # set/update session.terminal(device) with visa.terminal
-            visa = MessageUtils.get_visa(msg=r_msg)
-            if visa is not None:
-                _update_session_terminal(session=session, visa=visa, sender=sender)
         #
         #   check session key
         #
@@ -128,21 +124,6 @@ class HandshakeCommandProcessor(BaseCommandProcessor, Logging):
                 # respond with other visa documents
                 DocumentCommand.response(documents=visa_documents, identifier=sender),
             ]
-
-
-def _update_session_terminal(session: Session, visa: Visa, sender: ID) -> bool:
-    terminal = DocumentUtils.get_visa_terminal(document=visa)
-    Log.info('new terminal: "%s", sender: %s', terminal, sender)
-    # check old value
-    device = session.device
-    if device is None or device == '':
-        Log.info('update session terminal (device): "%s" -> "%s", sender: %s', device, terminal, sender)
-        session.set_device(terminal=terminal)
-        return True
-    # TODO:
-    Log.error('session terminal (device) conflicts: "%s" -> "%s", sender: %s', device, terminal, sender)
-    session.set_device(terminal=terminal)
-    return False
 
 
 async def _handshake_accepted(sender: ID, when: Optional[DateTime], session: Session, messenger: CommonMessenger):

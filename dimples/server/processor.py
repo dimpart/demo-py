@@ -28,7 +28,7 @@
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
-from typing import Optional, List
+from typing import List
 
 from dimsdk import ID
 from dimsdk import EntityType
@@ -38,20 +38,17 @@ from dimsdk import TextContent, ReceiptCommand
 from dimsdk import Facebook, Messenger
 from dimsdk.cpu import ContentProcessorCreator
 
+from ..utils import Log
 from ..common import DocumentUtils, MessageUtils
 from ..common import Station
 from ..common import CommonFacebook, CommonMessenger
 from ..common import CommonMessageProcessor
 
 from .dispatcher import Dispatcher
-from .pretreatment import Pretreatment
+from .trace import TraceManager
 
 
 class ServerMessageProcessor(CommonMessageProcessor):
-
-    def __init__(self, facebook: Facebook, messenger: Messenger):
-        super().__init__(facebook=facebook, messenger=messenger)
-        self.__pretreatment = Pretreatment(facebook=facebook, messenger=messenger)
 
     @property
     def facebook(self) -> CommonFacebook:
@@ -104,14 +101,26 @@ class ServerMessageProcessor(CommonMessageProcessor):
         current = await facebook.current_user
         sid = current.identifier
         # pretreat
-        msg, messages = await self.__pretreatment.pretreat(msg=msg)
-        if msg is None:
-            responses = []
+        if _is_duplicated(msg=msg, node=sid):
+            self.warning('ignore duplicated message: %s -> %s, %s', msg.sender, msg.receiver, msg.group)
+            return []
         else:
+            rcpt = MessageUtils.rcpt_to(msg=msg)
+            if rcpt is None:
+                rcpt = msg.receiver
+            is_mine = rcpt.is_broadcast or rcpt == sid
+        if not is_mine:
+            # deliver messages
+            return await _deliver_message(messages=[msg], station=sid, messenger=messenger)
+        else:
+            # 'station@anywhere'
+            # 'anyone@anywhere'
+            # 'stations@everywhere'
+            # 'everyone@everywhere'
             responses = await super().process_reliable_message(msg=msg)
-            receiver = msg.receiver
             # check for first handshake
-            if receiver == Station.ANY or msg.group == Station.EVERY:
+            receiver = msg.receiver
+            if receiver == Station.ANY or receiver == Station.EVERY or msg.group == Station.EVERY:
                 # if this message sent to 'station@anywhere', or with group ID 'stations@everywhere',
                 # it means the client doesn't have the station's meta (e.g.: first handshaking)
                 # or visa maybe expired, here attach them to the first response.
@@ -127,10 +136,48 @@ class ServerMessageProcessor(CommonMessageProcessor):
             elif session.identifier == sid:
                 # station bridge
                 responses = await _pick_out(messages=responses, bridge=sid, messenger=messenger)
-        # deliver messages
-        res = await _deliver_message(messages=messages, station=sid, messenger=messenger)
-        responses.extend(res)
         return responses
+
+
+def _is_duplicated(msg: ReliableMessage, node: ID) -> bool:
+    """ check duplicated message """
+    man = TraceManager()
+    # check & append current node in msg['traces']
+    prev = man.update_traces(msg=msg, node=node)
+    man.add_node(msg=msg, node=node)
+    if prev is None:
+        # previous trace for current node not found
+        return False
+    else:
+        sender = msg.sender
+        receiver = msg.receiver
+        rcpt = MessageUtils.rcpt_to(msg=msg)
+        if rcpt is None:
+            rcpt = receiver
+    # check cycled message
+    if receiver.is_broadcast:
+        # ignore cycled broadcast message
+        Log.warning('drop cycled broadcast message: %s -> %s (%s)', sender, receiver, rcpt)
+        return True
+    elif sender.type == EntityType.STATION or rcpt.type == EntityType.STATION:
+        # ignore cycled station message
+        Log.warning('drop cycled station message: %s -> %s (%s)', sender, receiver, rcpt)
+        return True
+    elif sender.type == EntityType.BOT or rcpt.type == EntityType.BOT:
+        # ignore cycled bot message
+        Log.warning('drop cycled bot message: %s -> %s (%s)', sender, receiver, rcpt)
+        return True
+    elif msg.time is None:
+        Log.error('message time not found: %s -> %s (%s)', sender, receiver, rcpt)
+        return True
+    # check last time
+    delta = msg.time - prev.time
+    if delta < 60:
+        Log.warning('drop cycled message: %s -> %s (%s)', sender, receiver, rcpt)
+        return True
+    else:
+        Log.info('restart cycled message: %s -> %s (%s)', sender, receiver, rcpt)
+        return False
 
 
 async def _pick_out(messages: List[ReliableMessage], bridge: ID, messenger: CommonMessenger) -> List[ReliableMessage]:
@@ -155,22 +202,32 @@ async def _deliver_message(messages: List[ReliableMessage], station: ID,
     respond_messages = []
     dispatcher = Dispatcher()
     for msg in messages:
-        sender = msg.sender
-        receiver = msg.receiver
+        #
+        #  1. send from
+        #
+        if 'from' in msg:
+            sender = MessageUtils.send_from(msg=msg)
+        else:
+            sender = msg.sender
+        #
+        #  2. rcpt to
+        #
+        if 'rcpt' in msg:
+            receiver = MessageUtils.rcpt_to(msg=msg)
+        else:
+            receiver = msg.receiver
+        #
+        #  3. delivering
+        #
         responses = await dispatcher.deliver_message(msg=msg, receiver=receiver)
-        for res in responses:
-            r_msg = await _pack_message(content=res, sender=station, receiver=sender, messenger=messenger)
-            if r_msg is None:
-                assert False, f'failed to pack response for: {sender}'
-            else:
-                respond_messages.append(r_msg)
+        for body in responses:
+            head = Envelope.create(sender=station, receiver=sender)
+            i_msg = InstantMessage.create(head=head, body=body)
+            s_msg = await messenger.encrypt_message(msg=i_msg)
+            if s_msg is not None:
+                r_msg = await messenger.sign_message(msg=s_msg)
+                if r_msg is not None:
+                    respond_messages.append(r_msg)
+                    continue
+            Log.error('failed to pack response for: %s, from: %s', sender, station)
     return respond_messages
-
-
-async def _pack_message(content: Content, sender: ID, receiver: ID,
-                        messenger: CommonMessenger) -> Optional[ReliableMessage]:
-    envelope = Envelope.create(sender=sender, receiver=receiver)
-    i_msg = InstantMessage.create(head=envelope, body=content)
-    s_msg = await messenger.encrypt_message(msg=i_msg)
-    if s_msg is not None:
-        return await messenger.sign_message(msg=s_msg)

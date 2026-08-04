@@ -27,7 +27,8 @@
 # ==============================================================================
 
 import threading
-from typing import Optional, Union, List, Dict
+from typing import Optional, Union, List
+from typing import MutableMapping
 
 from dimsdk import DateTime
 from dimsdk import Mapper, Dictionary
@@ -35,6 +36,7 @@ from dimsdk import ID, ReliableMessage
 
 from ..utils import MutableStrMap
 from ..utils import Singleton
+from ..common import MessageUtils
 
 
 class TraceNode(Dictionary):
@@ -210,7 +212,7 @@ class TracePool:
     def __init__(self):
         super().__init__()
         self._next_time = 0
-        self.__caches: Dict[str, TraceList] = {}  # signature:receiver => TraceList
+        self.__caches: MutableMapping[str, TraceList] = {}  # signature:receiver => TraceList
 
     def purge(self, now: DateTime):
         """ remove expired traces """
@@ -235,8 +237,10 @@ class TracePool:
         assert sig is not None, f'message error: {msg}'
         if len(sig) > 16:
             sig = sig[-16:]
-        add = msg.receiver  # .address
-        tag = '%s:%s' % (sig, add)
+        rcpt = MessageUtils.rcpt_to(msg=msg)
+        if rcpt is None:
+            rcpt = msg.receiver
+        tag = '%s:%s' % (sig, rcpt)
         cached = self.__caches.get(tag)
         if cached is None:
             # cache not found, create a new one with message time

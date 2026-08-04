@@ -27,7 +27,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from dimsdk import DateTime
-from dimsdk import Envelope, Content, ArrayContent
+from dimsdk import Envelope, Content, ArrayContent, ForwardContent
 from dimsdk import InstantMessage, ReliableMessage
 from dimsdk import MessageProcessor
 from dimsdk import Facebook, Messenger
@@ -85,6 +85,11 @@ class CommonMessageProcessor(MessageProcessor, Logging, ABC):
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
         responses = await super().process_content(content=content, r_msg=r_msg)
+        cnt = len(responses)
+        if cnt > 0 and _contents_empty(contents=responses):
+            # remove empty ArrayContent, ForwardContent
+            self.warning('drop %d empty response(s): %s -> %s, %s', cnt, r_msg.sender, r_msg.receiver, responses)
+            responses = []
         # check sender's document times from the message
         # to make sure the user info synchronized
         await self._check_visa_time(content=content, r_msg=r_msg)
@@ -113,3 +118,21 @@ class CommonMessageProcessor(MessageProcessor, Logging, ABC):
                 self.info('checking for new visa: %s', sender)
                 await facebook.get_documents(identifier=sender)
         return doc_updated
+
+
+def _contents_empty(contents: List[Content]) -> bool:
+    for msg_body in contents:
+        if not _content_empty(content=msg_body):
+            return False
+    return True
+
+
+def _content_empty(content: Content) -> bool:
+    if isinstance(content, ArrayContent):
+        content.to_map()  # serialize "contents"
+        return _contents_empty(contents=content.contents)
+    elif isinstance(content, ForwardContent):
+        content.to_map()  # serialize "messages"
+        return len(content.secrets) == 0
+    else:
+        return False

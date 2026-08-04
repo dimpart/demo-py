@@ -28,8 +28,9 @@
 # SOFTWARE.
 # ==============================================================================
 
-from abc import ABC
 from typing import Optional, List
+
+from dimsdk import final
 
 from dimsdk import ID, ANYONE, FOUNDER
 
@@ -37,6 +38,7 @@ from dimsdk import Meta, Visa, Document
 from dimsdk import Message
 
 
+@final
 class BroadcastUtils:
 
     @classmethod  # private
@@ -86,7 +88,8 @@ class BroadcastUtils:
             return [owner, member]
 
 
-class MessageUtils(ABC):
+@final
+class MessageUtils:
 
     """
         Sender's Meta
@@ -120,3 +123,38 @@ class MessageUtils(ABC):
     @classmethod
     def set_visa(cls, visa: Optional[Visa], msg: Message):
         msg.set_map(key='visa', value=visa)
+
+    """
+        Message Direction
+        ~~~~~~~~~~~~~~~~~
+        MAIL FROM: "moky@xxx/abc"
+        RCPT TO:   "hulk@yyy/def"
+    """
+
+    @classmethod
+    def send_from(cls, msg: Message) -> Optional[ID]:
+        mail_from = msg.get_str(key='from')
+        if mail_from is None:  # or mail_from == '':
+            return None
+        elif mail_from == '/':
+            # Naked ID: "{name}@{address}"
+            return msg.sender.without_terminal()
+        elif mail_from.startswith('/'):
+            # Terminal only: "/{terminal}"
+            terminal = mail_from[1:]
+            return msg.sender.with_terminal(terminal=terminal)
+        else:
+            # Dressed ID: "{name}@{address}/{terminal}"
+            uid = ID.parse(identifier=mail_from)
+            assert msg.sender.is_same_as(other=uid), f'sender error: {msg.sender}, {mail_from}'
+            return uid
+
+    @classmethod
+    def rcpt_to(cls, msg: Message) -> Optional[ID]:
+        rcpt = msg.get_str(key='rcpt')
+        if rcpt is None:  # or rcpt == '':
+            return None
+        else:
+            uid = ID.parse(identifier=rcpt)
+            assert uid.is_user, f'receiver error: {msg.receiver}, {rcpt}'
+            return uid
