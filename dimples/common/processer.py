@@ -35,6 +35,7 @@ from dimsdk.cpu import ContentProcessorCreator
 from dimsdk.cpu import GeneralContentProcessorFactory
 
 from ..utils import Logging
+from .protocol import MessageUtils
 
 from .facebook import CommonFacebook
 
@@ -64,8 +65,8 @@ class CommonMessageProcessor(MessageProcessor, Logging, ABC):
             # nothing to respond
             return []
         # 2. select a local user to build message
-        sender = msg.sender
-        receiver = msg.receiver
+        sender = MessageUtils.real_sender(msg=msg)
+        receiver = MessageUtils.real_receiver(msg=msg)
         user = await self.select_local_user(receiver=receiver)
         if user is None:
             # assert False, f'receiver error: {receiver}'

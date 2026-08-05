@@ -111,6 +111,7 @@ __all__ = [
     #   Utils
     #
 
+    'IDUtils',
     'MetaUtils',
     'DocumentUtils',
 

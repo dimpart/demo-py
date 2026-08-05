@@ -38,6 +38,7 @@ from dimsdk import ReceiptCommand
 from dimsdk import Facebook, Messenger
 from dimsdk.cpu import ContentProcessorCreator
 
+from ..common import MessageUtils
 from ..common import HandshakeCommand
 from ..common import CommonMessenger
 from ..common import CommonMessageProcessor
@@ -48,7 +49,7 @@ class ClientMessageProcessor(CommonMessageProcessor):
     @property
     def messenger(self) -> Optional[CommonMessenger]:
         transceiver = super().messenger
-        assert isinstance(transceiver, CommonMessenger), 'messenger error: %s' % transceiver
+        assert isinstance(transceiver, CommonMessenger), f'messenger error: {transceiver}'
         return transceiver
 
     # Override
@@ -76,7 +77,7 @@ class ClientMessageProcessor(CommonMessageProcessor):
             doc_updated = checker.set_last_document_time(identifier=group, now=last_doc_time)
             # check whether needs update
             if doc_updated:
-                self.info(msg='checking for new bulletin: %s' % group)
+                self.info('checking for new bulletin: %s', group)
                 await facebook.get_documents(identifier=group)
         # check group history time
         last_his_time = r_msg.get_datetime(key='GHT')
@@ -88,7 +89,7 @@ class ClientMessageProcessor(CommonMessageProcessor):
             # check whether needs update
             if mem_updated:
                 checker.set_last_active_member(member=r_msg.sender, group=group)
-                self.info(msg='checking for group members: %s' % group)
+                self.info('checking for group members: %s', group)
                 await facebook.get_members(identifier=group)
         # OK
         return doc_updated or mem_updated
@@ -109,13 +110,13 @@ class ClientMessageProcessor(CommonMessageProcessor):
         else:
             facebook = self.facebook
             messenger = self.messenger
-            assert facebook is not None and messenger is not None, 'twins not ready: %s, %s' % (facebook, messenger)
-        sender = r_msg.sender
-        receiver = r_msg.receiver
+            assert facebook is not None and messenger is not None, f'twins not ready: {facebook}, {messenger}'
+        sender = MessageUtils.real_sender(msg=r_msg)
+        receiver = MessageUtils.real_receiver(msg=r_msg)
         user = await self.select_local_user(receiver=receiver)
         me = None if user is None else user.identifier
         if me is None:
-            # assert False, 'receiver error: %s' % receiver
+            # assert False, f'receiver error: {receiver}'
             return responses
         # check responses
         from_bots = sender.type == EntityType.STATION or sender.type == EntityType.BOT
@@ -126,12 +127,12 @@ class ClientMessageProcessor(CommonMessageProcessor):
             elif isinstance(res, ReceiptCommand):
                 if from_bots:
                     # no need to respond receipt to station
-                    self.info(msg='drop receipt to %s, origin msg time=[%s]' % (sender, r_msg.time))
+                    self.info('drop receipt to %s, origin msg time=[%s]', sender, r_msg.time)
                     continue
             elif isinstance(res, TextContent):
                 if from_bots:
                     # no need to respond text message to station
-                    self.info(msg='drop text to %s, origin time=[%s], text=%s' % (sender, r_msg.time, res.text))
+                    self.info('drop text to %s, origin time=[%s], text=%s', sender, r_msg.time, res.text)
                     continue
             # normal response
             await messenger.send_content(sender=me, receiver=sender, content=res, priority=1)

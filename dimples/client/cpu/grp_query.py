@@ -41,6 +41,7 @@ from typing import List
 from dimsdk import ReliableMessage
 from dimsdk import Content
 
+from ...common import IDUtils
 from ...common import QueryCommand
 
 from .group import GroupCommandProcessor
@@ -50,7 +51,7 @@ class QueryCommandProcessor(GroupCommandProcessor):
 
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
-        assert isinstance(content, QueryCommand), 'query command error: %s' % content
+        assert isinstance(content, QueryCommand), f'query command error: {content}'
 
         # 0. check command
         group, errors = await self._check_expired(content=content, r_msg=r_msg)
@@ -64,7 +65,7 @@ class QueryCommandProcessor(GroupCommandProcessor):
             return errors
 
         sender = r_msg.sender
-        is_member = sender in members
+        is_member = IDUtils.contains(sender, members=members)
         can_query = is_member  # or is_bot
 
         # 2. check permission
@@ -84,7 +85,7 @@ class QueryCommandProcessor(GroupCommandProcessor):
             checker = self.facebook.checker
             last_time = await checker.get_last_group_history_time(group=group)
             if last_time is None:
-                self.error(msg='group history error: %s' % group)
+                self.error('group history error: %s', group)
             elif not last_time.after(query_time):
                 # group history not updated
                 text = 'Group history not updated.'
@@ -98,7 +99,7 @@ class QueryCommandProcessor(GroupCommandProcessor):
 
         # 3. send newest group history commands
         ok = await self.send_group_histories(group=group, receiver=sender)
-        assert ok, 'failed to send history for group: %s => %s' % (group, sender)
+        assert ok, f'failed to send history for group: {group} => {sender}'
 
         # no need to response this group command
         return []

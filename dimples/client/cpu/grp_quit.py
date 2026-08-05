@@ -42,6 +42,8 @@ from dimsdk import ReliableMessage
 from dimsdk import Content
 from dimsdk import QuitCommand
 
+from ...common import IDUtils
+
 from .group import GroupCommandProcessor
 
 
@@ -49,7 +51,7 @@ class QuitCommandProcessor(GroupCommandProcessor):
 
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
-        assert isinstance(content, QuitCommand), 'quit command error: %s' % content
+        assert isinstance(content, QuitCommand), f'quit command error: {content}'
 
         # 0. check command
         group, errors = await self._check_expired(content=content, r_msg=r_msg)
@@ -64,9 +66,9 @@ class QuitCommandProcessor(GroupCommandProcessor):
 
         sender = r_msg.sender
         admins = await self._administrators(group=group)
-        is_owner = sender == owner
-        is_admin = sender in admins
-        is_member = sender in members
+        is_owner = sender.is_same_as(other=owner)
+        is_admin = IDUtils.contains(sender, admins)
+        is_member = IDUtils.contains(sender, members)
 
         # 2. check permission
         if is_owner:
@@ -94,17 +96,17 @@ class QuitCommandProcessor(GroupCommandProcessor):
         if not is_member:
             # the sender is not a member now,
             # shall we notify the sender that the member list was updated?
-            self.warning(msg='not a member now: %s, %s' % (sender, group))
+            self.warning('not a member now: %s, %s', sender, group)
         elif not await self._save_group_history(group=group, content=content, r_msg=r_msg):
             # here try to append the 'quit' command to local storage as group history
             # it should not failed unless the command is expired
-            self.error(msg='failed to save "quit" command for group: %s' % group)
+            self.error('failed to save "quit" command for group: %s', group)
         elif await self._save_members(members=members, group=group):
             # here try to remove the sender from member list
             content['removed'] = [str(sender)]
         else:
             # DB error?
-            assert False, 'failed to save members for group: %s' % group
+            assert False, f'failed to save members for group: {group}'
 
         # no need to response this group command
         return []

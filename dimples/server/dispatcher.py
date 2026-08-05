@@ -243,5 +243,9 @@ class Dispatcher(Logging):
         elif msg.receiver.is_broadcast:
             # no need to save broadcast message
             return False
+        group = msg.group
+        if group is not None and group.is_broadcast:
+            # no need to save broadcast message
+            return False
         # save message in cache
         return await self.mdb.cache_reliable_message(msg=msg, receiver=receiver)

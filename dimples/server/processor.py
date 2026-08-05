@@ -39,6 +39,8 @@ from dimsdk import Facebook, Messenger
 from dimsdk.cpu import ContentProcessorCreator
 
 from ..utils import Log
+from ..utils import get_msg_info
+
 from ..common import DocumentUtils, MessageUtils
 from ..common import Station
 from ..common import CommonFacebook, CommonMessenger
@@ -105,9 +107,7 @@ class ServerMessageProcessor(CommonMessageProcessor):
             self.warning('ignore duplicated message: %s -> %s, %s', msg.sender, msg.receiver, msg.group)
             return []
         else:
-            rcpt = MessageUtils.rcpt_to(msg=msg)
-            if rcpt is None:
-                rcpt = msg.receiver
+            rcpt = MessageUtils.real_receiver(msg=msg)
             is_mine = rcpt.is_broadcast or rcpt == sid
         if not is_mine:
             # deliver messages
@@ -151,32 +151,36 @@ def _is_duplicated(msg: ReliableMessage, node: ID) -> bool:
     else:
         sender = msg.sender
         receiver = msg.receiver
-        rcpt = MessageUtils.rcpt_to(msg=msg)
-        if rcpt is None:
-            rcpt = receiver
+        msg_info = get_msg_info(msg=msg)
     # check cycled message
     if receiver.is_broadcast:
         # ignore cycled broadcast message
-        Log.warning('drop cycled broadcast message: %s -> %s (%s)', sender, receiver, rcpt)
+        Log.warning('drop cycled broadcast message: %s', msg_info)
         return True
-    elif sender.type == EntityType.STATION or rcpt.type == EntityType.STATION:
+    elif receiver.is_group:
+        Log.error('drop cycled group message: %s', msg_info)
+        return True
+    elif sender.type == EntityType.STATION or receiver.type == EntityType.STATION:
         # ignore cycled station message
-        Log.warning('drop cycled station message: %s -> %s (%s)', sender, receiver, rcpt)
+        Log.warning('drop cycled station message: %s', msg_info)
         return True
-    elif sender.type == EntityType.BOT or rcpt.type == EntityType.BOT:
+    elif sender.type == EntityType.BOT or receiver.type == EntityType.BOT:
         # ignore cycled bot message
-        Log.warning('drop cycled bot message: %s -> %s (%s)', sender, receiver, rcpt)
+        Log.warning('drop cycled bot message: %s', msg_info)
         return True
-    elif msg.time is None:
+    # check message time
+    msg_time = msg.time
+    if msg_time is None:
+        rcpt = MessageUtils.rcpt_to(msg=msg)
         Log.error('message time not found: %s -> %s (%s)', sender, receiver, rcpt)
         return True
     # check last time
-    delta = msg.time - prev.time
+    delta = msg_time - prev.time
     if delta < 60:
-        Log.warning('drop cycled message: %s -> %s (%s)', sender, receiver, rcpt)
+        Log.warning('drop cycled message: %s', msg_info)
         return True
     else:
-        Log.info('restart cycled message: %s -> %s (%s)', sender, receiver, rcpt)
+        Log.info('restart cycled message: %s', msg_info)
         return False
 
 
@@ -202,23 +206,9 @@ async def _deliver_message(messages: List[ReliableMessage], station: ID,
     respond_messages = []
     dispatcher = Dispatcher()
     for msg in messages:
-        #
-        #  1. send from
-        #
-        if 'from' in msg:
-            sender = MessageUtils.send_from(msg=msg)
-        else:
-            sender = msg.sender
-        #
-        #  2. rcpt to
-        #
-        if 'rcpt' in msg:
-            receiver = MessageUtils.rcpt_to(msg=msg)
-        else:
-            receiver = msg.receiver
-        #
-        #  3. delivering
-        #
+        sender = MessageUtils.real_sender(msg=msg)
+        receiver = MessageUtils.real_receiver(msg=msg)
+        # delivering
         responses = await dispatcher.deliver_message(msg=msg, receiver=receiver)
         for body in responses:
             head = Envelope.create(sender=station, receiver=sender)

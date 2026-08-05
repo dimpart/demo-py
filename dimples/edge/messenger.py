@@ -40,6 +40,8 @@ from dimsdk import ReliableMessage
 
 from ..utils import Log
 from ..utils import get_msg_sig
+
+from ..common import MessageUtils
 from ..common import Station
 from ..common import ServiceProvider
 from ..common import MessageDBI, SessionDBI
@@ -96,6 +98,8 @@ class OctopusMessenger(ClientMessenger, ABC):
         if msg.type != ContentType.COMMAND:
             # not a command
             return False
+        # TODO: check handshake flag
+        # ...
         i_msg = await self.decrypt_message(msg=msg)
         if i_msg is not None:
             return isinstance(i_msg.content, HandshakeCommand)
@@ -107,14 +111,16 @@ class OctopusMessenger(ClientMessenger, ABC):
             self.info('receive handshaking: %s', msg.sender)
             return await super().process_reliable_message(msg=msg)
         # check for cycled message
-        if msg.receiver == msg.sender:
-            self.error('drop cycled msg(type=%s): %s -> %s | from %s, traces: %s',
-                       msg.type, msg.sender, msg.receiver, get_remote_station(messenger=self), msg.get('traces'))
+        sender = MessageUtils.real_sender(msg=msg)
+        receiver = MessageUtils.real_receiver(msg=msg)
+        sid = get_remote_station(messenger=self)
+        sig = get_msg_sig(msg=msg, size=8)
+        if receiver == sender:
+            self.error('drop cycled msg: type=%s, "%s" from station: %s', msg.type, sig, sid)
             return []
         # handshake accepted, redirecting message
-        sig = get_msg_sig(msg=msg)
-        self.info('redirect msg(type=%s, sig=%s): %s -> %s | from %s, traces: %s',
-                  msg.type, sig, msg.sender, msg.receiver, get_remote_station(messenger=self), msg.get('traces'))
+        sig = get_msg_sig(msg=msg, size=8)
+        self.info('deliver msg: type=%s, "%s" from station: %s', msg.type, sig, sid)
         return await self._deliver_message(msg=msg)
 
     @abstractmethod

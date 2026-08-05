@@ -55,12 +55,13 @@ class ReportCommandProcessor(BaseCommandProcessor, Logging):
         assert isinstance(content, ReportCommand), 'report command error: %s' % content
         # check session sender
         session = self.session
+        sess_id = session.identifier
         sender = r_msg.sender
-        if session.identifier is None:
+        if sess_id is None:
             self.error(msg='session not login, drop report command: %s => %s' % (sender, content))
             return []
         # FIXME: send via bridge?
-        assert sender == session.identifier, 'report sender error: %s not %s' % (sender, session.identifier)
+        assert sender.is_same_as(other=sess_id), 'report sender error: %s not %s' % (sender, sess_id)
         # check report title
         title = content.title
         if title == ReportCommand.ONLINE:

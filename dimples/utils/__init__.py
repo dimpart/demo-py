@@ -75,12 +75,15 @@ def is_before(old_time: Optional[DateTime], new_time: Optional[DateTime]) -> boo
     # return DocumentUtils.is_before(old_time, new_time)
 
 
-def get_msg_sig(msg: ReliableMessage) -> str:
+def get_msg_sig(msg: ReliableMessage, size: int = -1) -> str:
     """ last 6 bytes (signature in base64) """
     sig = msg.get('signature')
     # assert isinstance(sig, str), f'signature error: {sig}'
     sig = sig.strip()
-    return sig[-8:]  # last 6 bytes (signature in base64)
+    if size < 0:
+        return sig
+    assert 0 < size < len(sig)
+    return sig[-size:]  # last 6 bytes (signature in base64)
 
 
 def get_msg_traces(msg: ReliableMessage) -> List:
@@ -104,13 +107,17 @@ def get_msg_traces(msg: ReliableMessage) -> List:
 
 
 def get_msg_info(msg: ReliableMessage) -> str:
-    sig = get_msg_sig(msg=msg)
-    traces = get_msg_traces(msg=msg)
+    sender = msg.sender
+    receiver = msg.receiver
+    rcpt = msg.get('rcpt')
     group = msg.group
+    # traces
+    traces = get_msg_traces(msg=msg)
+    sig = get_msg_sig(msg=msg, size=8)
     if group is None:
-        return '%s => %s [%s] %s, traces: %s' % (msg.sender, msg.receiver, msg.time, sig, traces)
+        return f'type={msg.type}, "{sig}" [{msg.time}] {sender} => {receiver} ({rcpt}), traces: {traces}'
     else:
-        return '%s => %s, %s [%s] %s, traces: %s' % (msg.sender, msg.receiver, group, msg.time, sig, traces)
+        return f'type={msg.type}, "{sig}" [{msg.time}] {sender} => {receiver} ({rcpt}), group={group}, traces: {traces}'
 
 
 def template_replace(template: str, key: str, value: str) -> str:

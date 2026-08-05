@@ -34,6 +34,7 @@ from dimsdk import ContentType, TextContent, FileContent
 from dimsdk import InstantMessage, SecureMessage, ReliableMessage
 
 from ..common import DocumentUtils
+from ..common import MessageUtils
 from ..common import CommonFacebook
 from ..common import CommonMessagePacker
 
@@ -163,7 +164,8 @@ class ClientMessagePacker(CommonMessagePacker):
         if i_msg is None:
             # failed to decrypt message, visa.key changed?
             # 1. push new visa document to this message sender
-            await self._push_visa(receiver=msg.sender)
+            sender = MessageUtils.real_sender(msg=msg)
+            await self._push_visa(receiver=sender)
             # 2. build 'failed' message
             i_msg = await self._build_failed_message(msg=msg)
         else:

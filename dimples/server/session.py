@@ -37,7 +37,6 @@
 
 import socket
 import threading
-import traceback
 from typing import Optional, List
 
 from dimsdk import ID, EntityType
@@ -49,8 +48,12 @@ from startrek import Arrival, Departure
 
 from ..utils import Log, Runner
 from ..utils import hex_encode, random_bytes
-from ..utils import get_msg_sig, get_msg_info
+from ..utils import get_msg_info
+from ..utils import get_exception_traceback
+
+from ..common import MessageUtils
 from ..common import SessionDBI, MessageDBI, ReliableMessageDBI
+
 from ..conn import MessageWrapper
 from ..conn import BaseSession
 from ..conn import WSArrival, MarsStreamArrival, MTPStreamArrival
@@ -148,7 +151,9 @@ class ServerSession(BaseSession):
             except Exception as error:
                 source = porter.remote_address
                 self.error('parse message failed (%s): %s, %s', source, error, pack)
-                traceback.print_exc()
+                # traceback.print_exc()
+                tr = get_exception_traceback()
+                self.error('traceback: %s', tr)
                 # from dimsdk import TextContent
                 # return TextContent.new(text=f'parse message failed: {error}')
         gate = self.gate
@@ -255,8 +260,8 @@ async def _load_cached_messages(identifier: ID, session: ServerSession):
     for msg in messages:
         data = await messenger.serialize_message(msg=msg)
         ok = await session.queue_message_package(msg=msg, data=data, priority=1)
-        sig = get_msg_sig(msg=msg)
-        Log.info('queue message for: %s, %s, %s', identifier, ok, sig)
+        msg_info = get_msg_info(msg=msg)
+        Log.info('queue message for: %s, %s, %s', identifier, ok, msg_info)
 
 
 async def remove_reliable_message(msg: ReliableMessage, receiver: ID, database: MessageDBI):
@@ -273,8 +278,8 @@ async def remove_reliable_message(msg: ReliableMessage, receiver: ID, database: 
         # if msg.receiver == receiver:
         #     # station message won't be stored
         #     return False
-        receiver = msg.receiver
-    info = get_msg_info(msg=msg)
-    Log.info('message sent, remove it: %s', info)
+        receiver = MessageUtils.real_receiver(msg=msg)
+    msg_info = get_msg_info(msg=msg)
+    Log.info('message sent, remove it: %s', msg_info)
     # remove sent message from database
     return await database.remove_reliable_message(msg=msg, receiver=receiver)

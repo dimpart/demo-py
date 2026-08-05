@@ -34,6 +34,7 @@ from .bot import Bot
 from .station import Station
 from .station import ServiceProvider
 
+from .utils import IDUtils
 from .utils import MetaUtils
 from .utils import DocumentUtils
 
@@ -66,6 +67,7 @@ __all__ = [
     #   Utils
     #
 
+    'IDUtils',
     'MetaUtils',
     'DocumentUtils',
 

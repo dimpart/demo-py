@@ -64,7 +64,7 @@ class MessageCache(RedisCache):
         return '%s.%s.%s.messages' % (self.db_name, self.tbl_name, did)
 
     async def save_reliable_message(self, msg: ReliableMessage, receiver: ID) -> bool:
-        sig = get_msg_sig(msg=msg)  # last 6 bytes (signature in base64)
+        sig = get_msg_sig(msg=msg, size=8)  # last 6 bytes (signature in base64)
         # 1. save message: 'dkd.msg.{RECEIVER}.{SIG}
         msg_key = self.__msg_cache_name(identifier=receiver, sig=sig)
         msg_info = msg.to_map()
@@ -79,7 +79,7 @@ class MessageCache(RedisCache):
         return ok1 and ok2
 
     async def remove_reliable_message(self, msg: ReliableMessage, receiver: ID) -> bool:
-        sig = get_msg_sig(msg=msg)  # last 6 bytes (signature in base64)
+        sig = get_msg_sig(msg=msg, size=8)  # last 6 bytes (signature in base64)
         # 1. delete message: 'dkd.msg.{RECEIVER}.{SIG}
         msg_key = self.__msg_cache_name(identifier=receiver, sig=sig)
         ok1 = await self.delete(msg_key)

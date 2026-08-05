@@ -28,13 +28,13 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, List
+from typing import Optional, Union, List
 
 from dimsdk import final
 
 from dimsdk import ID, ANYONE, FOUNDER
-
 from dimsdk import Meta, Visa, Document
+from dimsdk import Envelope
 from dimsdk import Message
 
 
@@ -118,7 +118,7 @@ class MessageUtils:
         doc = Document.parse(document=visa)
         if isinstance(doc, Visa):
             return doc
-        assert doc is None, 'visa document error: %s' % visa
+        assert doc is None, f'visa document error: {visa}'
 
     @classmethod
     def set_visa(cls, visa: Optional[Visa], msg: Message):
@@ -132,7 +132,7 @@ class MessageUtils:
     """
 
     @classmethod
-    def send_from(cls, msg: Message) -> Optional[ID]:
+    def send_from(cls, msg: Union[Message, Envelope]) -> Optional[ID]:
         mail_from = msg.get_str(key='from')
         if mail_from is None:  # or mail_from == '':
             return None
@@ -150,7 +150,7 @@ class MessageUtils:
             return uid
 
     @classmethod
-    def rcpt_to(cls, msg: Message) -> Optional[ID]:
+    def rcpt_to(cls, msg: Union[Message, Envelope]) -> Optional[ID]:
         rcpt = msg.get_str(key='rcpt')
         if rcpt is None:  # or rcpt == '':
             return None
@@ -158,3 +158,17 @@ class MessageUtils:
             uid = ID.parse(identifier=rcpt)
             assert uid.is_user, f'receiver error: {msg.receiver}, {rcpt}'
             return uid
+
+    @classmethod
+    def real_sender(cls, msg: Union[Message, Envelope]) -> ID:
+        sender = cls.send_from(msg=msg)
+        if sender is None:
+            sender = msg.sender
+        return sender
+
+    @classmethod
+    def real_receiver(cls, msg: Union[Message, Envelope]) -> ID:
+        receiver = cls.rcpt_to(msg=msg)
+        if receiver is None:
+            receiver = msg.receiver
+        return receiver

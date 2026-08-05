@@ -43,6 +43,8 @@ from dimsdk import ReliableMessage
 from dimsdk import Content
 from dimsdk import ResetCommand
 
+from ...common import IDUtils
+
 from .group import GroupCommandProcessor
 
 
@@ -69,8 +71,8 @@ class ResetCommandProcessor(GroupCommandProcessor):
 
         sender = r_msg.sender
         administrators = await self._administrators(group=group)
-        is_owner = sender == owner
-        is_admin = sender in administrators
+        is_owner = sender.is_same_as(other=owner)
+        is_admin = IDUtils.contains(sender, administrators)
 
         # 2. check permission
         can_reset = is_owner or is_admin
@@ -123,7 +125,7 @@ class ResetCommandProcessor(GroupCommandProcessor):
                 content['removed'] = ID.revert(identifiers=remove_list)
         else:
             # DB error?
-            assert False, 'failed to save members for group: %s' % group
+            assert False, f'failed to save members for group: {group}'
 
         # no need to response this group command
         return []

@@ -38,7 +38,8 @@ from dimsdk import Envelope, InstantMessage, ReliableMessage
 from dimsdk import ContentType, Command
 from dimsdk import ReceiptCommand
 
-from ..utils import get_msg_sig
+from ..utils import get_msg_info
+
 from ..common import DocumentUtils, MessageUtils
 from ..common import Station
 from ..common import HandshakeCommand, ReportCommand, LoginCommand
@@ -53,7 +54,7 @@ class ClientMessenger(CommonMessenger):
     @property
     def session(self) -> ClientSession:
         sess = super().session
-        assert isinstance(sess, ClientSession), 'session error: %s' % sess
+        assert isinstance(sess, ClientSession), f'session error: {sess}'
         return sess
 
     # Override
@@ -67,8 +68,8 @@ class ClientMessenger(CommonMessenger):
         """ check duplicated """
         cp = Checkpoint()
         if cp.duplicated(msg=msg):
-            sig = get_msg_sig(msg=msg)
-            self.warning(msg='drop duplicated message (%s): %s -> %s' % (sig, msg.sender, msg.receiver))
+            msg_info = get_msg_info(msg=msg)
+            self.warning('drop duplicated message: %s', msg_info)
             return True
 
     # Override
@@ -83,17 +84,18 @@ class ClientMessenger(CommonMessenger):
 
     async def _build_receipt(self, envelope: Envelope) -> Optional[ReliableMessage]:
         current_user = await self.facebook.current_user
+        mail_from = MessageUtils.real_sender(msg=envelope)
         text = 'Message received.'
         res = ReceiptCommand.create(text=text, envelope=envelope)
-        env = Envelope.create(sender=current_user.identifier, receiver=envelope.sender)
+        env = Envelope.create(sender=current_user.identifier, receiver=mail_from)
         i_msg = InstantMessage.create(head=env, body=res)
         s_msg = await self.encrypt_message(msg=i_msg)
         if s_msg is None:
-            # assert False, 'failed to encrypt message: %s -> %s' % (current_user, envelope.sender)
+            # assert False, f'failed to encrypt message: {current_user} -> {mail_from}'
             return None
         r_msg = await self.sign_message(msg=s_msg)
         if r_msg is None:
-            # assert False, 'failed to sign message: %s -> %s' % (current_user, envelope.sender)
+            # assert False, f'failed to sign message: {current_user} -> {mail_from}'
             return None
         return r_msg
 
@@ -127,14 +129,14 @@ class ClientMessenger(CommonMessenger):
             # not login yet
             content = msg.content
             if not isinstance(content, Command):
-                self.warning(msg='not handshake yet, suspend message: %s => %s' % (content, msg.receiver))
+                self.warning('not handshake yet, suspend message: %s => %s', content, msg.receiver)
                 # TODO: suspend instant message
                 return None
             elif isinstance(content, HandshakeCommand):
                 # NOTICE: only handshake message can go out
                 msg['pass'] = 'handshaking'
             else:
-                self.warning(msg='not handshake yet, drop command: %s => %s' % (content, msg.receiver))
+                self.warning('not handshake yet, drop command: %s => %s', content, msg.receiver)
                 # TODO: suspend instant message
                 return None
         return await super().send_instant_message(msg=msg, priority=priority)
@@ -149,7 +151,7 @@ class ClientMessenger(CommonMessenger):
             # not login in yet, let the handshake message go out only
             pass
         else:
-            self.warning(msg='not handshake yet, suspend message: %s => %s' % (msg.sender, msg.receiver))
+            self.warning('not handshake yet, suspend message: %s => %s', msg.sender, msg.receiver)
             # TODO: suspend reliable message
             return False
         return await super().send_reliable_message(msg=msg, priority=priority)
@@ -190,7 +192,7 @@ class ClientMessenger(CommonMessenger):
         assert user is not None, 'current user not found'
         # 1. get sign key for current user
         pri_key = await facebook.private_key_for_visa_signature(identifier=user.identifier)
-        assert pri_key is not None, 'private key not found: %s' % user.identifier
+        assert pri_key is not None, f'private key not found: {user.identifier}'
         # 2. get visa document for current user
         docs = await user.documents
         visa = DocumentUtils.last_visa(documents=docs)
@@ -201,24 +203,24 @@ class ClientMessenger(CommonMessenger):
             # clone for modifying
             visa = Document.parse(document=visa.copy_map())
             if not isinstance(visa, Visa):
-                self.error(msg='visa error: %s' % visa)
+                self.error('visa error: %s', visa)
                 return None
         # 3. update visa document
         visa.set_property(name='sys', value={
             'os': 'Linux',
         })
         if visa.sign(private_key=pri_key) is None:
-            self.error(msg='failed to sign visa: %s, private key: %s' % (visa, pri_key))
+            self.error('failed to sign visa: %s, private key: %s', visa, pri_key)
         elif await archivist.save_document(document=visa, identifier=user.identifier):
-            self.info(msg='visa updated: %s' % visa)
+            self.info('visa updated: %s', visa)
             return visa
         else:
-            self.error(msg='failed to save visa: %s' % visa)
+            self.error('failed to save visa: %s', visa)
 
     async def handshake_success(self):
         """ Callback for handshake success """
         # change the flag of current session
-        self.info(msg='handshake success, change session accepted: %s => True' % self.session.accepted)
+        self.info('handshake success, change session accepted: %s => True', self.session.accepted)
         self.session.accepted = True
         # broadcast current documents after handshake success
         await self.broadcast_documents()
@@ -231,7 +233,7 @@ class ClientMessenger(CommonMessenger):
         assert user is not None, 'current user not found'
         docs = await user.documents
         visa = DocumentUtils.last_visa(documents=docs)
-        assert visa is not None, 'visa not found: %s' % user
+        assert visa is not None, f'visa not found: {user}'
         me = user.identifier
         #
         #  send to all contacts
@@ -249,7 +251,7 @@ class ClientMessenger(CommonMessenger):
         """ send login command to keep roaming """
         # get current station
         station = self.session.station
-        assert sender.type != EntityType.STATION, 'station (%s) cannot login: %s' % (sender, station)
+        assert sender.type != EntityType.STATION, f'station ({sender}) cannot login: {station}'
         # create login command
         command = LoginCommand(identifier=sender)
         command.agent = user_agent

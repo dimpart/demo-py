@@ -37,6 +37,8 @@ from dimsdk import Content, ReceiptCommand
 from dimsdk import ReliableMessage
 
 from ..utils import Log, Logging
+from ..utils import get_msg_info
+
 from ..common import CommandMessageUtils
 from ..common import CommonFacebook
 from ..common import SessionDBI
@@ -93,7 +95,8 @@ class MessageDeliver(Logging):
         """
         """ Redirect message to neighbor station """
         assert neighbor is None or neighbor.type == EntityType.STATION, f'neighbor station ID error: {neighbor}'
-        self.info('redirect message %s => %s to neighbor station: %s', msg.sender, msg.receiver, neighbor)
+        msg_info = get_msg_info(msg=msg)
+        self.info('redirect to neighbor station: %s, message: %s', neighbor, msg_info)
         # 0. check current station
         current = await self.facebook.current_user
         current = current.identifier

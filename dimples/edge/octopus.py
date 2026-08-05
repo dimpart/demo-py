@@ -40,7 +40,8 @@ from dimsdk import ReliableMessage
 
 from ..utils import Logging
 from ..utils import Runner
-from ..utils import get_msg_sig
+from ..utils import get_msg_sig, get_msg_info
+
 from ..common import SessionDBI
 
 from ..client import ClientMessenger
@@ -105,7 +106,7 @@ class Octopus(Runner, Logging, ABC):
                 # check station
                 station = out.session.station
                 if port == station.port and host == station.host:
-                    self.warning(msg='connection already exists: (%s, %d)' % (host, port))
+                    self.warning('connection already exists: (%s, %d)', host, port)
                     # self.__outers.discard(out)
                     return None
             # create new terminal
@@ -148,7 +149,7 @@ class Octopus(Runner, Logging, ABC):
         # get all outer terminals
         with self.__outer_lock:
             outers = set(self.__outers)
-        self.debug(msg='checking %d client(s) with %d neighbor(s)' % (len(outers), len(neighbors)))
+        self.debug('checking %d client(s) with %d neighbor(s)', len(outers), len(neighbors))
         for out in outers:
             # check station
             station = out.session.station
@@ -167,7 +168,7 @@ class Octopus(Runner, Logging, ABC):
                 continue
             else:
                 # remove dead client
-                self.warning(msg='client stopped, remove it: %s (%s:%d)' % (sid, host, port))
+                self.warning('client stopped, remove it: %s (%s:%d)', sid, host, port)
             with self.__outer_lock:
                 self.__outers.discard(out)
                 if sid is not None:
@@ -176,26 +177,23 @@ class Octopus(Runner, Logging, ABC):
         for item in neighbors:
             host = item.host
             port = item.port
-            self.debug(msg='connecting neighbor station (%s:%d), client count: %d' % (host, port, len(self.__outers)))
+            self.debug('connecting neighbor station (%s:%d), client count: %d', host, port, len(self.__outers))
             await self.connect(host=host, port=port)
         return False
 
     async def income_message(self, msg: ReliableMessage, priority: int = 0) -> List[ReliableMessage]:
         """ redirect message from remote station """
-        sender = msg.sender
-        receiver = msg.receiver
-        sig = get_msg_sig(msg=msg)
+        msg_info = get_msg_info(msg=msg)
         messenger = await self.inner_messenger
         if await messenger.send_reliable_message(msg=msg, priority=priority):
-            self.info(msg='redirected msg (%s): %s -> %s' % (sig, sender, receiver))
+            self.info('redirected msg: %s', msg_info)
         else:
-            self.error(msg='failed to redirect msg (%s): %s -> %s' % (sig, sender, receiver))
+            self.error('failed to redirect msg: %s', msg_info)
         # no need to respond receipt for station
         return []
 
     async def outgo_message(self, msg: ReliableMessage, priority: int = 0) -> List[ReliableMessage]:
         """ redirect message to remote station """
-        receiver = msg.receiver
         # get neighbor stations
         neighbor = ID.parse(identifier=msg.get('neighbor'))
         if neighbor is not None:
@@ -213,30 +211,31 @@ class Octopus(Runner, Logging, ABC):
         old_recipients = [] if old_recipients is None else ID.convert(array=old_recipients)
         for item in neighbors:
             if item in old_recipients:
-                self.info(msg='skip exists station: %s' % item)
+                self.info('skip exists station: %s', item)
                 continue
-            self.info(msg='new neighbor station: %s' % item)
+            self.info('new neighbor station: %s', item)
             new_recipients.add(item)
         # update 'recipients' to avoid the new recipients redirect it to same targets
-        self.info(msg='append new recipients: %s, %s + %s' % (receiver, new_recipients, old_recipients))
+        self.info('append new recipients: %s, %s + %s', msg.receiver, old_recipients, new_recipients)
         all_recipients = list(old_recipients) + list(new_recipients)
         msg['recipients'] = ID.revert(identifiers=all_recipients)
         #
         #  1. send to the new recipients (neighbor stations)
         #
-        sig = get_msg_sig(msg=msg)
+        sig = get_msg_sig(msg=msg, size=8)
+        msg_info = get_msg_info(msg=msg)
         failed_neighbors = []
         for target in new_recipients:
             messenger = self.get_outer_messenger(identifier=target)
             if messenger is None:
                 # target station not my neighbor
-                self.warning(msg='not my neighbor: %s (%s)' % (target, receiver))
+                self.warning('not my neighbor: %s, "%s" %s -> %s', target, sig, msg.sender, msg.receiver)
                 failed_neighbors.append(target)
             elif await messenger.send_reliable_message(msg=msg, priority=priority):
-                self.info(msg='redirected msg (%s) to neighbor: %s (%s)' % (sig, target, receiver))
+                self.info('redirected msg to neighbor: %s, "%s" %s -> %s', target, sig, msg.sender, msg.receiver)
             else:
-                self.error(msg='failed to send to neighbor: %s (%s)' % (target, receiver))
+                self.error('failed to send msg to neighbor: %s, "%s" %s -> %s', target, sig, msg.sender, msg.receiver)
                 failed_neighbors.append(target)
         if len(failed_neighbors) > 0:
-            self.error(msg='failed to redirect msg (%s) for receiver (%s): %s' % (sig, receiver, failed_neighbors))
+            self.error('failed to redirect msg to neighbor(s): %s, %s', failed_neighbors, msg_info)
         return []

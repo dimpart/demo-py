@@ -63,7 +63,7 @@ class ServerMessagePacker(CommonMessagePacker):
             # current user not login yet
             return False
         # handshake accepted, check current user with sender
-        if user == sender:
+        if user.is_same_as(other=sender):
             # no need to verify signature of this message
             # which sender is equal to current id in session
             return True

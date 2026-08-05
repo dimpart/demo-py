@@ -30,6 +30,8 @@ from dimsdk import DateTime
 from dimsdk import ReliableMessage
 
 from ..utils import Singleton
+from ..utils import get_msg_sig
+
 from ..common import MessageUtils
 
 
@@ -61,13 +63,8 @@ class SigPool:
 
     def duplicated(self, msg: ReliableMessage) -> bool:
         """ check whether duplicated """
-        sig = msg.get('signature')
-        assert sig is not None, 'message error: %s' % msg
-        if len(sig) > 16:
-            sig = sig[-16:]
-        rcpt = MessageUtils.rcpt_to(msg=msg)
-        if rcpt is None:
-            rcpt = msg.receiver
+        sig = get_msg_sig(msg=msg, size=8)  # last 6 bytes (signature in base64)
+        rcpt = MessageUtils.real_receiver(msg=msg)
         tag = '%s:%s' % (sig, rcpt)
         cached = self.__caches.get(tag)
         if cached is not None:

@@ -216,7 +216,7 @@ class GroupEmitter(TripletsHelper):
         messages = self.packer.split_reliable_message(msg=r_msg, members=members)
         for item in messages:
             receiver = item.receiver
-            if sender == receiver:
+            if sender.is_same_as(other=receiver):
                 self.error(msg='cycled message: %s => %s, %s' % (sender, receiver, group))
                 continue
             #
@@ -250,7 +250,7 @@ class GroupEmitter(TripletsHelper):
         messages = self.packer.split_instant_message(msg=msg, members=members)
         for item in messages:
             receiver = item.receiver
-            if sender == receiver:
+            if sender.is_same_as(other=receiver):
                 self.error(msg='cycled message: %s => %s, %s' % (sender, receiver, group))
                 continue
             #

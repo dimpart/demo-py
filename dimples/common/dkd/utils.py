@@ -28,7 +28,10 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Union, Tuple, List, Dict
+from typing import Optional, Union, Tuple, List
+from typing import Mapping
+
+from dimsdk import final
 
 from dimsdk import ReliableMessage
 from dimsdk import Command
@@ -37,6 +40,7 @@ from ...utils import Log
 from ..protocol import LoginCommand
 
 
+@final
 class CommandMessageUtils:
 
     @classmethod
@@ -68,6 +72,8 @@ class CommandMessageUtils:
         while idx > 0:
             idx -= 1
             cmd, msg = records[idx]
+            # TODO: remove expired command
+            # ...
             # check serial number
             sn = cmd.sn
             if sn in numbers:
@@ -84,7 +90,7 @@ class CommandMessageUtils:
     #
 
     @classmethod
-    def dump_command_messages(cls, records: List[Tuple[Command, ReliableMessage]]) -> Dict:
+    def dump_command_messages(cls, records: List[Tuple[Command, ReliableMessage]]) -> Mapping:
         """ Serialize command messages """
         Log.info('Dump %d command message(s)', len(records))
         # revert command messages
@@ -99,7 +105,7 @@ class CommandMessageUtils:
         }
 
     @classmethod
-    def pump_command_messages(cls, info: Union[Dict, List]) -> Optional[List[Tuple[Command, ReliableMessage]]]:
+    def pump_command_messages(cls, info: Union[Mapping, List]) -> Optional[List[Tuple[Command, ReliableMessage]]]:
         """ Deserialize command messages """
         array = _fetch_command_messages(info=info)
         if array is None:
@@ -121,12 +127,12 @@ class CommandMessageUtils:
         return records
 
 
-def _fetch_command_messages(info: Union[Dict, List]) -> Optional[List]:
-    if isinstance(info, List):
+def _fetch_command_messages(info: Union[Mapping, List]) -> Optional[List]:
+    if isinstance(info, list):
         return info
-    elif isinstance(info, Dict):
+    elif isinstance(info, dict):
         records = info.get('records')
-        if isinstance(records, List):
+        if isinstance(records, list):
             return records
         elif 'cmd' in info and 'msg' in info:
             return [info]

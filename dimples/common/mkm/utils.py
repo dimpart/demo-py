@@ -31,6 +31,8 @@
 from typing import Optional, Union, List
 from typing import Iterable
 
+from dimsdk import final
+
 from dimsdk import utf8_encode
 from dimsdk import Converter
 from dimsdk import DateTime
@@ -47,6 +49,18 @@ from ...utils import StrMap, MutableStrMap
 from ...utils import Log
 
 
+@final
+class IDUtils:
+
+    @classmethod
+    def contains(cls, did: ID, members: List[ID]) -> bool:
+        for item in members:
+            if did.is_same_as(other=item):
+                return True
+        return False
+
+
+@final
 class MetaUtils:
 
     @classmethod
@@ -94,6 +108,7 @@ class MetaUtils:
         return key.verify(data=data, signature=fingerprint)
 
 
+@final
 class DocumentUtils:
 
     @classmethod
@@ -222,6 +237,8 @@ class DocumentUtils:
         while idx > 0:
             idx -= 1
             doc = documents[idx]
+            # TODO: remove expired document
+            # ...
             # check signature
             sig = doc.get('signature')
             if sig is None or sig in signatures:

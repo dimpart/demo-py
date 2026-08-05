@@ -36,13 +36,19 @@
 """
 
 import threading
-from typing import Optional, List, Dict
+from typing import Optional, List
+from typing import MutableMapping
 
 from dimsdk import DateTime
 from dimsdk import ReliableMessage
 
 from startrek import Arrival, Departure
 from startrek import ShipStatus
+
+from ..utils import Logging
+from ..utils import get_msg_info
+
+from ..common import MessageUtils
 
 
 class MessageWrapper(Departure):
@@ -89,12 +95,12 @@ class MessageWrapper(Departure):
         return self.ship.get_status(now=now)
 
 
-class MessageQueue:
+class MessageQueue(Logging):
 
     def __init__(self):
         super().__init__()
         self.__priorities: List[int] = []
-        self.__fleets: Dict[int, List[MessageWrapper]] = {}  # priority => List[MessageWrapper]
+        self.__fleets: MutableMapping[int, List[MessageWrapper]] = {}  # priority => List[MessageWrapper]
         self.__lock = threading.Lock()
         # purge
         self.__next_purge_time = 0
@@ -115,8 +121,7 @@ class MessageQueue:
                 for wrapper in fleet:
                     item = wrapper.msg
                     if self.__is_duplicated(item, msg):
-                        signature = msg.get('signature')
-                        print('[QUEUE] duplicated message: %s' % signature)
+                        self.warning('[QUEUE] duplicated message: %s', get_msg_info(msg=msg))
                         return False
             # 2. append with wrapper
             wrapper = MessageWrapper(msg=msg, ship=ship)
@@ -130,15 +135,15 @@ class MessageQueue:
         sig1 = msg1.get('signature')
         sig2 = msg2.get('signature')
         if sig1 is None or sig2 is None:
-            # assert False, 'signature should not empty here: %s, %s' % (msg1, msg2)
+            # assert False, f'signature should not empty here: {msg1}, {msg2}'
             return False
         elif sig1 != sig2:
             return False
         # maybe it's a group message split for every members,
         # so we still need to check receiver here.
-        to1 = msg1.receiver
-        to2 = msg2.receiver
-        assert to1 is not None and to2 is not None, 'receiver should not empty here: %s, %s' % (msg1, msg2)
+        to1 = MessageUtils.real_receiver(msg=msg1)
+        to2 = MessageUtils.real_receiver(msg=msg2)
+        assert to1 is not None and to2 is not None, f'receiver should not empty here: {msg1}, {msg2}'
         return to1 == to2
 
     def __insert(self, priority: int):

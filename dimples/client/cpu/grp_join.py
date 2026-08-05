@@ -42,6 +42,8 @@ from dimsdk import ReliableMessage
 from dimsdk import Content
 from dimsdk import JoinCommand
 
+from ...common import IDUtils
+
 from .group import GroupCommandProcessor
 
 
@@ -49,7 +51,7 @@ class JoinCommandProcessor(GroupCommandProcessor):
 
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
-        assert isinstance(content, JoinCommand), 'join command error: %s' % content
+        assert isinstance(content, JoinCommand), f'join command error: {content}'
 
         # 0. check command
         group, errors = await self._check_expired(content=content, r_msg=r_msg)
@@ -64,9 +66,9 @@ class JoinCommandProcessor(GroupCommandProcessor):
 
         sender = r_msg.sender
         admins = await self._administrators(group=group)
-        is_owner = sender == owner
-        is_admin = sender in admins
-        is_member = sender in members
+        is_owner = sender.is_same_as(other=owner)
+        is_admin = IDUtils.contains(sender, admins)
+        is_member = IDUtils.contains(sender, members)
         can_reset = is_owner or is_admin
         cannot_reset = not can_reset
 
@@ -81,14 +83,14 @@ class JoinCommandProcessor(GroupCommandProcessor):
                 # and if I am the owner, then send the group history commands
                 # to update the sender's memory.
                 ok = await self.send_group_histories(group=group, receiver=sender)
-                assert ok, 'failed to send history for group: %s => %s' % (group, sender)
+                assert ok, f'failed to send history for group: {group} => {sender}'
         elif not await self._save_group_history(group=group, content=content, r_msg=r_msg):
             # here try to append the 'join' command to local storage as group history
             # it should not failed unless the command is expired
-            self.error(msg='failed to save "join" command for group: %s' % group)
+            self.error('failed to save "join" command for group: %s', group)
         else:
             # the 'join' command was saved, now waiting for review.
-            self.info(msg='"join" command saved, waiting review now')
+            self.info('"join" command saved, waiting review now')
 
         # no need to response this group command
         return []
