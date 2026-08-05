@@ -60,7 +60,7 @@ class GroupHistoryStorage(Storage):
         if array is None:
             # history not found
             return None
-        assert isinstance(array, List), f'group history error: {array}, {path}'
+        assert isinstance(array, list), f'group history error: {array}, {path}'
         histories = []
         for item in array:
             cmd = item.get('cmd')

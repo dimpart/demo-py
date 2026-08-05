@@ -66,7 +66,7 @@ class GroupHistoryCache(RedisCache):
         js = utf8_decode(data=value)
         assert js is not None, f'failed to decode string: {value}'
         array = json_decode(string=js)
-        assert isinstance(array, List), f'history error: {value}'
+        assert isinstance(array, list), f'history error: {value}'
         histories = []
         for item in array:
             cmd = item.get('cmd')

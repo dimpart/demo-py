@@ -179,8 +179,11 @@ class CommonFacebook(Facebook, Logging, ABC):
         return doc
 
     async def get_visa(self, user: ID) -> Optional[Visa]:
+        terminal = user.terminal
+        if terminal is None:
+            terminal = '*'
         docs = await self.get_documents(identifier=user)
-        return DocumentUtils.last_visa(documents=docs)
+        return DocumentUtils.last_visa(documents=docs, terminal=terminal)
 
     async def get_bulletin(self, group: ID) -> Optional[Bulletin]:
         docs = await self.get_documents(identifier=group)

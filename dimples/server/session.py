@@ -103,9 +103,10 @@ class ServerSession(BaseSession):
 
     # Override
     def set_did(self, identifier: ID) -> bool:
-        old = self.identifier
+        old_id = self.identifier
         if super().set_did(identifier=identifier):
-            session_change_id(session=self, new_id=identifier, old_id=old)
+            new_id = self.identifier  # Dressed ID with terminal (device)
+            session_change_id(session=self, new_id=new_id, old_id=old_id)
             self.__loader.load_cached_messages(session=self)
             return True
 
