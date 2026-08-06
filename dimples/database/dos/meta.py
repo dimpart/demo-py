@@ -29,12 +29,11 @@ from dimsdk import ID, Meta
 
 from ...utils import template_replace
 from ...common.compat import Compatible
-from ...common import MetaDBI
 
 from .base import Storage
 
 
-class MetaStorage(Storage, MetaDBI):
+class MetaStorage(Storage):
     """
         Meta for Entities (User/Group)
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -51,11 +50,6 @@ class MetaStorage(Storage, MetaDBI):
         address = str(identifier.address)
         return template_replace(path, key='ADDRESS', value=address)
 
-    #
-    #   Meta DBI
-    #
-
-    # Override
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
         """ save meta into file """
         path = self.__meta_path(identifier=identifier)
@@ -63,8 +57,7 @@ class MetaStorage(Storage, MetaDBI):
         info = meta.to_map()
         return await self.write_json(container=info, path=path)
 
-    # Override
-    async def get_meta(self, identifier: ID) -> Optional[Meta]:
+    async def load_meta(self, identifier: ID) -> Optional[Meta]:
         """ load meta from file """
         path = self.__meta_path(identifier=identifier)
         self.info('Loading meta from: %s', path)
@@ -73,7 +66,7 @@ class MetaStorage(Storage, MetaDBI):
             # file not found
             self.warning('meta file not found: %s', path)
             return None
-        else:
+        elif isinstance(info, dict):
             Compatible.fix_meta_version(meta=info)
         try:
             return Meta.parse(meta=info)

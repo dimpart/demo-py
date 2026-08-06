@@ -24,7 +24,6 @@
 # ==============================================================================
 
 import threading
-from abc import ABC
 from typing import Optional, List
 
 from aiou.mem import CachePool
@@ -42,7 +41,7 @@ from .t_base import DbTask
 
 
 # noinspection PyAbstractClass
-class GrpTask(DbTask[ID, List[ID]], ABC):
+class GrpTask(DbTask[ID, List[ID]]):
 
     def __init__(self, group: ID,
                  redis: GroupCache, storage: GroupStorage,
@@ -61,26 +60,28 @@ class MemberTask(GrpTask):
 
     # Override
     async def _read_data(self) -> Optional[List[ID]]:
+        group = self._group
         # 1. the redis server will return None when cache not found
         # 2. when redis server return an empty array, no need to check local storage again
-        members = await self._redis.get_members(group=self._group)
+        members = await self._redis.load_members(group=group)
         if members is not None:
             return members
-        # 3. the local storage will return an empty array, when no member in this group
-        members = await self._dos.get_members(group=self._group)
+        # 3. try to load from local storage
+        members = await self._dos.load_members(group=group)
         if members is None:
-            # 4. return empty array as a placeholder for the memory cache
+            # 4. create an empty array as a placeholder for the memory cache
             members = []
         # 5. update redis server
-        await self._redis.save_members(members=members, group=self._group)
+        await self._redis.save_members(members=members, group=group)
         return members
 
     # Override
     async def _write_data(self, value: List[ID]) -> bool:
+        group = self._group
         # 1. store into redis server
-        ok1 = await self._redis.save_members(members=value, group=self._group)
+        ok1 = await self._redis.save_members(members=value, group=group)
         # 2. save into local storage
-        ok2 = await self._dos.save_members(members=value, group=self._group)
+        ok2 = await self._dos.save_members(members=value, group=group)
         return ok1 or ok2
 
 
@@ -88,26 +89,28 @@ class AdminTask(GrpTask):
 
     # Override
     async def _read_data(self) -> Optional[List[ID]]:
+        group = self._group
         # 1. the redis server will return None when cache not found
         # 2. when redis server return an empty array, no need to check local storage again
-        admins = await self._redis.get_administrators(group=self._group)
+        admins = await self._redis.load_administrators(group=group)
         if admins is not None:
             return admins
-        # 3. the local storage will return an empty array, when no admin in this group
-        admins = await self._dos.get_administrators(group=self._group)
+        # 3. try to load from local storage
+        admins = await self._dos.load_administrators(group=group)
         if admins is None:
-            # 4. return empty array as a placeholder for the memory cache
+            # 4. create an empty array as a placeholder for the memory cache
             admins = []
         # 5. update redis server
-        await self._redis.save_administrators(administrators=admins, group=self._group)
+        await self._redis.save_administrators(administrators=admins, group=group)
         return admins
 
     # Override
     async def _write_data(self, value: List[ID]) -> bool:
+        group = self._group
         # 1. store into redis server
-        ok1 = await self._redis.save_administrators(administrators=value, group=self._group)
+        ok1 = await self._redis.save_administrators(administrators=value, group=group)
         # 2. save into local storage
-        ok2 = await self._dos.save_administrators(administrators=value, group=self._group)
+        ok2 = await self._dos.save_administrators(administrators=value, group=group)
         return ok1 or ok2
 
 
@@ -157,7 +160,7 @@ class GroupTable(GroupDBI):
     # Override
     async def save_members(self, members: List[ID], group: ID) -> bool:
         task = self._new_member_task(group=group)
-        return await task.save(value=members)
+        return await task.save(members)
 
     # Override
     async def get_administrators(self, group: ID) -> List[ID]:
@@ -168,4 +171,4 @@ class GroupTable(GroupDBI):
     # Override
     async def save_administrators(self, administrators: List[ID], group: ID) -> bool:
         task = self._new_admin_task(group=group)
-        return await task.save(value=administrators)
+        return await task.save(administrators)

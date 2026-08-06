@@ -56,7 +56,7 @@ class GroupCache(RedisCache):
         address = str(identifier.address)
         return '%s.%s.%s.members' % (self.db_name, self.tbl_name, address)
 
-    async def get_members(self, group: ID) -> Optional[List[ID]]:
+    async def load_members(self, group: ID) -> Optional[List[ID]]:
         key = self.__members_cache_name(identifier=group)
         value = await self.get(name=key)
         if value is not None:
@@ -81,7 +81,7 @@ class GroupCache(RedisCache):
         address = str(identifier.address)
         return '%s.%s.%s.administrators' % (self.db_name, self.tbl_name, address)
 
-    async def get_administrators(self, group: ID) -> Optional[List[ID]]:
+    async def load_administrators(self, group: ID) -> Optional[List[ID]]:
         key = self.__administrators_cache_name(identifier=group)
         value = await self.get(name=key)
         if value is not None:

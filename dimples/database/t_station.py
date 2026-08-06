@@ -92,23 +92,25 @@ class SrvTask(DbTask[ID, List[StationInfo]]):
 
     # Override
     async def _read_data(self) -> Optional[List[StationInfo]]:
+        provider = self._provider
         # 1. the redis server will return None when cache not found
         # 2. when redis server return an empty array, no need to check local storage again
-        array = await self._redis.load_stations(provider=self._provider)
+        array = await self._redis.load_stations(provider=provider)
         if array is not None:
             return array
         # 3. the local storage will return an empty array, when no station for this sp
-        array = await self._dos.all_stations(provider=self._provider)
+        array = await self._dos.all_stations(provider=provider)
         if array is None:
             # 4. return empty array as a placeholder for the memory cache
             array = []
         # 5. update redis server
-        await self._redis.save_stations(stations=array, provider=self._provider)
+        await self._redis.save_stations(stations=array, provider=provider)
         return array
 
     # Override
     async def _write_data(self, value: List[StationInfo]) -> bool:
-        return await self._redis.save_stations(stations=value, provider=self._provider)
+        provider = self._provider
+        return await self._redis.save_stations(stations=value, provider=provider)
 
 
 class StationTable(ProviderDBI, StationDBI):

@@ -57,26 +57,28 @@ class PwdTask(DbTask[Tuple[ID, ID], StringPairing]):
 
     # Override
     async def _read_data(self) -> Optional[StringPairing]:
+        group = self._group
         # 1. the redis server will return None when cache not found
         # 2. when redis server return an empty array, no need to check local storage again
-        keys = await self._redis.get_group_keys(group=self._group, sender=self._sender)
+        keys = await self._redis.load_group_keys(group=group, sender=self._sender)
         if keys is not None:
             return keys
-        # 3. the local storage will return None when file not found
-        keys = await self._dos.get_group_keys(group=self._group, sender=self._sender)
+        # 3. try to load from local storage
+        keys = await self._dos.load_group_keys(group=group, sender=self._sender)
         if keys is None:
-            # 4. return empty dictionary as a placeholder for the memory cache
+            # 4. create an empty map as a placeholder for the memory cache
             keys = {}
         # 5. update redis server
-        await self._redis.save_group_keys(group=self._group, sender=self._sender, keys=keys)
+        await self._redis.save_group_keys(group=group, sender=self._sender, keys=keys)
         return keys
 
     # Override
     async def _write_data(self, value: StringPairing) -> bool:
+        group = self._group
         # 1. store into redis server
-        ok1 = await self._redis.save_group_keys(group=self._group, sender=self._sender, keys=value)
+        ok1 = await self._redis.save_group_keys(group=group, sender=self._sender, keys=value)
         # 2. save into local storage
-        ok2 = await self._dos.save_group_keys(group=self._group, sender=self._sender, keys=value)
+        ok2 = await self._dos.save_group_keys(group=group, sender=self._sender, keys=value)
         return ok1 or ok2
 
 

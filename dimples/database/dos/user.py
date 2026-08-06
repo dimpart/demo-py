@@ -23,17 +23,16 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import List
+from typing import Optional, List
 
 from dimsdk import ID
 
 from ...utils import template_replace
-from ...common import UserDBI, ContactDBI
 
 from .base import Storage
 
 
-class UserStorage(Storage, UserDBI, ContactDBI):
+class UserStorage(Storage):
     """
         User Storage
         ~~~~~~~~~~~~
@@ -46,41 +45,27 @@ class UserStorage(Storage, UserDBI, ContactDBI):
         path = self.private_path(self.contacts_path)
         print('!!!       contacts path: %s' % path)
 
-    def __contacts_path(self, identifier: ID) -> str:
+    def __contacts_path(self, user: ID) -> str:
         path = self.private_path(self.contacts_path)
-        address = str(identifier.address)
+        address = str(user.address)
         return template_replace(path, key='ADDRESS', value=address)
 
+    # async def get_local_users(self) -> Optional[List[ID]]:
+    #     pass
     #
-    #   User DBI
-    #
+    # async def save_local_users(self, users: List[ID]) -> bool:
+    #     pass
 
-    # Override
-    async def get_local_users(self) -> List[ID]:
-        return []
-
-    # Override
-    async def save_local_users(self, users: List[ID]) -> bool:
-        pass
-
-    #
-    #   Contact DBI
-    #
-
-    # Override
-    async def get_contacts(self, user: ID) -> List[ID]:
+    async def load_contacts(self, user: ID) -> Optional[List[ID]]:
         """ load contacts from file """
-        path = self.__contacts_path(identifier=user)
+        path = self.__contacts_path(user=user)
         self.info('Loading contacts from: %s', path)
         contacts = await self.read_json(path=path)
-        if contacts is None:
-            # contacts not found
-            return []
-        return ID.convert(array=contacts)
+        if contacts is not None:
+            return ID.convert(array=contacts)
 
-    # Override
     async def save_contacts(self, contacts: List[ID], user: ID) -> bool:
         """ save contacts into file """
-        path = self.__contacts_path(identifier=user)
+        path = self.__contacts_path(user=user)
         self.info('Saving contacts into: %s', path)
         return await self.write_json(container=ID.revert(identifiers=contacts), path=path)

@@ -29,12 +29,11 @@ from dimsdk import ID
 
 from ...utils import StringPairing
 from ...utils import template_replace
-from ...common import GroupKeysDBI
 
 from .base import Storage
 
 
-class GroupKeysStorage(Storage, GroupKeysDBI):
+class GroupKeysStorage(Storage):
     """
         Group Keys Storage
         ~~~~~~~~~~~~~~~~~~
@@ -53,18 +52,12 @@ class GroupKeysStorage(Storage, GroupKeysDBI):
         path = template_replace(path, key='SENDER_ADDRESS', value=str(sender.address))
         return template_replace(path, key='GROUP_ADDRESS', value=str(group.address))
 
-    #
-    #   Group Keys DBI
-    #
-
-    # Override
-    async def get_group_keys(self, group: ID, sender: ID) -> Optional[StringPairing]:
+    async def load_group_keys(self, group: ID, sender: ID) -> Optional[StringPairing]:
         """ load group keys from file """
         path = self.__keys_path(group=group, sender=sender)
         self.info('Loading group keys from: %s', path)
         return await self.read_json(path=path)
 
-    # Override
     async def save_group_keys(self, group: ID, sender: ID, keys: StringPairing) -> bool:
         """ save group keys into file """
         path = self.__keys_path(group=group, sender=sender)

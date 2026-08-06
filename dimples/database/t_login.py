@@ -62,37 +62,39 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
 
     # Override
     async def _read_data(self) -> Optional[List[Tuple[LoginCommand, ReliableMessage]]]:
+        user = self._user
         # 1. the redis server will return None when cache not found
         # 2. when redis server return a tuple with None values, no need to check local storage again
-        array = await self._redis.load_login_command_messages(user=self._user)
+        array = await self._redis.load_login_command_messages(user=user)
         if array is not None:
             CommandMessageUtils.sort_commands(records=array)
             return array
-        # 3. the local storage will return a tuple with None values, when command not found
-        array = await self._dos.load_login_command_messages(user=self._user)
-        if array is not None:
-            CommandMessageUtils.sort_commands(records=array)
-        else:
-            # 4. return a tuple with None values as a placeholder for the memory cache
+        # 3. try to load from local storage
+        array = await self._dos.load_login_command_messages(user=user)
+        if array is None:
+            # 4. create an empty array as a placeholder for the memory cache
             array = []
+        else:
+            CommandMessageUtils.sort_commands(records=array)
         # 5. update redis server
-        await self._redis.save_login_command_messages(records=array, user=self._user)
+        await self._redis.save_login_command_messages(records=array, user=user)
         return array
 
     # Override
     async def _write_data(self, records: List[Tuple[LoginCommand, ReliableMessage]]) -> bool:
+        user = self._user
         new_cmd = self._new_cmd
         new_msg = self._new_msg
         if new_cmd is None or new_msg is None:
-            assert False, f'should not happen: {self._user}'
+            assert False, f'should not happen: {user}'
         else:
             new_sn = new_cmd.sn
             new_time = new_cmd.time
             identifier = new_cmd.identifier
             terminal = CommandMessageUtils.get_login_terminal(content=new_cmd)
         # check did
-        if not identifier.is_same_as(other=self._user):
-            self.error('login id not matched: %s, %s', identifier, self._user)
+        if not identifier.is_same_as(other=user):
+            self.error('login id not matched: %s, %s', identifier, user)
             return False
         #
         #   0. check old records
@@ -133,11 +135,11 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
         #
         #   1. store into redis server
         #
-        ok1 = await self._redis.save_login_command_messages(records=records, user=self._user)
+        ok1 = await self._redis.save_login_command_messages(records=records, user=user)
         #
         #   2. save into local storage
         #
-        ok2 = await self._dos.save_login_command_messages(records=records, user=self._user)
+        ok2 = await self._dos.save_login_command_messages(records=records, user=user)
         return ok1 or ok2
 
 

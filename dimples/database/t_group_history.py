@@ -58,26 +58,28 @@ class HisTask(DbTask[ID, List[Tuple[GroupCommand, ReliableMessage]]]):
 
     # Override
     async def _read_data(self) -> Optional[List[Tuple[GroupCommand, ReliableMessage]]]:
+        group = self._group
         # 1. the redis server will return None when cache not found
         # 2. when redis server return an empty array, no need to check local storage again
-        array = await self._redis.load_group_histories(group=self._group)
+        array = await self._redis.load_group_histories(group=group)
         if array is not None:
             return array
-        # 3. the local storage will return an empty array, when no history in this group
-        array = await self._dos.load_group_histories(group=self._group)
+        # 3. try to load from local storage
+        array = await self._dos.load_group_histories(group=group)
         if array is None:
-            # 4. return empty array as a placeholder for the memory cache
+            # 4. create an empty array as a placeholder for the memory cache
             array = []
         # 5. update redis server
-        await self._redis.save_group_histories(group=self._group, histories=array)
+        await self._redis.save_group_histories(group=group, histories=array)
         return array
 
     # Override
     async def _write_data(self, value: List[Tuple[GroupCommand, ReliableMessage]]) -> bool:
+        group = self._group
         # 1. store into redis server
-        ok1 = await self._redis.save_group_histories(group=self._group, histories=value)
+        ok1 = await self._redis.save_group_histories(group=group, histories=value)
         # 2. save into local storage
-        ok2 = await self._dos.save_group_histories(group=self._group, histories=value)
+        ok2 = await self._dos.save_group_histories(group=group, histories=value)
         return ok1 or ok2
 
 
@@ -104,7 +106,7 @@ class GroupHistoryTable(DataCache, GroupHistoryDBI):
 
     async def _save_group_histories(self, group: ID, histories: List[Tuple[GroupCommand, ReliableMessage]]) -> bool:
         task = self._new_task(group=group)
-        return await task.save(value=histories)
+        return await task.save(histories)
 
     #
     #   Group History DBI

@@ -59,42 +59,43 @@ class DocTask(DbTask[ID, List[Document]]):
 
     # Override
     async def _read_data(self) -> Optional[List[Document]]:
+        identifier = self._identifier
         # 1. the redis server will return None when cache not found
         # 2. when redis server return an empty array, no need to check local storage again
-        array = await self._redis.load_documents(identifier=self._identifier)
+        array = await self._redis.load_documents(identifier=identifier)
         if array is not None:
             DocumentUtils.sort_documents(documents=array)
             return array
-        # 3. the local storage will return an empty array, when no document for this id
-        array = await self._dos.load_documents(identifier=self._identifier)
-        if array is not None:
-            DocumentUtils.sort_documents(documents=array)
-            return array
-        else:
-            # 4. return empty array as a placeholder for the memory cache
+        # 3. try to load from local storage
+        array = await self._dos.load_documents(identifier=identifier)
+        if array is None:
+            # 4. create an empty array as a placeholder for the memory cache
             array = []
+        else:
+            DocumentUtils.sort_documents(documents=array)
         # 5. update redis server
-        await self._redis.save_documents(documents=array, identifier=self._identifier)
+        await self._redis.save_documents(documents=array, identifier=identifier)
         return array
 
     # Override
     async def _write_data(self, documents: List[Document]) -> bool:
+        identifier = self._identifier
         new_doc = self._new_doc
         if new_doc is None:
-            assert False, 'should not happen: %s' % self._identifier
+            assert False, f'should not happen: {identifier}'
             # return False
         else:
             signature = new_doc.get('signature')
             new_time = new_doc.time
             created_time = new_doc.get_property(name='created_time')
-            identifier = DocumentUtils.get_document_id(document=new_doc)
             doc_type = DocumentUtils.get_document_type(document=new_doc)
         # check did
-        if identifier is None:
-            self.warning('document id not found: %s', new_doc)
-            identifier = self._identifier
-        elif not identifier.is_same_as(other=self._identifier):
-            self.error('document id not matched: %s, %s', identifier, self._identifier)
+        did = DocumentUtils.get_document_id(document=new_doc)
+        if did is None:
+            self.warning('document id not found: %s, %s', identifier, new_doc)
+            # return False
+        elif not did.is_same_as(other=identifier):
+            self.error('document id not matched: %s, %s', identifier, new_doc)
             return False
         # get terminal
         if isinstance(new_doc, Visa):
@@ -142,11 +143,11 @@ class DocTask(DbTask[ID, List[Document]]):
         #
         #   1. store into redis server
         #
-        ok1 = await self._redis.save_documents(documents=documents, identifier=self._identifier)
+        ok1 = await self._redis.save_documents(documents=documents, identifier=identifier)
         #
         #   2. save into local storage
         #
-        ok2 = await self._dos.save_documents(documents=documents, identifier=self._identifier)
+        ok2 = await self._dos.save_documents(documents=documents, identifier=identifier)
         return ok1 or ok2
 
 

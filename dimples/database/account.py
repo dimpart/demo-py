@@ -113,12 +113,12 @@ class AccountDatabase(Logging, AccountDBI):
     # Override
     async def save_document(self, document: Document, identifier: ID) -> bool:
         # check meta first
-        meta = await self._meta_table.get_meta(identifier=identifier)
+        meta = await self.get_meta(identifier=identifier)
         if meta is None:
             raise LookupError(f'meta not exists: {identifier}')
         # check document valid before saving it
         if not (document.is_valid or document.verify(public_key=meta.public_key)):
-            raise ValueError(f'document error: {identifier}')
+            raise ValueError(f'document error: {identifier} => {document}')
         elif DocumentUtils.get_document_id(document=document) is None:
             self.warning('set id for document: %s, %s', identifier, document)
             document['did'] = str(identifier)
@@ -136,8 +136,8 @@ class AccountDatabase(Logging, AccountDBI):
             # check founder of group in bulletin document
             founder = document.founder
             if founder is not None:
-                f_meta = await self._meta_table.get_meta(identifier=founder)
-                if f_meta is None or meta.public_key != meta.public_key:
+                f_meta = await self.get_meta(identifier=founder)
+                if f_meta is None or f_meta.public_key != meta.public_key:
                     raise ValueError(f'founder error: {founder}, group: {identifier}')
         # document ok, try to save it
         return await self._doc_table.save_document(document=document, identifier=identifier)

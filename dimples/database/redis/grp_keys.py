@@ -58,7 +58,7 @@ class GroupKeysCache(RedisCache):
         ma = str(sender.address)
         return '%s.%s.%s.%s.encrypted-keys' % (self.db_name, self.tbl_name, ga, ma)
 
-    async def get_group_keys(self, group: ID, sender: ID) -> Optional[StringPairing]:
+    async def load_group_keys(self, group: ID, sender: ID) -> Optional[StringPairing]:
         name = self.__cache_name(group=group, sender=sender)
         value = await self.get(name=name)
         if value is not None:

@@ -55,23 +55,28 @@ class UsrTask(DbTask[ID, List[ID]]):
 
     # Override
     async def _read_data(self) -> Optional[List[ID]]:
-        # 1. get from redis server
-        contacts = await self._redis.get_contacts(identifier=self._user)
+        user = self._user
+        # 1. the redis server will return None when cache not found
+        # 2. when redis server return an empty array, no need to check local storage again
+        contacts = await self._redis.get_contacts(user=user)
         if contacts is not None:
             return contacts
-        # 2. get from local storage
-        contacts = await self._dos.get_contacts(user=self._user)
-        if contacts is not None:
-            # 3. update redis server
-            await self._redis.save_contacts(contacts=contacts, identifier=self._user)
-            return contacts
+        # 3. try to load from local storage
+        contacts = await self._dos.load_contacts(user=user)
+        if contacts is None:
+            # 4. create an empty array as a placeholder for the memory cache
+            contacts = []
+        # 5. update redis server
+        await self._redis.save_contacts(contacts=contacts, user=user)
+        return contacts
 
     # Override
     async def _write_data(self, value: List[ID]) -> bool:
+        user = self._user
         # 1. store into redis server
-        ok1 = await self._redis.save_contacts(contacts=value, identifier=self._user)
+        ok1 = await self._redis.save_contacts(contacts=value, user=user)
         # 2. save into local storage
-        ok2 = await self._dos.save_contacts(contacts=value, user=self._user)
+        ok2 = await self._dos.save_contacts(contacts=value, user=user)
         return ok1 or ok2
 
 

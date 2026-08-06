@@ -57,7 +57,7 @@ class MetaCache(RedisCache):
         address = str(identifier.address)
         return '%s.%s.%s' % (self.db_name, self.tbl_name, address)
 
-    async def get_meta(self, identifier: ID) -> Optional[Meta]:
+    async def load_meta(self, identifier: ID) -> Optional[Meta]:
         key = self.__cache_name(identifier=identifier)
         value = await self.get(name=key)
         if value is None:
@@ -67,7 +67,7 @@ class MetaCache(RedisCache):
             js = utf8_decode(data=value)
             assert js is not None, f'failed to decode string: {value}'
             info = json_decode(string=js)
-            assert info is not None, f'meta error: {value}'
+            assert isinstance(info, dict), f'meta error: {value}'
             Compatible.fix_meta_version(meta=info)
         try:
             return Meta.parse(meta=info)

@@ -45,7 +45,7 @@ class DocumentCache(RedisCache):
 
     @property  # Override
     def tbl_name(self) -> str:
-        return 'document'
+        return 'documents'
 
     """
         Document for Entities (User/Group)

@@ -23,17 +23,16 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import List, Optional
+from typing import Optional, List
 
 from dimsdk import ID
 
 from ...utils import template_replace
-from ...common import GroupDBI
 
 from .base import Storage
 
 
-class GroupStorage(Storage, GroupDBI):
+class GroupStorage(Storage):
     """
         Group Storage
         ~~~~~~~~~~~~~
@@ -61,48 +60,34 @@ class GroupStorage(Storage, GroupDBI):
         address = str(identifier.address)
         return template_replace(path, key='ADDRESS', value=address)
 
+    # async def get_founder(self, group: ID) -> Optional[ID]:
+    #     pass
     #
-    #   Group DBI
-    #
+    # async def get_owner(self, group: ID) -> Optional[ID]:
+    #     pass
 
-    # Override
-    async def get_founder(self, group: ID) -> Optional[ID]:
-        pass
-
-    # Override
-    async def get_owner(self, group: ID) -> Optional[ID]:
-        pass
-
-    # Override
-    async def get_members(self, group: ID) -> List[ID]:
+    async def load_members(self, group: ID) -> Optional[List[ID]]:
         """ load members from file """
         path = self.__members_path(identifier=group)
         self.info('Loading members from: %s', path)
         users = await self.read_json(path=path)
-        if users is None:
-            # members not found
-            return []
-        return ID.convert(array=users)
+        if isinstance(users, list):
+            return ID.convert(array=users)
 
-    # Override
     async def save_members(self, members: List[ID], group: ID) -> bool:
         """ save members into file """
         path = self.__members_path(identifier=group)
         self.info('Saving members into: %s', path)
         return await self.write_json(container=ID.revert(identifiers=members), path=path)
 
-    # Override
-    async def get_administrators(self, group: ID) -> List[ID]:
+    async def load_administrators(self, group: ID) -> Optional[List[ID]]:
         """ load administrators from file """
         path = self.__administrators_path(identifier=group)
         self.info('Loading administrators from: %s', path)
         users = await self.read_json(path=path)
-        if users is None:
-            # administrators not found
-            return []
-        return ID.convert(array=users)
+        if isinstance(users, list):
+            return ID.convert(array=users)
 
-    # Override
     async def save_administrators(self, administrators: List[ID], group: ID) -> bool:
         """ save administrators into file """
         path = self.__administrators_path(identifier=group)

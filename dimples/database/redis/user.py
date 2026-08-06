@@ -23,7 +23,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import List, Optional
+from typing import Optional, List
 
 from dimsdk import ID
 
@@ -52,22 +52,22 @@ class UserCache(RedisCache):
 
         redis key: 'mkm.user.{ADDRESS}.contacts'
     """
-    def __contacts_cache_name(self, identifier: ID) -> str:
-        address = str(identifier.address)
+    def __contacts_cache_name(self, user: ID) -> str:
+        address = str(user.address)
         return '%s.%s.%s.contacts' % (self.db_name, self.tbl_name, address)
 
-    async def save_contacts(self, contacts: List[ID], identifier: ID) -> bool:
+    async def save_contacts(self, contacts: List[ID], user: ID) -> bool:
         assert contacts is not None, 'contacts cannot be empty'
         contacts = ID.revert(identifiers=contacts)
         text = '\n'.join(contacts)
         text = utf8_encode(string=text)
-        key = self.__contacts_cache_name(identifier=identifier)
+        key = self.__contacts_cache_name(user=user)
         return await self.set(name=key, value=text, expires=self.EXPIRES)
 
-    async def get_contacts(self, identifier: ID) -> List[ID]:
-        key = self.__contacts_cache_name(identifier=identifier)
+    async def get_contacts(self, user: ID) -> Optional[List[ID]]:
+        key = self.__contacts_cache_name(user=user)
         value = await self.get(name=key)
         if value is None:
-            return []
+            return None
         text = utf8_decode(data=value)
         return ID.convert(array=text.splitlines())

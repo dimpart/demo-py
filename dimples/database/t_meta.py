@@ -60,23 +60,26 @@ class TaiTask(DbTask[ID, Meta]):
 
     # Override
     async def _read_data(self) -> Optional[Meta]:
+        identifier = self._identifier
         # 1. get from redis server
-        meta = await self._redis.get_meta(identifier=self._identifier)
+        meta = await self._redis.load_meta(identifier=identifier)
         if meta is not None:
             return meta
         # 2. get from local storage
-        meta = await self._dos.get_meta(identifier=self._identifier)
-        if meta is not None:
-            # 3. update redis server
-            await self._redis.save_meta(meta=meta, identifier=self._identifier)
-            return meta
+        meta = await self._dos.load_meta(identifier=identifier)
+        if meta is None:
+            return None
+        # 3. update redis server
+        await self._redis.save_meta(meta=meta, identifier=identifier)
+        return meta
 
     # Override
     async def _write_data(self, value: Meta) -> bool:
+        identifier = self._identifier
         # 1. store into redis server
-        ok1 = await self._redis.save_meta(meta=value, identifier=self._identifier)
+        ok1 = await self._redis.save_meta(meta=value, identifier=identifier)
         # 2. save into local storage
-        ok2 = await self._dos.save_meta(meta=value, identifier=self._identifier)
+        ok2 = await self._dos.save_meta(meta=value, identifier=identifier)
         return ok1 or ok2
 
 
