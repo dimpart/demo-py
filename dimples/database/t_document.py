@@ -162,17 +162,7 @@ class DocumentTable(DataCache, DocumentDBI):
         self._dos.show_info()
 
     def _new_task(self, identifier: ID, new_document: Document = None) -> DocTask:
-        terminal = identifier.terminal
-        if terminal is not None:
-            assert identifier.is_user, f'did error: {identifier}'
-            if new_document is not None:
-                assert isinstance(new_document, Visa), f'visa error: {identifier}, {new_document}'
-                # old = DocumentUtils.get_visa_terminal(document=new_document)
-                old = new_document.get('terminal')
-                if old is None or old == '':
-                    new_document['terminal'] = terminal
-            # Naked ID
-            identifier = identifier.without_terminal()
+        assert identifier.terminal is None, f'not a naked id: {identifier}'
         # create task with naked id
         return DocTask(identifier=identifier, new_document=new_document,
                        redis=self._redis, storage=self._dos,

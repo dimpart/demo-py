@@ -27,11 +27,11 @@ from typing import Optional, List, Tuple
 
 from dimsdk import GroupCommand, ResetCommand
 from dimsdk import PrivateKey, DecryptKey, SignKey
-from dimsdk import ID, Meta, Document, Bulletin
+from dimsdk import ID, Meta, Document, Visa, Bulletin
 from dimsdk import ReliableMessage
 
-from ..utils import Config
-from ..common import MetaUtils
+from ..utils import Config, Logging
+from ..common import MetaUtils, DocumentUtils
 from ..common import AccountDBI
 
 from .t_private import PrivateKeyTable
@@ -42,7 +42,7 @@ from .t_group import GroupTable
 from .t_group_history import GroupHistoryTable
 
 
-class AccountDatabase(AccountDBI):
+class AccountDatabase(Logging, AccountDBI):
     """
         Database for MingKeMing
         ~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,18 +71,22 @@ class AccountDatabase(AccountDBI):
 
     # Override
     async def save_private_key(self, key: PrivateKey, user: ID, key_type: str = 'M') -> bool:
+        user = user.without_terminal()  # Naked ID
         return await self._private_table.save_private_key(key=key, user=user, key_type=key_type)
 
     # Override
     async def private_keys_for_decryption(self, user: ID) -> List[DecryptKey]:
+        user = user.without_terminal()  # Naked ID
         return await self._private_table.private_keys_for_decryption(user=user)
 
     # Override
     async def private_key_for_signature(self, user: ID) -> Optional[SignKey]:
+        user = user.without_terminal()  # Naked ID
         return await self._private_table.private_key_for_signature(user=user)
 
     # Override
     async def private_key_for_visa_signature(self, user: ID) -> Optional[SignKey]:
+        user = user.without_terminal()  # Naked ID
         return await self._private_table.private_key_for_visa_signature(user=user)
 
     #
@@ -91,6 +95,7 @@ class AccountDatabase(AccountDBI):
 
     # Override
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
+        identifier = identifier.without_terminal()  # Naked ID
         # check meta with ID
         if not MetaUtils.match_id(identifier=identifier, meta=meta):
             raise ValueError(f'meta not match: {identifier} => {meta}')
@@ -98,6 +103,7 @@ class AccountDatabase(AccountDBI):
 
     # Override
     async def get_meta(self, identifier: ID) -> Optional[Meta]:
+        identifier = identifier.without_terminal()  # Naked ID
         return await self._meta_table.get_meta(identifier=identifier)
 
     #
@@ -113,8 +119,21 @@ class AccountDatabase(AccountDBI):
         # check document valid before saving it
         if not (document.is_valid or document.verify(public_key=meta.public_key)):
             raise ValueError(f'document error: {identifier}')
-        # check founder in group document
-        if isinstance(document, Bulletin):
+        elif DocumentUtils.get_document_id(document=document) is None:
+            self.warning('set id for document: %s, %s', identifier, document)
+            document['did'] = str(identifier)
+        # check terminal
+        terminal = identifier.terminal
+        if terminal is not None:
+            identifier = identifier.without_terminal()  # Naked ID
+            # check terminal in visa document
+            if isinstance(document, Visa):
+                # old = DocumentUtils.get_visa_terminal(document=document)
+                old = document.get('terminal')
+                if old is None or old == '':
+                    document['terminal'] = terminal
+        elif isinstance(document, Bulletin):
+            # check founder of group in bulletin document
             founder = document.founder
             if founder is not None:
                 f_meta = await self._meta_table.get_meta(identifier=founder)
@@ -125,7 +144,22 @@ class AccountDatabase(AccountDBI):
 
     # Override
     async def get_documents(self, identifier: ID) -> List[Document]:
-        return await self._doc_table.get_documents(identifier=identifier)
+        terminal = identifier.terminal
+        if terminal is not None:
+            identifier = identifier.without_terminal()  # Naked ID
+        # load
+        documents = await self._doc_table.get_documents(identifier=identifier)
+        if terminal is not None:
+            # filter for terminal
+            array = []
+            for doc in documents:
+                if isinstance(doc, Visa) and DocumentUtils.get_visa_terminal(document=doc) != terminal:
+                    self.info('skip document: %s "%s", %s', identifier, terminal, doc)
+                    continue
+                # terminal matched
+                array.append(doc)
+            documents = array
+        return documents
 
     #
     #   User DBI
@@ -141,10 +175,12 @@ class AccountDatabase(AccountDBI):
 
     # Override
     async def get_contacts(self, user: ID) -> List[ID]:
+        user = user.without_terminal()  # Naked ID
         return await self._user_table.get_contacts(user=user)
 
     # Override
     async def save_contacts(self, contacts: List[ID], user: ID) -> bool:
+        user = user.without_terminal()  # Naked ID
         return await self._user_table.save_contacts(contacts=contacts, user=user)
 
     #

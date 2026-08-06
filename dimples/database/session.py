@@ -28,7 +28,8 @@ from typing import Optional, List, Tuple
 from dimsdk import ID
 from dimsdk import ReliableMessage
 
-from ..utils import Config
+from ..utils import Config, Logging
+from ..common import CommandMessageUtils
 from ..common import ProviderInfo, StationInfo
 from ..common import SessionDBI, LoginCommand
 
@@ -36,7 +37,7 @@ from .t_login import LoginTable
 from .t_station import StationTable
 
 
-class SessionDatabase(SessionDBI):
+class SessionDatabase(Logging, SessionDBI):
     """
         Database for Session
         ~~~~~~~~~~~~~~~~~~~~
@@ -56,9 +57,33 @@ class SessionDatabase(SessionDBI):
     #
 
     async def get_login_command_messages(self, user: ID) -> List[Tuple[LoginCommand, ReliableMessage]]:
-        return await self._login_table.get_login_command_messages(user=user)
+        terminal = user.terminal
+        if terminal is not None:
+            user = user.without_terminal()  # Naked ID
+        # load
+        records = await self._login_table.get_login_command_messages(user=user)
+        if terminal is not None:
+            # filter for terminal
+            array = []
+            for pair in records:
+                cmd = pair[0]
+                if CommandMessageUtils.get_login_terminal(content=cmd) != terminal:
+                    self.info('skip login record: %s "%s", %s', user, terminal, cmd)
+                    continue
+                # terminal matched
+                array.append(pair)
+            records = array
+        return records
 
     async def save_login_command_message(self, user: ID, content: LoginCommand, msg: ReliableMessage) -> bool:
+        terminal = user.terminal
+        if terminal is not None:
+            user = user.without_terminal()  # Naked ID
+            # old = CommandMessageUtils.get_login_terminal(content=new_cmd)
+            old = content.get('terminal')
+            if old is None or old == '':
+                content['terminal'] = terminal
+        # save
         return await self._login_table.save_login_command_message(user=user, content=content, msg=msg)
 
     #

@@ -98,11 +98,13 @@ class PrivateKeyTable(PrivateKeyDBI):
         self._dos.show_info()
 
     def _new_id_key_task(self, user: ID) -> IdKeyTask:
+        assert user.terminal is None, f'not a naked id: {user}'
         return IdKeyTask(user=user,
                          storage=self._dos,
                          mutex_lock=self._lock, cache_pool=self._id_key_cache)
 
     def _new_msg_key_task(self, user: ID) -> MsgKeyTask:
+        assert user.terminal is None, f'not a naked id: {user}'
         return MsgKeyTask(user=user,
                           storage=self._dos,
                           mutex_lock=self._lock, cache_pool=self._msg_keys_cache)

@@ -92,6 +92,7 @@ class MetaTable(DataCache, MetaDBI):
         self._dos.show_info()
 
     def _new_task(self, identifier: ID) -> TaiTask:
+        assert identifier.terminal is None, f'not a naked id: {identifier}'
         return TaiTask(identifier=identifier,
                        redis=self._redis, storage=self._dos,
                        mutex_lock=self._mutex_lock, cache_pool=self._cache_pool)
@@ -111,6 +112,6 @@ class MetaTable(DataCache, MetaDBI):
 
     # Override
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
-        # assert Meta.match_id(meta=meta, identifier=identifier), 'meta invalid: %s, %s' % (identifier, meta)
+        # assert Meta.match_id(meta=meta, identifier=identifier), f'meta invalid: {identifier}, {meta}'
         task = self._new_task(identifier=identifier)
-        return await task.save(value=meta)
+        return await task.save(meta)

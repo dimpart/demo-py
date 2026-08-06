@@ -84,7 +84,7 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
         new_cmd = self._new_cmd
         new_msg = self._new_msg
         if new_cmd is None or new_msg is None:
-            assert False, 'should not happen: %s' % self._user
+            assert False, f'should not happen: {self._user}'
         else:
             new_sn = new_cmd.sn
             new_time = new_cmd.time
@@ -153,14 +153,7 @@ class LoginTable(DataCache, LoginDBI):
         self._dos.show_info()
 
     def _new_task(self, user: ID, new_cmd: LoginCommand = None, new_msg: ReliableMessage = None) -> CmdTask:
-        terminal = user.terminal
-        if terminal is not None:
-            if new_cmd is not None:
-                old = new_cmd.get('terminal')
-                if old is None or old == '':
-                    new_cmd['terminal'] = terminal
-            # Naked ID
-            user = user.without_terminal()
+        assert user.terminal is None, f'not a naked id: {user}'
         # create task with naked id
         return CmdTask(user=user, new_cmd=new_cmd, new_msg=new_msg,
                        redis=self._redis, storage=self._dos,

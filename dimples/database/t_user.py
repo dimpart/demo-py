@@ -24,7 +24,7 @@
 # ==============================================================================
 
 import threading
-from typing import List, Optional
+from typing import Optional, List
 
 from aiou.mem import CachePool
 
@@ -87,6 +87,7 @@ class UserTable(DataCache, UserDBI, ContactDBI):
         self._dos.show_info()
 
     def _new_task(self, user: ID) -> UsrTask:
+        assert user.terminal is None, f'not a naked id: {user}'
         return UsrTask(user=user,
                        redis=self._redis, storage=self._dos,
                        mutex_lock=self._mutex_lock, cache_pool=self._cache_pool)
@@ -116,4 +117,4 @@ class UserTable(DataCache, UserDBI, ContactDBI):
     # Override
     async def save_contacts(self, contacts: List[ID], user: ID) -> bool:
         task = self._new_task(user=user)
-        return await task.save(value=contacts)
+        return await task.save(contacts)
