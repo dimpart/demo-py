@@ -52,12 +52,12 @@ class GroupCache(RedisCache):
 
         redis key: 'mkm.group.{ADDRESS}.members'
     """
-    def __members_cache_name(self, identifier: ID) -> str:
-        address = str(identifier.address)
+    def __members_cache_name(self, group: ID) -> str:
+        address = str(group.address)
         return '%s.%s.%s.members' % (self.db_name, self.tbl_name, address)
 
     async def load_members(self, group: ID) -> Optional[List[ID]]:
-        key = self.__members_cache_name(identifier=group)
+        key = self.__members_cache_name(group=group)
         value = await self.get(name=key)
         if value is not None:
             text = utf8_decode(data=value)
@@ -68,7 +68,7 @@ class GroupCache(RedisCache):
         users = ID.revert(identifiers=members)
         text = '\n'.join(users)
         value = utf8_encode(string=text)
-        key = self.__members_cache_name(identifier=group)
+        key = self.__members_cache_name(group=group)
         return await self.set(name=key, value=value, expires=self.EXPIRES)
 
     """
@@ -77,12 +77,12 @@ class GroupCache(RedisCache):
 
         redis key: 'mkm.group.{ADDRESS}.administrators'
     """
-    def __administrators_cache_name(self, identifier: ID) -> str:
-        address = str(identifier.address)
+    def __administrators_cache_name(self, group: ID) -> str:
+        address = str(group.address)
         return '%s.%s.%s.administrators' % (self.db_name, self.tbl_name, address)
 
     async def load_administrators(self, group: ID) -> Optional[List[ID]]:
-        key = self.__administrators_cache_name(identifier=group)
+        key = self.__administrators_cache_name(group=group)
         value = await self.get(name=key)
         if value is not None:
             text = utf8_decode(data=value)
@@ -93,5 +93,5 @@ class GroupCache(RedisCache):
         users = ID.revert(identifiers=administrators)
         text = '\n'.join(users)
         value = utf8_encode(string=text)
-        key = self.__administrators_cache_name(identifier=group)
+        key = self.__administrators_cache_name(group=group)
         return await self.set(name=key, value=value, expires=self.EXPIRES)

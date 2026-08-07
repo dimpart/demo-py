@@ -88,7 +88,7 @@ class MessageCache(RedisCache):
         ok2 = await self.zrem(messages_key, utf8_encode(string=sig))
         return ok1 and ok2
 
-    async def get_reliable_messages(self, receiver: ID, limit: int = 1024) -> List[ReliableMessage]:
+    async def load_reliable_messages(self, receiver: ID, limit: int = 1024) -> List[ReliableMessage]:
         assert limit > 0, f'message limit error: {limit}'
         # 0. clear expired messages (7 days ago)
         key = self.__messages_cache_name(identifier=receiver)

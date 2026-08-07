@@ -24,7 +24,7 @@
 # ==============================================================================
 
 import threading
-from typing import List, Optional
+from typing import Optional, List
 
 from aiou.mem import CachePool
 
@@ -60,7 +60,7 @@ class MsgTask(DbTask[ID, List[ReliableMessage]]):
 
     # Override
     async def _read_data(self) -> Optional[List[ReliableMessage]]:
-        return await self._redis.get_reliable_messages(receiver=self._receiver, limit=self._limit)
+        return await self._redis.load_reliable_messages(receiver=self._receiver, limit=self._limit)
 
     # Override
     async def _write_data(self, value: List[ReliableMessage]) -> bool:
@@ -76,7 +76,7 @@ class ReliableMessageTable(DataCache, ReliableMessageDBI):
 
     # noinspection PyMethodMayBeStatic
     def show_info(self):
-        print('!!! messages cached in memory only !!!')
+        print('!!!   messages cached in memory only !!!')
 
     def _new_task(self, receiver: ID, limit: int) -> MsgTask:
         return MsgTask(receiver=receiver, limit=limit,

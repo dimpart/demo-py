@@ -64,7 +64,7 @@ class UserCache(RedisCache):
         key = self.__contacts_cache_name(user=user)
         return await self.set(name=key, value=text, expires=self.EXPIRES)
 
-    async def get_contacts(self, user: ID) -> Optional[List[ID]]:
+    async def load_contacts(self, user: ID) -> Optional[List[ID]]:
         key = self.__contacts_cache_name(user=user)
         value = await self.get(name=key)
         if value is None:

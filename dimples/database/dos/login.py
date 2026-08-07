@@ -48,21 +48,21 @@ class LoginStorage(Storage):
         path = self.public_path(self.login_path)
         print('!!!      login cmd path: %s' % path)
 
-    def __login_path(self, identifier: ID) -> str:
+    def __login_path(self, user: ID) -> str:
         path = self.public_path(self.login_path)
-        address = str(identifier.address)
+        address = str(user.address)
         return template_replace(path, key='ADDRESS', value=address)
 
     async def save_login_command_messages(self, records: List[Tuple[LoginCommand, ReliableMessage]], user: ID) -> bool:
         """ save login commands into file """
         info = CommandMessageUtils.dump_command_messages(records=records)
-        path = self.__login_path(identifier=user)
+        path = self.__login_path(user=user)
         self.info('Saving %d login command(s) into: %s', len(records), path)
         return await self.write_json(container=info, path=path)
 
     async def load_login_command_messages(self, user: ID) -> Optional[List[Tuple[LoginCommand, ReliableMessage]]]:
         """ load login commands from file """
-        path = self.__login_path(identifier=user)
+        path = self.__login_path(user=user)
         # self.info('Loading login commands from: %s', path)
         info = await self.read_json(path=path)
         if info is None:

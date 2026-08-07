@@ -50,14 +50,14 @@ class GroupStorage(Storage):
         print('!!!        members path: %s' % path1)
         print('!!! administrators path: %s' % path2)
 
-    def __members_path(self, identifier: ID) -> str:
+    def __members_path(self, group: ID) -> str:
         path = self.protected_path(self.members_path)
-        address = str(identifier.address)
+        address = str(group.address)
         return template_replace(path, key='ADDRESS', value=address)
 
-    def __administrators_path(self, identifier: ID) -> str:
+    def __administrators_path(self, group: ID) -> str:
         path = self.protected_path(self.administrators_path)
-        address = str(identifier.address)
+        address = str(group.address)
         return template_replace(path, key='ADDRESS', value=address)
 
     # async def get_founder(self, group: ID) -> Optional[ID]:
@@ -68,7 +68,7 @@ class GroupStorage(Storage):
 
     async def load_members(self, group: ID) -> Optional[List[ID]]:
         """ load members from file """
-        path = self.__members_path(identifier=group)
+        path = self.__members_path(group=group)
         self.info('Loading members from: %s', path)
         users = await self.read_json(path=path)
         if isinstance(users, list):
@@ -76,13 +76,13 @@ class GroupStorage(Storage):
 
     async def save_members(self, members: List[ID], group: ID) -> bool:
         """ save members into file """
-        path = self.__members_path(identifier=group)
+        path = self.__members_path(group=group)
         self.info('Saving members into: %s', path)
         return await self.write_json(container=ID.revert(identifiers=members), path=path)
 
     async def load_administrators(self, group: ID) -> Optional[List[ID]]:
         """ load administrators from file """
-        path = self.__administrators_path(identifier=group)
+        path = self.__administrators_path(group=group)
         self.info('Loading administrators from: %s', path)
         users = await self.read_json(path=path)
         if isinstance(users, list):
@@ -90,6 +90,6 @@ class GroupStorage(Storage):
 
     async def save_administrators(self, administrators: List[ID], group: ID) -> bool:
         """ save administrators into file """
-        path = self.__administrators_path(identifier=group)
+        path = self.__administrators_path(group=group)
         self.info('Saving administrators into: %s', path)
         return await self.write_json(container=ID.revert(identifiers=administrators), path=path)

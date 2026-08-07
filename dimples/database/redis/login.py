@@ -23,7 +23,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Set, Tuple, List
+from typing import Optional, Tuple, List
 
 from dimsdk import ID, ReliableMessage
 
@@ -54,8 +54,8 @@ class LoginCache(RedisCache):
 
         redis key: 'mkm.user.{ADDRESS}.login_commands'
     """
-    def __login_cache_name(self, identifier: ID) -> str:
-        address = str(identifier.address)
+    def __login_cache_name(self, user: ID) -> str:
+        address = str(user.address)
         return '%s.%s.%s.login_commands' % (self.db_name, self.tbl_name, address)
 
     async def save_login_command_messages(self, records: List[Tuple[LoginCommand, ReliableMessage]], user: ID) -> bool:
@@ -63,13 +63,13 @@ class LoginCache(RedisCache):
         info = CommandMessageUtils.dump_command_messages(records=records)
         js = json_encode(container=info)
         value = utf8_encode(string=js)
-        name = self.__login_cache_name(identifier=user)
+        name = self.__login_cache_name(user=user)
         # self.info('Caching %d record(s) for key: %s', len(records), name)
         return await self.set(name=name, value=value, expires=self.EXPIRES)
 
     async def load_login_command_messages(self, user: ID) -> Optional[List[Tuple[LoginCommand, ReliableMessage]]]:
         """ load login commands from cache """
-        name = self.__login_cache_name(identifier=user)
+        name = self.__login_cache_name(user=user)
         value = await self.get(name=name)
         if value is None:
             # not found
@@ -79,102 +79,3 @@ class LoginCache(RedisCache):
         info = json_decode(string=js)
         # load login records from cache server
         return CommandMessageUtils.pump_command_messages(info=info)
-
-    """
-        Session Online
-        ~~~~~~~~~~~~~~
-
-        redis key: 'mkm.user.active_sockets'
-    """
-    def __active_sockets_cache_name(self) -> str:
-        return '%s.%s.active_sockets' % (self.db_name, self.tbl_name)
-
-    async def clear_socket_addresses(self) -> bool:
-        """ clear before station start """
-        name = self.__active_sockets_cache_name()
-        all_keys = await self.hkeys(name=name)
-        for key in all_keys:
-            await self.hdel(name=name, key=key)
-        return await self.delete(name)
-
-    async def save_socket_addresses(self, identifier: ID, addresses: Set[Tuple[str, int]]) -> bool:
-        name = self.__active_sockets_cache_name()
-        value = serialize_socket_addresses(addresses=addresses)
-        if value is None:
-            return await self.hdel(name=name, key=str(identifier))
-        else:
-            return await self.hset(name=name, key=str(identifier), value=value)
-
-    async def get_socket_addresses(self, identifier: ID) -> Set[Tuple[str, int]]:
-        name = self.__active_sockets_cache_name()
-        value = await self.hget(name=name, key=str(identifier))
-        if is_empty(value=value):
-            return set()
-        return deserialize_socket_addresses(value=value)
-
-    async def all_users(self) -> Set[ID]:
-        name = self.__active_sockets_cache_name()
-        all_keys = await self.hkeys(name=name)
-        users = set()
-        for key in all_keys:
-            did = ID.parse(identifier=key)
-            if did is not None:
-                did = did.without_terminal()
-                users.add(did)
-        return users
-
-    async def get_active_users(self) -> Set[ID]:
-        name = self.__active_sockets_cache_name()
-        records = await self.hgetall(name=name)  # ID => Set[socket_address]
-        if records is None:
-            return set()
-        users = set()
-        for key, value in records.items():
-            if is_empty(value=value):
-                # user logout
-                continue
-            string = utf8_decode(data=key)
-            did = ID.parse(identifier=string)
-            if did is not None:
-                did = did.without_terminal()
-                users.add(did)
-        return users
-
-
-"""
-    JsON format: [
-        [host, port],
-        [host, port],
-        [host, port]
-    ]
-"""
-
-
-def serialize_socket_addresses(addresses: Set[Tuple[str, int]]) -> Optional[bytes]:
-    if addresses is None or len(addresses) == 0:
-        return None
-    array = []
-    for add in addresses:
-        # item = [add[0], add[1]]
-        item = list(add)
-        array.append(item)
-    js = json_encode(container=array)
-    return utf8_encode(string=js)
-
-
-def deserialize_socket_addresses(value: bytes) -> Set[Tuple[str, int]]:
-    js = utf8_decode(data=value)
-    array = json_decode(string=js)
-    all_addresses = set()
-    for item in array:
-        # address = (item[0], item[1])
-        address = tuple(item)
-        all_addresses.add(address)
-    return all_addresses
-
-
-min_len = len('[["8.8.8.8",8]]')
-
-
-def is_empty(value: bytes) -> bool:
-    return value is None or len(value) <= 2  # < min_len
