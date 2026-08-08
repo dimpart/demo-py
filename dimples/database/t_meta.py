@@ -115,6 +115,12 @@ class MetaTable(DataCache, MetaDBI):
 
     # Override
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
-        # assert Meta.match_id(meta=meta, identifier=identifier), f'meta invalid: {identifier}, {meta}'
+        assert meta.is_valid, f'meta invalid: {identifier}, {meta}'
+        # 1. check old record
+        old = await self.get_meta(identifier=identifier)
+        if old is not None:
+            self.warning('meta exists: %s', identifier)
+            return True
+        # 2. save to database
         task = self._new_task(identifier=identifier)
         return await task.save(meta)

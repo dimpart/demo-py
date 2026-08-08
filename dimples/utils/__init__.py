@@ -36,6 +36,7 @@
 import traceback
 from io import StringIO
 from typing import Optional, List
+from typing import TypeVar, Callable
 
 from dimsdk.core.compress_keys import StringPairing
 from dimsdk import *
@@ -132,6 +133,27 @@ def get_exception_traceback() -> str:
     return buf.getvalue()
 
 
+T = TypeVar('T')
+
+
+def list_remove_where(array: List[T], predicate: Callable[[T], bool]) -> List[T]:
+    """
+    Filters list in-place with two-pointer algorithm.
+    Element will be removed if predicate returns True.
+
+    :param array: Target list, modified in-place
+    :param predicate: A function accepting an element, return True = remove, False = keep
+    :return: The original input list (enables method chaining)
+    """
+    write = 0
+    for item in array:
+        if not predicate(item):
+            array[write] = item
+            write += 1
+    del array[write:]
+    return array
+
+
 __all__ = [
 
     'md5', 'sha1', 'sha256', 'keccak256', 'ripemd160',
@@ -178,5 +200,7 @@ __all__ = [
     'template_replace',
 
     'get_exception_traceback',
+
+    'list_remove_where',
 
 ]

@@ -45,8 +45,9 @@ from dimsdk import Document, Visa, Bulletin
 
 from dimplugins.mem.ext import account_helper
 
-from ...utils import StrMap, MutableStrMap
+from ...utils import list_remove_where
 from ...utils import Log
+from ...utils import StrMap, MutableStrMap
 
 
 @final
@@ -225,28 +226,31 @@ class DocumentUtils:
 
     @classmethod
     def sort_documents(cls, documents: List[Document]) -> List[Document]:
-        """ Sort and remove duplicated item """
-        # 1. sort by time DESC
+        """ Sort documents by timestamp descending """
         documents.sort(
             # key=lambda x: -(x.time or 0.0)
             key=lambda x: 0.0 if x.time is None else -x.time
         )
-        # 2. remove duplicated item
+        return documents
+
+    @classmethod
+    def tidy_documents(cls, documents: List[Document]) -> List[Document]:
+        """ Remove duplicated items by signature """
         signatures = set()
-        idx = len(documents)
-        while idx > 0:
-            idx -= 1
-            doc = documents[idx]
-            # TODO: remove expired document
-            # ...
-            # check signature
-            sig = doc.get('signature')
+
+        def should_remove(doc: Document) -> bool:
+            did = cls.get_document_id(document=doc)
+            sig = doc.get_str(key='signature')
             if sig is None or sig in signatures:
-                Log.warning('skip duplicated document: %s, %s', sig, doc)
-                del documents[idx]
+                assert sig is not None, f'document info error: {did}, {doc}'
+                Log.warning('skip duplicated document: %s, %s', did, doc)
+                return True
             else:
                 signatures.add(sig)
-        # done
+            # TODO: remove expired document(s)
+            return False
+
+        list_remove_where(documents, predicate=should_remove)
         return documents
 
     #

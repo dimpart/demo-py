@@ -140,11 +140,13 @@ async def _handshake_accepted(sender: ID, when: Optional[DateTime], session: Ses
 
 
 async def _filter_visa_documents(identifier: ID, facebook: CommonFacebook) -> List[Visa]:
+    terminal = identifier.terminal
+    if terminal is not None:
+        identifier = identifier.without_terminal()
     documents = await facebook.get_documents(identifier=identifier)
     if len(documents) < 1:
         return []
-    else:
-        terminal = identifier.terminal
+    # ignore same terminal
     other_visa_documents = []
     for doc in documents:
         if not isinstance(doc, Visa):

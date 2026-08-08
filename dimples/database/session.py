@@ -62,17 +62,24 @@ class SessionDatabase(Logging, SessionDBI):
             user = user.without_terminal()  # Naked ID
         # load
         records = await self._login_table.get_login_command_messages(user=user)
+        total = len(records)
         if terminal is not None:
             # filter for terminal
             array = []
+            index = 0
             for pair in records:
                 cmd = pair[0]
+                index += 1
                 if CommandMessageUtils.get_login_terminal(content=cmd) != terminal:
-                    self.info('skip login record: %s "%s", %s', user, terminal, cmd)
-                    continue
-                # terminal matched
-                array.append(pair)
+                    # login terminal not matched
+                    self.info('[%d/%d]   skip login not for: %s/%s, %s', index, total, user, terminal, cmd)
+                else:
+                    self.info('[%d/%d] got login record for: %s/%s, %s', index, total, user, terminal, cmd)
+                    array.append(pair)
+            self.info('filter %d/%d login command(s) for user: %s/%s', len(array), total, user, terminal)
             records = array
+        else:
+            self.info('loaded %d login command(s) for user: %s', total, user)
         return records
 
     async def save_login_command_message(self, user: ID, content: LoginCommand, msg: ReliableMessage) -> bool:
@@ -81,7 +88,7 @@ class SessionDatabase(Logging, SessionDBI):
             user = user.without_terminal()  # Naked ID
             # old = CommandMessageUtils.get_login_terminal(content=new_cmd)
             old = content.get('terminal')
-            if old is None or old == '':
+            if old is None or old == '' or old == '*':
                 content['terminal'] = terminal
         # save
         return await self._login_table.save_login_command_message(user=user, content=content, msg=msg)

@@ -33,10 +33,13 @@ from typing import Mapping
 
 from dimsdk import final
 
+from dimsdk import ID
 from dimsdk import ReliableMessage
 from dimsdk import Command
 
+from ...utils import list_remove_where
 from ...utils import Log
+
 from ..protocol import LoginCommand
 
 
@@ -59,30 +62,33 @@ class CommandMessageUtils:
 
     @classmethod
     def sort_commands(cls, records: List[Tuple[Command, ReliableMessage]]) -> List[Tuple[Command, ReliableMessage]]:
-        """ Sort and remove duplicated item """
-        # 1. sort by time DESC
+        """ Sort and remove duplicated items """
         records.sort(
             # key=lambda x: -(x[0].time or 0.0)
             key=lambda x: 0.0 if x[0].time is None else -x[0].time
         )
-        cnt = len(records)
-        # 2. remove duplicated item
-        numbers = set()
-        idx = cnt
-        while idx > 0:
-            idx -= 1
-            cmd, msg = records[idx]
-            # TODO: remove expired command
-            # ...
-            # check serial number
-            sn = cmd.sn
-            if sn in numbers:
-                Log.warning('skip duplicated command: %s, %s', sn, cmd)
-                del records[idx]
+        return records
+
+    @classmethod
+    def tidy_commands(cls, records: List[Tuple[Command, ReliableMessage]]) -> List[Tuple[Command, ReliableMessage]]:
+        signatures = set()
+
+        def should_remove(pair: Tuple[Command, ReliableMessage]) -> bool:
+            cmd = pair[0]
+            msg = pair[1]
+            # did = cmd.identifier
+            did = ID.parse(identifier=cmd.get('did'))
+            sig = msg.get_str(key='signature')
+            if sig is None or sig in signatures:
+                assert sig is not None, f'login command error: {did}, {cmd}'
+                Log.warning('skip duplicated command: %s, %s', did, cmd)
+                return True
             else:
-                numbers.add(sn)
-        # done
-        Log.info('Sort %d/%d command message(s)', len(records), cnt)
+                signatures.add(sig)
+            # TODO: remove expired command(s)
+            return False
+
+        list_remove_where(records, predicate=should_remove)
         return records
 
     #

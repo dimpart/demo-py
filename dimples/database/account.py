@@ -27,7 +27,7 @@ from typing import Optional, List, Tuple
 
 from dimsdk import GroupCommand, ResetCommand
 from dimsdk import PrivateKey, DecryptKey, SignKey
-from dimsdk import ID, Meta, Document, Visa, Bulletin
+from dimsdk import ID, Meta, Document, Visa
 from dimsdk import ReliableMessage
 
 from ..utils import Config, Logging
@@ -97,7 +97,8 @@ class AccountDatabase(Logging, AccountDBI):
     async def save_meta(self, meta: Meta, identifier: ID) -> bool:
         identifier = identifier.without_terminal()  # Naked ID
         # check meta with ID
-        if not MetaUtils.match_id(identifier=identifier, meta=meta):
+        ok = meta.is_valid and MetaUtils.match_id(identifier=identifier, meta=meta)
+        if not ok:
             raise ValueError(f'meta not match: {identifier} => {meta}')
         return await self._meta_table.save_meta(meta=meta, identifier=identifier)
 
@@ -112,17 +113,6 @@ class AccountDatabase(Logging, AccountDBI):
 
     # Override
     async def save_document(self, document: Document, identifier: ID) -> bool:
-        # check meta first
-        meta = await self.get_meta(identifier=identifier)
-        if meta is None:
-            raise LookupError(f'meta not exists: {identifier}')
-        # check document valid before saving it
-        if not (document.is_valid or document.verify(public_key=meta.public_key)):
-            raise ValueError(f'document error: {identifier} => {document}')
-        elif DocumentUtils.get_document_id(document=document) is None:
-            self.warning('set id for document: %s, %s', identifier, document)
-            document['did'] = str(identifier)
-        # check terminal
         terminal = identifier.terminal
         if terminal is not None:
             identifier = identifier.without_terminal()  # Naked ID
@@ -130,16 +120,30 @@ class AccountDatabase(Logging, AccountDBI):
             if isinstance(document, Visa):
                 # old = DocumentUtils.get_visa_terminal(document=document)
                 old = document.get('terminal')
-                if old is None or old == '':
+                if old is None or old == '' or old == '*':
                     document['terminal'] = terminal
-        elif isinstance(document, Bulletin):
-            # check founder of group in bulletin document
-            founder = document.founder
-            if founder is not None:
-                f_meta = await self.get_meta(identifier=founder)
-                if f_meta is None or f_meta.public_key != meta.public_key:
-                    raise ValueError(f'founder error: {founder}, group: {identifier}')
-        # document ok, try to save it
+        # elif isinstance(document, Bulletin):
+        #     # check founder of group in bulletin document
+        #     founder = document.founder
+        #     if founder is not None:
+        #         f_meta = await self.get_meta(identifier=founder)
+        #         if f_meta is None or f_meta.public_key != meta.public_key:
+        #             raise ValueError(f'founder error: {founder}, group: {identifier}')
+        # check ID
+        did = DocumentUtils.get_document_id(document=document)
+        if did is None:
+            self.warning('set id for document: %s, %s', identifier, document)
+            document['did'] = str(identifier)
+        elif not did.is_same_as(other=identifier):
+            self.error('document id not match: %s, %s', identifier, document)
+            return False
+        # check document with meta.key
+        meta = await self.get_meta(identifier=identifier)
+        if meta is None:
+            raise LookupError(f'meta not exists: {identifier}')
+        elif not document.verify(public_key=meta.public_key):
+            raise ValueError(f'document invalid: {identifier}, {document}')
+        # OK, save to local storage
         return await self._doc_table.save_document(document=document, identifier=identifier)
 
     # Override
@@ -149,16 +153,23 @@ class AccountDatabase(Logging, AccountDBI):
             identifier = identifier.without_terminal()  # Naked ID
         # load
         documents = await self._doc_table.get_documents(identifier=identifier)
+        total = len(documents)
         if terminal is not None:
             # filter for terminal
             array = []
+            index = 0
             for doc in documents:
+                index += 1
                 if isinstance(doc, Visa) and DocumentUtils.get_visa_terminal(document=doc) != terminal:
-                    self.info('skip document: %s "%s", %s', identifier, terminal, doc)
-                    continue
-                # terminal matched
-                array.append(doc)
+                    # visa terminal not matched
+                    self.info('[%d/%d] skip visa not for: %s/%s, %s', index, total, identifier, terminal, doc)
+                else:
+                    self.info('[%d/%d]  got document for: %s/%s, %s', index, total, identifier, terminal, doc)
+                    array.append(doc)
+            self.info('filter %d/%d document(s) for user: %s/%s', len(array), total, identifier, terminal)
             documents = array
+        else:
+            self.info('loaded %d document(s) for user: %s', total, identifier)
         return documents
 
     #
