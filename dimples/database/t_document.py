@@ -34,7 +34,6 @@ from dimsdk import Document, Visa
 
 from ..utils import Config
 from ..utils import Log
-from ..utils import list_remove_where
 
 from ..common import DocumentUtils
 from ..common import DocumentDBI
@@ -66,41 +65,19 @@ def _types_not_match(type1: Optional[str], type2: Optional[str]) -> bool:
         return type1 != type2
 
 
-def _sort_documents(documents: List[Document]) -> List[Document]:
-    # 1. Sort documents by timestamp descending
-    # 2. Remove duplicated items by signature
-    DocumentUtils.sort_documents(documents=documents)
+def _sort_documents(documents: List[Document], identifier: ID) -> List[Document]:
     total = len(documents)
-    if total <= 1:
-        return documents
-    # 3. Remove duplicated visa documents by terminal
-    terminals = set()
-    identifier: ID = None
-
-    def should_remove(doc: Document) -> bool:
-        nonlocal identifier
-        did = DocumentUtils.get_document_id(document=doc)
-        if identifier is None:
-            identifier = did
-        if isinstance(doc, Visa):
-            # check terminal (device)
-            device = DocumentUtils.get_visa_terminal(document=doc)
-            if device is None or device == '':
-                device = '*'
-            if device in terminals:
-                Log.warning('skip duplicated document: %s, %s', did, doc)
-                return True
-            else:
-                terminals.add(device)
-        # TODO: check for bulletin document?
-        return False
-
-    list_remove_where(documents, predicate=should_remove)
-    # TODO: remove expired document(s)
+    if total > 1:
+        # 1. Sort documents by timestamp descending
+        DocumentUtils.sort_documents(documents=documents)
+        # 2. Remove duplicated items by signature
+        DocumentUtils.tidy_documents(documents=documents)
+        # TODO: remove expired document(s)
+        if len(documents) > 8:
+            del documents[8:]
     count = len(documents)
     if count < total:
-        Log.info('trim %d/%d document(s) for %s by terminal', count, total, identifier)
-    # done
+        Log.info('trim %d/%d document(s) for %s', count, total, identifier)
     return documents
 
 
@@ -126,7 +103,7 @@ class DocTask(DbTask[ID, List[Document]]):
         # 2. when redis server return an empty array, no need to check local storage again
         array = await self._redis.load_documents(identifier=identifier)
         if array is not None:
-            _sort_documents(documents=array)
+            _sort_documents(documents=array, identifier=identifier)
             return array
         # 3. try to load from local storage
         array = await self._dos.load_documents(identifier=identifier)
@@ -134,7 +111,7 @@ class DocTask(DbTask[ID, List[Document]]):
             # 4. create an empty array as a placeholder for the memory cache
             array = []
         else:
-            _sort_documents(documents=array)
+            _sort_documents(documents=array, identifier=identifier)
         # 5. update redis server
         await self._redis.save_documents(documents=array, identifier=identifier)
         return array
@@ -202,7 +179,7 @@ class DocTask(DbTask[ID, List[Document]]):
             self.info('insert new document: %s "%s", type="%s", created=[%s].', entity, new_terminal, new_type, when)
             documents.append(new_doc)
         # if document list changed, sort before saving
-        DocumentUtils.sort_documents(documents=documents)
+        _sort_documents(documents=documents, identifier=entity)
         #
         #   1. store into redis server
         #

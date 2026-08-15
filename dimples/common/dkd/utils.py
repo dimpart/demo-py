@@ -33,7 +33,6 @@ from typing import Mapping
 
 from dimsdk import final
 
-from dimsdk import ID
 from dimsdk import ReliableMessage
 from dimsdk import Command
 
@@ -62,7 +61,7 @@ class CommandMessageUtils:
 
     @classmethod
     def sort_commands(cls, records: List[Tuple[Command, ReliableMessage]]) -> List[Tuple[Command, ReliableMessage]]:
-        """ Sort and remove duplicated items """
+        """ Sort command records by timestamp descending """
         records.sort(
             # key=lambda x: -(x[0].time or 0.0)
             key=lambda x: 0.0 if x[0].time is None else -x[0].time
@@ -71,13 +70,15 @@ class CommandMessageUtils:
 
     @classmethod
     def tidy_commands(cls, records: List[Tuple[Command, ReliableMessage]]) -> List[Tuple[Command, ReliableMessage]]:
+        """ Remove duplicated items by signature """
         signatures = set()
 
         def should_remove(pair: Tuple[Command, ReliableMessage]) -> bool:
             cmd = pair[0]
             msg = pair[1]
             # did = cmd.identifier
-            did = ID.parse(identifier=cmd.get('did'))
+            # did = ID.parse(identifier=cmd.get('did'))
+            did = cmd.get('did')
             sig = msg.get_str(key='signature')
             if sig is None or sig in signatures:
                 assert sig is not None, f'login command error: {did}, {cmd}'

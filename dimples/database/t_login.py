@@ -32,7 +32,9 @@ from dimsdk import ID
 from dimsdk import ReliableMessage
 
 from ..utils import Config
+from ..utils import Log
 from ..utils import is_before
+
 from ..common import CommandMessageUtils
 from ..common import LoginDBI, LoginCommand
 
@@ -40,6 +42,22 @@ from .dos import LoginStorage
 from .redis import LoginCache
 
 from .t_base import DbTask, DataCache
+
+
+def _sort_commands(records: List[Tuple[LoginCommand, ReliableMessage]], user: ID):
+    total = len(records)
+    if total > 1:
+        # 1. Sort records by timestamp descending
+        CommandMessageUtils.sort_commands(records=records)
+        # 2. Remove duplicated items by signature
+        CommandMessageUtils.tidy_commands(records=records)
+        # TODO: remove expired command(s)
+        if len(records) > 8:
+            del records[8:]
+    count = len(records)
+    if count < total:
+        Log.info('trim %d/%d login command(s) for %s', count, total, user)
+    return records
 
 
 class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
@@ -67,7 +85,7 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
         # 2. when redis server return a tuple with None values, no need to check local storage again
         array = await self._redis.load_login_command_messages(user=user)
         if array is not None:
-            CommandMessageUtils.sort_commands(records=array)
+            _sort_commands(records=array, user=user)
             return array
         # 3. try to load from local storage
         array = await self._dos.load_login_command_messages(user=user)
@@ -75,7 +93,7 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
             # 4. create an empty array as a placeholder for the memory cache
             array = []
         else:
-            CommandMessageUtils.sort_commands(records=array)
+            _sort_commands(records=array, user=user)
         # 5. update redis server
         await self._redis.save_login_command_messages(records=array, user=user)
         return array
@@ -131,7 +149,7 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
             rec = (new_cmd, new_msg)
             records.append(rec)
         # sort after changed
-        CommandMessageUtils.sort_commands(records=records)
+        _sort_commands(records=records, user=user)
         #
         #   1. store into redis server
         #
