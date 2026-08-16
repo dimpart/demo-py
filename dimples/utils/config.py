@@ -33,7 +33,7 @@ from dimsdk import StrMap, MutableStrMap
 
 from dimsdk import ID
 
-from startrek.utils import Log, Logging
+from small.log import Log, Logging
 
 from .conf_item import IConfig
 from .conf_item import MessageTransferAgent

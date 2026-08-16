@@ -44,10 +44,10 @@ from dimsdk import *
 from dimplugins.crypto.aes import random_bytes
 from dimplugins.mem import MemoryCache, ThanosCache
 
-from startrek.utils import Log, Logging, LogLevel
-from startrek.skywalker import Singleton
-from startrek.skywalker import Runnable, Runner, Daemon
-from startrek.fsm import Delegate as StateDelegate
+from small.utils import Singleton
+from small.log import Log, Logging, LogLevel
+from small.skywalker import Runnable, Runner, Daemon
+from small.fsm import Delegate as StateDelegate
 
 from aiou import Path, File, TextFile, JSONFile
 

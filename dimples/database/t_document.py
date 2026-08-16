@@ -168,7 +168,7 @@ class DocTask(DbTask[ID, List[Document]]):
                 continue
             # old record found (same type, same terminal),
             # update it
-            self.info('[%d/%d] update document: %d, terminal=%s, type=%s', index, total, did, new_terminal, new_type)
+            self.info('[%d/%d] update document: %s, terminal=%s, type=%s', index, total, did, new_terminal, new_type)
             documents[index - 1] = new_doc
             updated = True
             # break

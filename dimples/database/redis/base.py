@@ -39,8 +39,9 @@ class RedisCache(RedisClient, Logging, ABC):
     def __init__(self, config: Config):
         super().__init__()
         self.__config = config
+        self.__redis = None
 
-    @property  # Override
+    @property
     def connector(self) -> Optional[RedisConnector]:
         """ connection pool """
         return self.__config.redis_connector
@@ -109,14 +110,16 @@ class RedisCache(RedisClient, Logging, ABC):
 
     @property  # Override
     def redis(self) -> Optional[Redis]:
-        db_name = self.db_name
-        tbl_name = self.tbl_name
-        db = None
-        if db_name is not None:
-            name = f'{db_name}.{tbl_name}'
-            db = self.get_redis(name=name)
+        db = self.__redis
         if db is None:
-            db = self.get_redis(name=tbl_name)
-        if db is None:
-            db = super().redis
+            db_name = self.db_name
+            tbl_name = self.tbl_name
+            if db_name is not None:
+                name = f'{db_name}.{tbl_name}'
+                db = self.get_redis(name=name)
+            if db is None:
+                db = self.get_redis(name=tbl_name)
+                if db is None:
+                    db = self.get_redis(name='default')
+            self.__redis = db
         return db

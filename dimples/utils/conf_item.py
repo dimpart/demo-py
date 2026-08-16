@@ -25,20 +25,20 @@
 
 import weakref
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
 from typing import Optional, Any, Set, List
 from typing import Iterable
 
 from aiou import JSONFile
 
 from dimsdk import StrMap, MutableStrMap
+from dimsdk import StrList
 
 from dimsdk import JSON
 from dimsdk import Dictionary
 from dimsdk import EntityType, ID
 from dimsdk import Facebook
 
-from startrek.utils import Logging
+from small.log import Logging
 
 from .http import HttpClient
 
@@ -70,7 +70,7 @@ class IConfig(ABC):
         )
 
     @abstractmethod
-    def get_list(self, section: str, option: str, separator: str = ',') -> Optional[List[str]]:
+    def get_list(self, section: str, option: str, separator: str = ',') -> Optional[StrList]:
         raise NotImplementedError(
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.get_list()'
         )
@@ -206,7 +206,7 @@ class NeighborLoader(Logging):
         # check local path
         output = config.get_string(section='neighbors', option='output')
         if output is None:
-            self.warning(msg='neighbors path not set')
+            self.warning('neighbors path not set')
         elif stations is None:
             stations = await self._load_stations(path=output)
         else:
@@ -228,7 +228,7 @@ class NeighborLoader(Logging):
         except Exception as error:
             self.error('failed to download stations: %s, %s', error, url)
             return None
-        if isinstance(stations, Mapping):
+        if isinstance(stations, dict):
             stations = stations.get('stations')
         if isinstance(stations, list):
             return MessageTransferAgent.convert(array=stations)
@@ -240,7 +240,7 @@ class NeighborLoader(Logging):
         except Exception as error:
             self.error('failed to load stations: %s, %s', error, path)
             return None
-        if isinstance(stations, Mapping):
+        if isinstance(stations, dict):
             stations = stations.get('stations')
         if isinstance(stations, list):
             return MessageTransferAgent.convert(array=stations)

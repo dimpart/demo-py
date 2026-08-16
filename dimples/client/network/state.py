@@ -25,14 +25,13 @@
 
 import asyncio
 import weakref
-from abc import ABC
 from enum import IntEnum
 from typing import Optional, Union
 
 from dimsdk import ID
 
-from startrek.skywalker import Runner
-from startrek.fsm import Context, BaseTransition, BaseState, AutoMachine
+from small.skywalker import Runner
+from small.fsm import Context, BaseTransition, BaseState, AutoMachine
 from startrek import Porter, PorterStatus
 
 # from .session import ClientSession
@@ -118,7 +117,7 @@ class StateOrder(IntEnum):
 
 
 # noinspection PyAbstractClass
-class StateTransition(BaseTransition[StateMachine], ABC):
+class StateTransition(BaseTransition[StateMachine]):
 
     def __init__(self, target: Union[int, StateOrder]):
         if isinstance(target, StateOrder):
@@ -127,7 +126,7 @@ class StateTransition(BaseTransition[StateMachine], ABC):
 
     # noinspection PyMethodMayBeStatic
     def is_expired(self, state, now: float) -> bool:
-        assert isinstance(state, SessionState), 'state error: %s' % state
+        assert isinstance(state, SessionState), f'state error: {state}'
         return 0 < state.enter_time < (now - 30)
 
 

@@ -35,9 +35,9 @@ from typing import Optional, Set
 from aiou.mem import CachePool, CacheManager
 from aiou.mem.cache import K, V
 
-from startrek.skywalker import Singleton
-from startrek.skywalker import Runner
-from startrek.utils import Logging
+from small.utils import Singleton
+from small.log import Logging
+from small.skywalker import Runner
 
 
 @Singleton

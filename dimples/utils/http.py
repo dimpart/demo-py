@@ -33,7 +33,7 @@ from dimsdk.core.compress_keys import StringPairing
 
 from dimsdk import DateTime
 
-from startrek.utils import Logging
+from small.log import Logging
 
 from .cache import SharedCacheManager
 

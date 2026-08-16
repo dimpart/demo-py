@@ -32,8 +32,8 @@ import socket
 import threading
 from typing import Optional, List, Tuple
 
+from small.skywalker import Runner
 from startrek.types import SocketAddress
-from startrek.skywalker import Runner
 from startrek import Arrival, Departure
 from startrek import ArrivalShip, DepartureShip
 from startrek import BaseConnection, BaseChannel

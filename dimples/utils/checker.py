@@ -38,7 +38,7 @@
 from typing import Optional
 from typing import Generic, TypeVar
 
-from startrek.types import Duration
+from small.utils import Duration
 from dimsdk import DateTime
 
 

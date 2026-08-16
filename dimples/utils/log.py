@@ -34,7 +34,7 @@ import sys
 import time
 from logging.handlers import TimedRotatingFileHandler as FileHandler
 
-from startrek.utils import Log, LogLevel
+from small.log import Log, LogLevel
 
 
 LOG_MAX_LENGTH = 1024
