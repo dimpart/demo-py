@@ -33,9 +33,10 @@ from typing import Optional, Union, List
 from dimsdk import final
 
 from dimsdk import ID, ANYONE, FOUNDER
-from dimsdk import Meta, Visa, Document
+from dimsdk import Meta, Document
 from dimsdk import Envelope
 from dimsdk import Message
+from dimax.protocol import Visa
 
 
 @final

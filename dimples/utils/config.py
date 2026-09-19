@@ -28,7 +28,7 @@ from typing import Optional, List
 
 from aiou import RedisConnector
 
-from dimsdk.core.compress_keys import StringPairing
+from dimsdk.dkd.compress_keys import StringPairing
 from dimsdk import StrMap, MutableStrMap
 
 from dimsdk import ID

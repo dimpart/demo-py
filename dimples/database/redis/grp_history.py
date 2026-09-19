@@ -26,7 +26,8 @@
 from typing import Optional, Tuple, List
 
 from dimsdk import ID, ReliableMessage
-from dimsdk import Command, GroupCommand
+from dimsdk import Command
+from dimax import GroupCommand
 
 from ...utils import json_encode, json_decode, utf8_encode, utf8_decode
 

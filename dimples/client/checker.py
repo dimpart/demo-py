@@ -31,9 +31,10 @@
 import weakref
 from typing import Optional, List
 
-from dimsdk import ID, Document, Visa
+from dimsdk import ID, Document
 from dimsdk import Content
-from dimsdk import MetaCommand, DocumentCommand
+from dimax.protocol import Visa
+from dimax import MetaCommand, DocumentCommand
 
 from ..common import DocumentUtils
 from ..common import Station

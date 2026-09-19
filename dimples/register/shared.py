@@ -26,7 +26,8 @@
 from typing import Optional
 
 from dimsdk import EntityType
-from dimsdk import ID, Bulletin
+from dimsdk import ID
+from dimax.protocol import Bulletin
 
 from ..common.compat import NetworkType, network_to_type
 

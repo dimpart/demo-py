@@ -35,8 +35,8 @@ from dimsdk import ID, Identifier
 from dimsdk import ANYONE, EVERYONE, FOUNDER
 from dimsdk import Address
 
-from dimplugins import GeneralIdentifierFactory
-from dimplugins.mem.ext import id_cache
+from dimax import GeneralIdentifierFactory
+from dimax.mem.ext import id_cache
 
 from ..mkm import Station
 from ..mkm import ServiceProvider

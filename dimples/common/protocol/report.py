@@ -35,7 +35,7 @@
     Report for online/offline, ...
 """
 
-from dimsdk import BaseCommand
+from dimax.dkd import BaseCommand
 
 from ...utils import StrMap
 

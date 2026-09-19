@@ -41,7 +41,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, List
 
 from dimsdk import ID
-from dimsdk import GroupCommand, BaseGroupCommand
+from dimax import GroupCommand, BaseGroupCommand
 
 from ...utils import StrMap
 

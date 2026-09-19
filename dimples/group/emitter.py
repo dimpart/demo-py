@@ -32,8 +32,8 @@ from typing import Optional, List
 
 from dimsdk import ID
 from dimsdk import InstantMessage, ReliableMessage
-from dimsdk import FileContent
-from dimsdk import GroupCommand
+from dimax import FileContent
+from dimax import GroupCommand
 
 from .delegate import TripletsHelper
 from .delegate import GroupDelegate

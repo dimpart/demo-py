@@ -31,8 +31,8 @@
 from typing import Optional
 
 from dimsdk import Meta
-from dimplugins import DefaultMeta, BTCMeta, ETHMeta
-from dimplugins import BaseMetaFactory
+from dimax import DefaultMeta, BTCMeta, ETHMeta
+from dimax import BaseMetaFactory
 
 from ..mkm import MetaUtils
 

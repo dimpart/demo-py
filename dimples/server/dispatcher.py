@@ -33,7 +33,8 @@
 from typing import Optional, Set, List
 
 from dimsdk import EntityType, ID, EVERYONE
-from dimsdk import Content, ReceiptCommand
+from dimsdk import Content
+from dimax import ReceiptCommand
 from dimsdk import ReliableMessage
 
 from ..utils import Singleton, Logging

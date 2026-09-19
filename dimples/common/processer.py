@@ -27,12 +27,13 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from dimsdk import DateTime
-from dimsdk import Envelope, Content, ArrayContent, ForwardContent
+from dimsdk import Envelope, Content
 from dimsdk import InstantMessage, ReliableMessage
 from dimsdk import MessageProcessor
 from dimsdk import Facebook, Messenger
 from dimsdk.cpu import ContentProcessorCreator
 from dimsdk.cpu import GeneralContentProcessorFactory
+from dimax.protocol import ArrayContent, ForwardContent
 
 from ..utils import Logging
 from .protocol import MessageUtils

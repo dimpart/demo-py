@@ -30,8 +30,9 @@
 
 from typing import List
 
-from dimsdk import ID, Document, Bulletin
-from dimsdk import DocumentCommand
+from dimsdk import ID, Document
+from dimax.protocol import Bulletin
+from dimax import DocumentCommand
 
 from ..common import DocumentUtils
 from ..common import Station

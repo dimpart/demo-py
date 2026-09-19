@@ -42,8 +42,7 @@ from dimsdk import Converter, EncryptedBundle
 
 from dimsdk import ANYWHERE, EVERYWHERE
 from dimsdk import EntityType, ID, Identifier
-from dimsdk import Meta, Document, Visa
-
+from dimsdk import Meta, Document
 from dimsdk import User, UserDataSource
 from dimsdk import BaseUser
 from dimsdk import BaseGroup
@@ -191,8 +190,8 @@ class Station(User):
         return await self.__user.verify(data=data, signature=signature)
 
     # Override
-    async def encrypt_bundle(self, plaintext: bytes) -> EncryptedBundle:
-        return await self.__user.encrypt_bundle(plaintext=plaintext)
+    async def encrypt_bundle(self, data: bytes) -> EncryptedBundle:
+        return await self.__user.encrypt_bundle(data=data)
 
     # Override
     async def sign(self, data: bytes) -> bytes:
@@ -203,12 +202,12 @@ class Station(User):
         return await self.__user.decrypt_bundle(bundle=bundle)
 
     # Override
-    async def sign_visa(self, visa: Visa) -> Visa:
-        return await self.__user.sign_visa(visa=visa)
+    async def sign_document(self, document: Document) -> Document:
+        return await self.__user.sign_document(document=document)
 
     # Override
-    async def verify_visa(self, visa: Visa) -> bool:
-        return await self.__user.verify_visa(visa=visa)
+    async def verify_document(self, document: Document) -> bool:
+        return await self.__user.verify_document(document=document)
 
 
 class ServiceProvider(BaseGroup):

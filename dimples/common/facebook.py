@@ -40,9 +40,10 @@ from typing import Optional, List
 
 from dimsdk import SignKey, DecryptKey, EncryptKey
 from dimsdk import ID, User, Group
-from dimsdk import Meta, Document, Visa, Bulletin
+from dimsdk import Meta, Document
 from dimsdk import Facebook
-from dimsdk import DocumentType
+from dimax.protocol import DocumentType
+from dimax.protocol import Visa, Bulletin
 
 from ..utils import Logging
 from ..utils import Runner
@@ -52,7 +53,7 @@ from .dbi import AccountDBI
 
 from .ans import AddressNameServer
 from .checker import EntityChecker
-from .archivist import Archivist, CommonArchivist
+from .archivist import CommonArchivist
 from .anonymous import Anonymous
 
 
@@ -70,7 +71,7 @@ class CommonFacebook(Facebook, Logging, ABC):
         return self.__database
 
     @property  # Override
-    def archivist(self) -> Optional[Archivist]:
+    def archivist(self) -> Optional[CommonArchivist]:
         return self.__barrack
 
     @property  # Override

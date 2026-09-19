@@ -29,7 +29,7 @@ import requests
 from requests import Response, Session
 from requests.cookies import RequestsCookieJar
 
-from dimsdk.core.compress_keys import StringPairing
+from dimsdk.dkd.compress_keys import StringPairing
 
 from dimsdk import DateTime
 

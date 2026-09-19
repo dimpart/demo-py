@@ -28,21 +28,22 @@ from typing import Optional, Any
 from dimsdk import Converter, BaseConverter
 from dimsdk import DateTime
 
-from dimsdk import ID, Address, Meta, MetaType
+from dimsdk import ID, Address, Meta
 from dimsdk import ContentType, Content
-from dimsdk import GroupCommand
-from dimsdk import AsymmetricAlgorithms
 from dimsdk import AsymmetricKey, PrivateKey, PublicKey
 from dimsdk import EncryptedBundle
 from dimsdk import InstantMessage
 from dimsdk import SecureMessage, SecureMessageDelegate
 from dimsdk import MessagePackerFactory, SecureMessagePacker
-
 from dimsdk.msg.helpers import message_extensions
 
-from dimplugins import RSAPrivateKeyFactory, RSAPublicKeyFactory
-from dimplugins import ExtensionLoader
-from dimplugins import PluginLoader
+from dimax.protocol import MetaType
+from dimax import GroupCommand
+from dimax import ExtensionLoader
+
+from dimap import AsymmetricAlgorithms
+from dimap import RSAPrivateKeyFactory, RSAPublicKeyFactory
+from dimap import PluginLoader
 
 from ...utils.digest import MD5, MD5Digester
 from ...utils.digest import SHA1, SHA1Digester
@@ -239,6 +240,7 @@ class _SecureMessagePacker(SecureMessagePacker):
             }
         transformer = self.delegate
         assert transformer is not None, 'secure message delegate not found'
+        # FIXME:
         return await transformer.decode_keys(keys=msg_keys, receiver=receiver, msg=msg)
 
     # Override
@@ -259,8 +261,8 @@ class CommonPluginLoader(PluginLoader):
         super().load()
 
     # Override
-    def _load_message_digesters(self):
-        super()._load_message_digesters()
+    def _load_digest_plugins(self):
+        super()._load_digest_plugins()
         self.register_md5_digester()
         self.register_sha1_digester()
 

@@ -40,7 +40,7 @@ from typing import List
 
 from dimsdk import ReliableMessage
 from dimsdk import Content
-from dimsdk import JoinCommand
+from dimax import JoinCommand
 
 from ...common import IDUtils
 

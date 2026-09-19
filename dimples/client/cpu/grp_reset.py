@@ -41,7 +41,7 @@ from typing import Tuple, List
 from dimsdk import ID
 from dimsdk import ReliableMessage
 from dimsdk import Content
-from dimsdk import ResetCommand
+from dimax import ResetCommand
 
 from ...common import IDUtils
 

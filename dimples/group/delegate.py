@@ -31,9 +31,10 @@
 from typing import Optional, List
 
 from dimsdk import EntityType
-from dimsdk import ID, Meta, Document, Bulletin
+from dimsdk import ID, Meta, Document
 from dimsdk import GroupDataSource
 from dimsdk import TwinsHelper
+from dimax.protocol import Bulletin
 
 from ..utils import Logging
 from ..common import MetaUtils

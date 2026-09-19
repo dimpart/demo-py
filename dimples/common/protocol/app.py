@@ -31,7 +31,7 @@
 from abc import ABC, abstractmethod
 
 from dimsdk import ContentType, Content
-from dimsdk import BaseContent
+from dimax.dkd import BaseContent
 
 from ...utils import StrMap
 

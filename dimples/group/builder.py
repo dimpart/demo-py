@@ -33,8 +33,9 @@ from typing import Optional, Tuple, List
 from dimsdk import ANYONE
 from dimsdk import ID, Document
 from dimsdk import InstantMessage, ReliableMessage
-from dimsdk import Envelope, Content, DocumentCommand
-from dimsdk import GroupCommand, ResetCommand
+from dimsdk import Envelope, Content
+from dimax import DocumentCommand
+from dimax import GroupCommand, ResetCommand
 
 from ..common import DocumentUtils
 from ..common import ResignCommand

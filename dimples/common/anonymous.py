@@ -29,7 +29,7 @@
 # ==============================================================================
 
 from dimsdk import EntityType, Address, ID
-from dimplugins import BTCAddress, ETHAddress
+from dimax import BTCAddress, ETHAddress
 
 from ..utils import hex_decode, base58_decode
 

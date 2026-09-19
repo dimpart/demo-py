@@ -34,7 +34,7 @@ from typing import Optional, List
 
 from dimsdk import ReliableMessage
 from dimsdk import Content
-from dimsdk import ReceiptCommand
+from dimax import ReceiptCommand
 
 from dimsdk.cpu import BaseCommandProcessor
 

@@ -25,10 +25,11 @@
 
 from typing import Optional, List, Tuple
 
-from dimsdk import GroupCommand, ResetCommand
 from dimsdk import PrivateKey, DecryptKey, SignKey
-from dimsdk import ID, Meta, Document, Visa
+from dimsdk import ID, Meta, Document
 from dimsdk import ReliableMessage
+from dimax.protocol import Visa
+from dimax import GroupCommand, ResetCommand
 
 from ..utils import Config, Logging
 from ..common import MetaUtils, DocumentUtils

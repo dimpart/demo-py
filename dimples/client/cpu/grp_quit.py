@@ -40,7 +40,7 @@ from typing import List
 
 from dimsdk import ReliableMessage
 from dimsdk import Content
-from dimsdk import QuitCommand
+from dimax import QuitCommand
 
 from ...common import IDUtils
 

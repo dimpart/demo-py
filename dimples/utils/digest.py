@@ -34,6 +34,7 @@ import hashlib
 
 from dimsdk import final
 from dimsdk import MessageDigester
+from dimsdk import SHA256, KECCAK256, RIPEMD160
 
 
 @final
@@ -87,3 +88,15 @@ def md5(data: bytes) -> bytes:
 
 def sha1(data: bytes) -> bytes:
     return SHA1.digest(data=data)
+
+
+def sha256(data: bytes) -> bytes:
+    return SHA256.digest(data=data)
+
+
+def keccak256(data: bytes) -> bytes:
+    return KECCAK256.digest(data=data)
+
+
+def ripemd160(data: bytes) -> bytes:
+    return RIPEMD160.digest(data=data)

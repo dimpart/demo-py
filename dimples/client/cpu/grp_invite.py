@@ -42,7 +42,7 @@ from typing import List, Tuple
 from dimsdk import ID
 from dimsdk import ReliableMessage
 from dimsdk import Content
-from dimsdk import InviteCommand
+from dimax import InviteCommand
 
 from ...common import IDUtils
 

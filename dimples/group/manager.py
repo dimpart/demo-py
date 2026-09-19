@@ -31,9 +31,10 @@
 from typing import Optional, List
 
 from dimsdk import ID
-from dimsdk import Content, ForwardContent
-from dimsdk import MetaCommand, DocumentCommand
-from dimsdk import GroupCommand
+from dimsdk import Content
+from dimax.protocol import ForwardContent
+from dimax import MetaCommand, DocumentCommand
+from dimax import GroupCommand
 
 from ..common import Station
 from ..common import Register

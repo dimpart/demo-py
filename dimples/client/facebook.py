@@ -33,8 +33,9 @@
 from typing import Optional, List
 
 from dimsdk import EntityType
-from dimsdk import ID, Document, Bulletin
+from dimsdk import ID, Document
 from dimsdk import Group
+from dimax.protocol import Bulletin
 
 from ..utils import Runner
 from ..common import DocumentUtils

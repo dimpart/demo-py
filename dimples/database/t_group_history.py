@@ -30,7 +30,7 @@ from aiou.mem import CachePool
 
 from dimsdk import ID
 from dimsdk import ReliableMessage
-from dimsdk import GroupCommand, ResetCommand
+from dimax import GroupCommand, ResetCommand
 
 from ..utils import Config
 from ..common import GroupHistoryDBI

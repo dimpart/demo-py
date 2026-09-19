@@ -33,8 +33,9 @@ from typing import Optional, List
 from dimsdk import DateTime
 from dimsdk import EntityType
 from dimsdk import ReliableMessage
-from dimsdk import Content, TextContent
-from dimsdk import ReceiptCommand
+from dimsdk import Content
+from dimax import TextContent
+from dimax import ReceiptCommand
 from dimsdk import Facebook, Messenger
 from dimsdk.cpu import ContentProcessorCreator
 

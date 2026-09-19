@@ -30,7 +30,8 @@ from aiou.mem import CachePool
 
 from dimsdk import DateTime
 from dimsdk import ID
-from dimsdk import Document, Visa
+from dimsdk import Document
+from dimax.protocol import Visa
 
 from ..utils import Config
 from ..utils import Log

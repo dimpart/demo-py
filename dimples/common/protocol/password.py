@@ -23,13 +23,12 @@
 # SOFTWARE.
 # ==============================================================================
 
-from dimsdk import utf8_encode, base64_encode
-from dimsdk import sha256
 from dimsdk import SymmetricKey
-from dimsdk import SymmetricAlgorithms
-from dimplugins import PlainKey
+from dimap import SymmetricAlgorithms
+from dimap import PlainKey
 
-from ...utils import md5
+from ...utils import utf8_encode, base64_encode
+from ...utils import md5, sha256
 
 
 class Password:

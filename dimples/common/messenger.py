@@ -35,7 +35,6 @@
     Transform and send message
 """
 
-from abc import ABC
 from typing import Optional, Union, Tuple
 
 from dimsdk import SymmetricKey
@@ -59,7 +58,7 @@ from .compat import CompatibleCompressor
 from .compat import Compatible
 
 
-class CommonMessenger(Messenger, Transmitter, Logging, ABC):
+class CommonMessenger(Messenger, Transmitter, Logging):
 
     def __init__(self, session: Session, facebook: CommonFacebook, database: MessageDBI):
         super().__init__()
@@ -91,7 +90,7 @@ class CommonMessenger(Messenger, Transmitter, Logging, ABC):
         return self.__database
 
     @property  # Override
-    def key_cache(self) -> CipherKeyDelegate:
+    def cipher_key_delegate(self) -> CipherKeyDelegate:
         return self.__database
 
     @property  # Override

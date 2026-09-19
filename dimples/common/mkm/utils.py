@@ -33,18 +33,19 @@ from typing import Iterable
 
 from dimsdk import final
 
-from dimsdk import utf8_encode
 from dimsdk import Converter
 from dimsdk import DateTime
 from dimsdk import TransportableData
 
 from dimsdk import VerifyKey
 
-from dimsdk import Address, ID, Meta
-from dimsdk import Document, Visa, Bulletin
+from dimsdk import ID, Meta
+from dimsdk import Document
+from dimax.protocol import Visa, Bulletin
 
-from dimplugins.mem.ext import account_helper
+from dimax.mem.ext import account_handler
 
+from ...utils import utf8_encode
 from ...utils import list_remove_where
 from ...utils import Log
 from ...utils import StrMap, MutableStrMap
@@ -68,7 +69,7 @@ class MetaUtils:
     def get_meta_type(cls, meta: StrMap) -> Optional[str]:
         if isinstance(meta, Meta):
             meta = meta.to_map()
-        helper = account_helper()
+        helper = account_handler()
         return helper.get_meta_type(meta=meta)
 
     @classmethod
@@ -84,8 +85,8 @@ class MetaUtils:
             return False
         # check ID.address
         old = identifier.address
-        gen = Address.generate(meta, old.network)
-        return old == gen
+        gen = meta.generate_id(old.network)
+        return old == gen.address
 
     @classmethod
     def match_public_key(cls, key: VerifyKey, meta: Meta) -> bool:
@@ -116,14 +117,14 @@ class DocumentUtils:
     def get_document_type(cls, document: StrMap) -> Optional[str]:
         if isinstance(document, Document):
             document = document.to_map()
-        helper = account_helper()
+        helper = account_handler()
         return helper.get_document_type(document=document)
 
     @classmethod
     def get_document_id(cls, document: StrMap) -> Optional[ID]:
         if isinstance(document, Document):
             document = document.to_map()
-        helper = account_helper()
+        helper = account_handler()
         return helper.get_document_id(document=document)
 
     @classmethod
@@ -282,7 +283,7 @@ class DocumentUtils:
             else:
                 Log.error('document error: %s', item)
         # done
-        Log.info('Pump %d document(s)', len(documents))
+        Log.info('Pump %d/%d document(s) from: %s', len(documents), len(array), info)
         return documents
 
     @classmethod

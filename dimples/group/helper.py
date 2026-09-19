@@ -33,7 +33,7 @@ from typing import Optional, Tuple, List
 from dimsdk import DateTime
 from dimsdk import ID
 from dimsdk import ReliableMessage
-from dimsdk import GroupCommand, ResetCommand
+from dimax import GroupCommand, ResetCommand
 
 from ..common import DocumentUtils
 from ..common import ResignCommand

@@ -38,7 +38,7 @@
 from typing import Optional, Union
 
 from dimsdk import ID
-from dimsdk import BaseCommand
+from dimax.dkd import BaseCommand
 
 from ...utils import StrMap
 

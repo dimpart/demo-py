@@ -34,9 +34,11 @@ from typing import Optional, Set, List
 
 from dimsdk import DateTime
 from dimsdk import EntityType
-from dimsdk import ID, Document, Visa
-from dimsdk import Command, MetaCommand, DocumentCommand
+from dimsdk import ID, Document
 from dimsdk import Envelope, InstantMessage
+from dimsdk import Command
+from dimax.protocol import Visa
+from dimax import MetaCommand, DocumentCommand
 
 from ..common import DocumentUtils
 from ..common import AccountDBI

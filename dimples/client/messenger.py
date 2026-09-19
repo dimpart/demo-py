@@ -33,10 +33,11 @@
 from typing import Optional, List
 
 from dimsdk import EntityType, ID, EVERYONE
-from dimsdk import Document, Visa
+from dimsdk import Document
 from dimsdk import Envelope, InstantMessage, ReliableMessage
 from dimsdk import ContentType, Command
-from dimsdk import ReceiptCommand
+from dimax.protocol import Visa
+from dimax import ReceiptCommand
 
 from ..utils import get_msg_info
 

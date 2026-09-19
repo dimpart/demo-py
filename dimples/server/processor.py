@@ -34,7 +34,7 @@ from dimsdk import ID
 from dimsdk import EntityType
 from dimsdk import InstantMessage, ReliableMessage
 from dimsdk import Envelope, Content
-from dimsdk import TextContent, ReceiptCommand
+from dimax import TextContent, ReceiptCommand
 from dimsdk import Facebook, Messenger
 from dimsdk.cpu import ContentProcessorCreator
 

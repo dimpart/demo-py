@@ -32,9 +32,10 @@ import weakref
 from typing import List, Optional
 
 from dimsdk import Singleton
-from dimsdk import ID, Meta, Document, Bulletin
+from dimsdk import ID, Meta, Document
 from dimsdk import GroupDataSource
 from dimsdk import InstantMessage, ReliableMessage
+from dimax.protocol import Bulletin
 
 from ..common import CommonFacebook, CommonMessenger
 

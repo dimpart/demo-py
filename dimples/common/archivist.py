@@ -32,15 +32,15 @@ import weakref
 from typing import Optional, List
 
 from dimsdk import DateTime
-
 from dimsdk import EntityType, ID
-from dimsdk import Meta, Document, Visa, Bulletin
+
+from dimsdk import Meta, Document
 from dimsdk import User, Group
 from dimsdk import BaseUser, BaseGroup
-
 from dimsdk import Facebook
-from dimsdk import Archivist
 from dimsdk import Barrack
+
+from dimax.protocol import Visa, Bulletin
 
 from ..utils import Logging
 from ..utils import MemoryCache, ThanosCache
@@ -51,7 +51,7 @@ from .mkm import Bot, Station, ServiceProvider
 from .dbi import AccountDBI
 
 
-class CommonArchivist(Barrack, Archivist, Logging):
+class CommonArchivist(Barrack, Logging):
 
     def __init__(self, facebook: Facebook, database: AccountDBI):
         super().__init__()

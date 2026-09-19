@@ -29,7 +29,8 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Optional, Dict
+from typing import Optional
+from typing import MutableMapping
 
 from dimsdk import ReliableMessage
 from dimsdk import shared_message_extensions
@@ -54,7 +55,7 @@ class AppCustomizedFilter(CustomizedContentFilter):
     def __init__(self):
         super().__init__()
         self.__default_handler = BaseCustomizedContentHandler()
-        self.__handlers: Dict[str, CustomizedContentHandler] = {}
+        self.__handlers: MutableMapping[str, CustomizedContentHandler] = {}
 
     def set_content_handler(self, app: str, mod: str, handler: CustomizedContentHandler):
         key = '%s:%s' % (app, mod)

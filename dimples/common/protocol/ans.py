@@ -37,7 +37,8 @@
 
 from typing import Union, List
 
-from dimsdk import Command, BaseCommand
+from dimsdk import Command
+from dimax.dkd import BaseCommand
 
 from ...utils import StrMap
 from ...utils import StringPairing

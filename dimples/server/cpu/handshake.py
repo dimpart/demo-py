@@ -33,10 +33,11 @@
 from typing import Optional, List
 
 from dimsdk import DateTime
-from dimsdk import ID, Visa
+from dimsdk import ID
 from dimsdk import Content
-from dimsdk import DocumentCommand
 from dimsdk import ReliableMessage
+from dimax.protocol import Visa
+from dimax import DocumentCommand
 
 from dimsdk.cpu import BaseCommandProcessor
 
@@ -144,6 +145,7 @@ async def _filter_visa_documents(identifier: ID, facebook: CommonFacebook) -> Li
     if terminal is not None:
         identifier = identifier.without_terminal()
     documents = await facebook.get_documents(identifier=identifier)
+    Log.warning('got %d documents for: %s, %s.', len(documents), identifier, terminal)
     if len(documents) < 1:
         return []
     # ignore same terminal

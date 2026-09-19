@@ -38,10 +38,12 @@ from typing import Optional, List, Tuple
 
 from dimsdk import ID
 from dimsdk import ReliableMessage
-from dimsdk import Content, ForwardContent
-from dimsdk import Command, GroupCommand
+from dimsdk import Content
+from dimsdk import Command
 from dimsdk import Facebook, Messenger
 from dimsdk.cpu import BaseCommandProcessor
+from dimax.protocol import ForwardContent
+from dimax import GroupCommand
 
 
 from ...utils import Logging

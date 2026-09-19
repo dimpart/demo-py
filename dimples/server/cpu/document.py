@@ -33,9 +33,10 @@ from typing import Optional, List
 
 from dimsdk import EntityType, ID
 from dimsdk import ReliableMessage
-from dimsdk import Content, ForwardContent, DocumentCommand
+from dimsdk import Content
+from dimax.protocol import ForwardContent, DocumentCommand
 
-from dimsdk.cpu import DocumentCommandProcessor as SuperCommandProcessor
+from dimsdk.cpu import BaseCommandProcessor as SuperCommandProcessor
 
 from ...utils import Log
 from ...common import CommonFacebook, CommonMessenger
@@ -60,6 +61,7 @@ class DocumentCommandProcessor(SuperCommandProcessor):
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
         assert isinstance(content, DocumentCommand), f'document command error: {content}'
         responses = await super().process_content(content=content, r_msg=r_msg)
+        Log.info('responding for document command: %s -> %s', content.identifier, responses)
         if content.documents is None:
             # this is a request, check DocumentCommand & LoginCommand
             if has_document(contents=responses):

@@ -31,15 +31,15 @@
 import random
 from typing import Optional
 
-from dimsdk import PortableNetworkFile
 from dimsdk import EncryptKey, SignKey
 from dimsdk import PrivateKey
-from dimsdk import AsymmetricAlgorithms
-
 from dimsdk import EntityType, ID
-from dimsdk import Meta, MetaType
-from dimsdk import Visa, BaseVisa
-from dimsdk import Bulletin, BaseBulletin
+from dimsdk import Meta
+from dimax import BaseVisa, BaseBulletin
+from dimax.protocol import MetaType
+from dimax.protocol import Visa, Bulletin
+from dimap import AsymmetricAlgorithms
+from dimap import PortableNetworkFile
 
 from .dbi import AccountDBI, PrivateKeyDBI
 
@@ -73,7 +73,7 @@ class Register:
         #
         #   Step 3: generate ID with meta
         #
-        identifier = ID.generate(meta=meta, network=EntityType.USER)
+        identifier = meta.generate_id(EntityType.USER)
         #
         #   Step 4: generate visa with ID and sign with private key
         #
@@ -115,7 +115,7 @@ class Register:
         #
         #   Step 3: generate ID with meta
         #
-        identifier = ID.generate(meta=meta, network=EntityType.GROUP)
+        identifier = meta.generate_id(EntityType.GROUP)
         #
         #   Step 4: generate bulletin with ID and sign with founder's private key
         #

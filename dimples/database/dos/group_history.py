@@ -27,7 +27,8 @@ from typing import Optional, Tuple, List
 
 from dimsdk import ID
 from dimsdk import ReliableMessage
-from dimsdk import Command, GroupCommand
+from dimsdk import Command
+from dimax import GroupCommand
 
 from ...utils import template_replace
 

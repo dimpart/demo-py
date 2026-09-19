@@ -30,7 +30,7 @@ from typing import Iterable
 from dimsdk import PrivateKey, SignKey, DecryptKey
 from dimsdk import ID, Meta, Document
 from dimsdk import ReliableMessage
-from dimsdk import GroupCommand, ResetCommand
+from dimax import GroupCommand, ResetCommand
 
 from ...utils import MutableStrMap
 

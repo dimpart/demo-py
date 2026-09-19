@@ -30,7 +30,8 @@
 from typing import Optional, List
 
 from dimsdk import ID
-from dimsdk import ContentType, TextContent, FileContent
+from dimsdk import ContentType
+from dimax import TextContent, FileContent
 from dimsdk import InstantMessage, SecureMessage, ReliableMessage
 
 from ..common import DocumentUtils

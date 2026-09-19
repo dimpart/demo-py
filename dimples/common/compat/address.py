@@ -32,8 +32,8 @@ from typing import Optional
 
 from dimsdk import ConstantString
 from dimsdk import Address
-from dimplugins import BaseAddressFactory
-from dimplugins.mem.ext import address_cache
+from dimax import BaseAddressFactory
+from dimax.mem.ext import address_cache
 
 from ...utils import Logging
 
@@ -59,13 +59,14 @@ class CompatibleAddressFactory(BaseAddressFactory, Logging):
                 return res
         except (TypeError, ValueError, AssertionError) as e:
             self.error('address error: %s, %s', address, e)
+            assert False, f'invalid address: {address}'
         #
         #  TODO: other types of address
         #
         size = len(address)
         if 4 <= size <= 64:
             return UnknownAddress(address=address)
-        assert False, 'invalid address: %s' % address
+        assert False, f'invalid address: {address}'
 
 
 class UnknownAddress(ConstantString, Address):

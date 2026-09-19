@@ -35,14 +35,14 @@
 
 import traceback
 from io import StringIO
-from typing import Optional, List
+from typing import Optional, Union, List
 from typing import TypeVar, Callable
 
-from dimsdk.core.compress_keys import StringPairing
+from dimsdk.dkd.compress_keys import StringPairing
 from dimsdk import *
 
-from dimplugins.crypto.aes import random_bytes
-from dimplugins.mem import MemoryCache, ThanosCache
+from dimap.crypto.aes import random_bytes
+from dimax.mem import MemoryCache, ThanosCache
 
 from small.utils import Singleton
 from small.log import Log, Logging, LogLevel
@@ -51,7 +51,7 @@ from small.fsm import Delegate as StateDelegate
 
 from aiou import Path, File, TextFile, JSONFile
 
-from .digest import md5, sha1
+from .digest import md5, sha1, sha256, keccak256, ripemd160
 
 from .checker import FrequencyChecker
 from .checker import RecentTimeChecker
@@ -65,6 +65,60 @@ from .http import HttpSession, HttpClient
 
 from .conf_item import IConfig, MessageTransferAgent, Supervisor, NeighborLoader
 from .config import Config
+
+
+"""
+    Format Conveniences
+    ~~~~~~~~~~~~~~~~~~~~
+
+    UTF-8, JSON, Hex, Base58, Base64, ...
+"""
+
+
+def base64_encode(data: bytes) -> str:
+    return Base64.encode(data=data)
+
+
+def base64_decode(string: str) -> Optional[bytes]:
+    return Base64.decode(string=string)
+
+
+def base58_encode(data: bytes) -> str:
+    return Base58.encode(data=data)
+
+
+def base58_decode(string: str) -> Optional[bytes]:
+    return Base58.decode(string=string)
+
+
+def hex_encode(data: bytes) -> str:
+    return Hex.encode(data=data)
+
+
+def hex_decode(string: str) -> Optional[bytes]:
+    return Hex.decode(string=string)
+
+
+def json_encode(container: Union[StrMap, AnyList]) -> str:
+    return JSON.encode(container=container)
+
+
+def json_decode(string: str) -> Union[StrMap, AnyList, None]:
+    return JSON.decode(string=string)
+
+
+def utf8_encode(string: str) -> bytes:
+    return UTF8.encode(string=string)
+
+
+def utf8_decode(data: bytes) -> Optional[str]:
+    return UTF8.decode(data=data)
+
+
+"""
+    Other Extensions
+    ~~~~~~~~~~~~~~~~
+"""
 
 
 def is_before(old_time: Optional[DateTime], new_time: Optional[DateTime]) -> bool:

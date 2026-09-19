@@ -29,10 +29,12 @@
 # ==============================================================================
 
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict
+from typing import Optional, List
+from typing import MutableMapping
 
 from dimsdk import DateTime
-from dimsdk import ID, Meta, Document, Visa
+from dimsdk import ID, Meta, Document
+from dimax.protocol import Visa
 
 from ..utils import Logging
 from ..utils import FrequencyChecker, RecentTimeChecker
@@ -62,7 +64,7 @@ class EntityChecker(Logging, ABC):
         self.__last_document_times = RecentTimeChecker()
         self.__last_history_times = RecentTimeChecker()
         # group => member
-        self.__last_active_members: Dict[ID, ID] = {}
+        self.__last_active_members: MutableMapping[ID, ID] = {}
 
     @property
     def database(self) -> AccountDBI:

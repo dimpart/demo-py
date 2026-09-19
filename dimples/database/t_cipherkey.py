@@ -28,7 +28,7 @@ from typing import Optional
 
 from dimsdk import DateTime
 from dimsdk import ID, SymmetricKey
-from dimsdk import SymmetricAlgorithms
+from dimap import SymmetricAlgorithms
 
 from ..utils import Config
 from ..utils import SharedCacheManager
@@ -50,7 +50,7 @@ class CipherKeyTable(CipherKeyDBI):
 
     # noinspection PyMethodMayBeStatic
     def show_info(self):
-        print('!!!      cipher key in memory only !!!')
+        print('!!!        cipher key in memory only !!!')
 
     #
     #   Cipher Key DBI

@@ -32,11 +32,12 @@ from abc import ABC, abstractmethod
 from typing import Optional, Tuple
 
 from dimsdk import URI
-from dimsdk import SymmetricAlgorithms
-from dimsdk import PortableNetworkFile, EmbedData
+from dimap import SymmetricAlgorithms
+from dimap import PortableNetworkFile, EmbedData
 from dimsdk import SymmetricKey
 from dimsdk import ID, User
-from dimsdk import Envelope, Content, TextContent, FileContent
+from dimsdk import Envelope, Content
+from dimax import TextContent, FileContent
 from dimsdk import InstantMessage, ReliableMessage
 
 from .utils import StrMap

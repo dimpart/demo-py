@@ -23,7 +23,8 @@
 # SOFTWARE.
 # ==============================================================================
 
-from dimplugins import ExtensionLoader, PluginLoader
+from dimax import ExtensionLoader
+from dimap import PluginLoader
 
 from ...common.compat import CommonExtensionLoader, CommonPluginLoader
 from ...common import GroupHistory

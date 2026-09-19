@@ -25,11 +25,13 @@
 
 from dimsdk import Converter
 from dimsdk import Document
-from dimsdk import ContentType
-from dimsdk import Content, FileContent, NameCard
-from dimsdk import Command, MetaCommand, DocumentCommand
-from dimsdk import ReceiptCommand
 from dimsdk import ReliableMessage
+from dimsdk import ContentType
+from dimsdk import Content
+from dimsdk import Command
+from dimax import FileContent, NameCard
+from dimax import MetaCommand, DocumentCommand
+from dimax import ReceiptCommand
 
 from ...utils import MutableStrMap
 
@@ -186,11 +188,11 @@ class CompatibleIncoming:
             _fix_did(content=content)
             return
 
-        if cmd == Command.DOCUMENTS or cmd == 'document':
+        if cmd == DocumentCommand.DOCUMENTS or cmd == 'document':
             # 2. cmd: 'document' -> 'documents'
             cls._fix_docs(content=content)
 
-        if cmd == Command.META or cmd == Command.DOCUMENTS or cmd == 'document':
+        if cmd == MetaCommand.META or cmd == DocumentCommand.DOCUMENTS or cmd == 'document':
             # 3. 'ID' <-> 'did'
             _fix_did(content=content)
             meta = content.get('meta')

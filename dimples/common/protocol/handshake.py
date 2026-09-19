@@ -42,7 +42,8 @@ from abc import ABC, abstractmethod
 from enum import IntEnum
 from typing import Optional
 
-from dimsdk import Command, BaseCommand
+from dimsdk import Command
+from dimax.dkd import BaseCommand
 
 from ...utils import StrMap
 

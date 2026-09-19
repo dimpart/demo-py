@@ -31,7 +31,8 @@
 from typing import Optional
 
 from dimsdk import ContentType
-from dimsdk import Command, GroupCommand
+from dimax import ReceiptCommand
+from dimax import GroupCommand
 
 from dimsdk.cpu import ContentProcessor
 from dimsdk.cpu import BaseContentProcessorCreator
@@ -71,7 +72,7 @@ class ClientContentProcessorCreator(BaseContentProcessorCreator):
     # Override
     def create_command_processor(self, msg_type: str, cmd: str) -> Optional[ContentProcessor]:
         # receipt
-        if cmd == Command.RECEIPT:
+        if cmd == ReceiptCommand.RECEIPT:
             return ReceiptCommandProcessor(facebook=self.facebook, messenger=self.messenger)
         # handshake
         if cmd == HandshakeCommand.HANDSHAKE:

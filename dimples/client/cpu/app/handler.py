@@ -33,7 +33,7 @@ from typing import Optional, List
 
 from dimsdk import ReliableMessage
 from dimsdk import Envelope, Content
-from dimsdk import ReceiptCommand
+from dimsdk import Command
 from dimsdk import Messenger
 from dimsdk.cpu import BaseContentProcessor
 
@@ -92,7 +92,7 @@ class BaseCustomizedContentHandler(CustomizedContentHandler):
 
     # noinspection PyMethodMayBeStatic
     def _respond_receipt(self, text: str, envelope: Envelope, content: Optional[Content],
-                         extra: Optional[StrMap] = None) -> List[ReceiptCommand]:
+                         extra: Optional[StrMap] = None) -> List[Command]:
         return [
             # create base receipt command with text & original envelope
             BaseContentProcessor.create_receipt(text=text, envelope=envelope, content=content, extra=extra)

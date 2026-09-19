@@ -30,7 +30,7 @@
 
 from typing import Optional
 
-from dimsdk import Command
+from dimax import DocumentCommand
 
 from dimsdk.cpu import ContentProcessor
 from dimsdk.cpu import BaseContentProcessorCreator
@@ -51,7 +51,7 @@ class ServerContentProcessorCreator(BaseContentProcessorCreator):
     # Override
     def create_command_processor(self, msg_type: str, cmd: str) -> Optional[ContentProcessor]:
         # document
-        if cmd == Command.DOCUMENTS:
+        if cmd == DocumentCommand.DOCUMENTS:
             return DocumentCommandProcessor(facebook=self.facebook, messenger=self.messenger)
         # handshake
         if cmd == HandshakeCommand.HANDSHAKE:

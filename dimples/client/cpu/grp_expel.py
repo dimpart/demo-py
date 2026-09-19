@@ -39,7 +39,7 @@ from typing import List
 
 from dimsdk import ReliableMessage
 from dimsdk import Content
-from dimsdk import ExpelCommand
+from dimax import ExpelCommand
 
 from ...utils import Logging
 

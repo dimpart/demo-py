@@ -25,12 +25,13 @@
 
 from typing import Optional, Any, Tuple, List
 
-from dimsdk import AsymmetricAlgorithms
 from dimsdk import PrivateKey, SignKey
 from dimsdk import ID
 from dimsdk import Meta
-from dimsdk import Document, Visa, Bulletin
-from dimsdk import DocumentType
+from dimsdk import Document
+from dimax.protocol import Visa, Bulletin
+from dimax.protocol import DocumentType
+from dimap import AsymmetricAlgorithms
 
 from ..common import MetaVersion
 from ..common import AccountDBI
