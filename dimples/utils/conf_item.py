@@ -91,18 +91,18 @@ class MessageTransferAgent(Dictionary):
 
     @property
     def identifier(self) -> Optional[ID]:
-        string = self.get(key='did')
+        string = self.get_str(key='did')
         if string is None:
-            string = self.get(key='ID')
+            string = self.get_str(key='ID')
         return ID.parse(identifier=string)
 
     @property
     def host(self) -> str:
-        return self.get(key='host', default='')
+        return self.get_str(key='host', default='')
 
     @property
     def port(self) -> int:
-        return self.get(key='port', default=0)
+        return self.get_int(key='port', default=0)
 
     @classmethod
     def parse(cls, node: Any):

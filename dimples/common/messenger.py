@@ -136,32 +136,32 @@ class CommonMessenger(Messenger, Transmitter, Logging):
             self.error('failed to encrypt key: %s', error)
 
     # Override
-    async def serialize_key(self, key: Union[dict, SymmetricKey], msg: InstantMessage) -> Optional[bytes]:
+    async def serialize_key(self, password: Union[dict, SymmetricKey], msg: InstantMessage) -> Optional[bytes]:
         # TODO: reuse message key
         #
         # 0. check message key
-        reused = key.get('reused')
-        digest = key.get('digest')
+        reused = password.get('reused')
+        digest = password.get('digest')
         if reused is None and digest is None:
             # flags not exist, serialize it directly
-            return await super().serialize_key(key=key, msg=msg)
+            return await super().serialize_key(password=password, msg=msg)
         # 1. remove before serializing key
-        key.pop('reused', None)
-        key.pop('digest', None)
+        password.pop('reused', None)
+        password.pop('digest', None)
         # 2. serialize key without flags
-        data = await super().serialize_key(key=key, msg=msg)
+        data = await super().serialize_key(password=password, msg=msg)
         # 3. put them back after serialized
         if Converter.get_bool(value=reused):
-            key['reused'] = reused
+            password['reused'] = reused
         if digest is not None:
-            key['digest'] = digest
+            password['digest'] = digest
         # OK
         return data
 
     # Override
-    async def serialize_content(self, content: Content, key: SymmetricKey, msg: InstantMessage) -> bytes:
+    async def serialize_content(self, content: Content, password: SymmetricKey, msg: InstantMessage) -> bytes:
         CompatibleOutgoing.fix_content(content=content)
-        return await super().serialize_content(content=content, key=key, msg=msg)
+        return await super().serialize_content(content=content, password=password, msg=msg)
 
     #
     #   Interfaces for Transmitting Message
