@@ -30,13 +30,13 @@
 
 from typing import Optional
 
-from dimsdk import ContentType
 from dimax import ReceiptCommand
 from dimax import GroupCommand
 
-from dimsdk.cpu import ContentProcessor
-from dimsdk.cpu import BaseContentProcessorCreator
+from dimsdk import ContentType
+from dimsdk import ContentProcessor
 
+from ...common import CommonContentProcessorCreator
 from ...common import HandshakeCommand, LoginCommand, AnsCommand
 from ...common import QueryCommand
 
@@ -54,7 +54,7 @@ from .grp_resign import ResignCommandProcessor
 from .customized import CustomizedContentProcessor
 
 
-class ClientContentProcessorCreator(BaseContentProcessorCreator):
+class ClientContentProcessorCreator(CommonContentProcessorCreator):
 
     # Override
     def create_content_processor(self, msg_type: str) -> Optional[ContentProcessor]:

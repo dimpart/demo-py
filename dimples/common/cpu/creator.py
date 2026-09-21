@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+#
+#   DIM-SDK : Decentralized Instant Messaging Software Development Kit
+#
+#                                Written in 2019 by Moky <albert.moky@gmail.com>
+#
 # ==============================================================================
 # MIT License
 #
-# Copyright (c) 2021 Albert Moky
+# Copyright (c) 2019 Albert Moky
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,46 +29,49 @@
 # ==============================================================================
 
 """
-    Server extensions for MessageProcessor
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Processor Factory
+    ~~~~~~~~~~~~~~~~~
+
+    produce content/command processors
 """
 
 from typing import Optional
 
-from dimax import DocumentCommand
-
+from dimsdk import ContentType
 from dimsdk import ContentProcessor
+from dimsdk import BaseContentProcessorCreator
 
-from ...common import CommonContentProcessorCreator
-from ...common import HandshakeCommand, LoginCommand
-from ...common import ReportCommand, AnsCommand
+from dimax import MetaCommand, DocumentCommand
 
-from .handshake import HandshakeCommandProcessor
-from .login import LoginCommandProcessor
-from .report import ReportCommandProcessor
-from .ans import AnsCommandProcessor
-
-from .document import DocumentCommandProcessor
+from .contents import ForwardContentProcessor
+from .contents import ArrayContentProcessor
+from .commands import MetaCommandProcessor
+from .commands import DocumentCommandProcessor
 
 
-class ServerContentProcessorCreator(CommonContentProcessorCreator):
+class CommonContentProcessorCreator(BaseContentProcessorCreator):
+    """ Common Content Processor Creator
+
+        moved from dimsdk.cpu.creator (contents.py, commands.py)
+    """
+
+    # Override
+    def create_content_processor(self, msg_type: str) -> Optional[ContentProcessor]:
+        # forward content
+        if msg_type == ContentType.FORWARD or msg_type == 'forward':
+            return ForwardContentProcessor(facebook=self.facebook, messenger=self.messenger)
+        # array content
+        if msg_type == ContentType.ARRAY or msg_type == 'array':
+            return ArrayContentProcessor(facebook=self.facebook, messenger=self.messenger)
+        # default commands & unknown content
+        return super().create_content_processor(msg_type=msg_type)
 
     # Override
     def create_command_processor(self, msg_type: str, cmd: str) -> Optional[ContentProcessor]:
-        # document
+        # meta command
+        if cmd == MetaCommand.META:
+            return MetaCommandProcessor(facebook=self.facebook, messenger=self.messenger)
+        # document command
         if cmd == DocumentCommand.DOCUMENTS:
             return DocumentCommandProcessor(facebook=self.facebook, messenger=self.messenger)
-        # handshake
-        if cmd == HandshakeCommand.HANDSHAKE:
-            return HandshakeCommandProcessor(facebook=self.facebook, messenger=self.messenger)
-        # login
-        if cmd == LoginCommand.LOGIN:
-            return LoginCommandProcessor(facebook=self.facebook, messenger=self.messenger)
-        # report
-        if cmd == ReportCommand.REPORT:
-            return ReportCommandProcessor(facebook=self.facebook, messenger=self.messenger)
-        # ans
-        if cmd == AnsCommand.ANS:
-            return AnsCommandProcessor(facebook=self.facebook, messenger=self.messenger)
-        # others
-        return super().create_command_processor(msg_type=msg_type, cmd=cmd)
+        # assert False, 'unsupported command: %s' % cmd
