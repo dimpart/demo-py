@@ -35,11 +35,9 @@
 
 import traceback
 from io import StringIO
-from typing import List
 from typing import TypeVar, Callable
 
 from dimsdk.dkd.compress_keys import StringPairing
-from dimsdk import *
 
 from dimap.crypto.aes import random_bytes
 from dimax.mem import MemoryCache, ThanosCache
@@ -51,7 +49,6 @@ from small.fsm import Delegate as StateDelegate
 
 from aiou import Path, File, TextFile, JSONFile
 
-from .digest import *
 from .sdk import *
 
 from .checker import FrequencyChecker
@@ -60,72 +57,13 @@ from .checker import RecentTimeChecker
 from .opt import SysArgvParser
 
 from .log import init_logger
+
 from .cache import CachePool, SharedCacheManager
 
 from .http import HttpSession, HttpClient
 
 from .conf_item import IConfig, MessageTransferAgent, Supervisor, NeighborLoader
 from .config import Config
-
-
-"""
-    Other Extensions
-    ~~~~~~~~~~~~~~~~
-"""
-
-
-def is_before(old_time: Optional[DateTime], new_time: Optional[DateTime]) -> bool:
-    """ check whether new time is before old time """
-    if old_time is None or new_time is None:
-        return False
-    else:
-        return new_time.before(old_time)
-    # return DocumentUtils.is_before(old_time, new_time)
-
-
-def get_msg_sig(msg: ReliableMessage, size: int = -1) -> str:
-    """ last 6 bytes (signature in base64) """
-    sig = msg.get('signature')
-    # assert isinstance(sig, str), f'signature error: {sig}'
-    sig = sig.strip()
-    if size < 0:
-        return sig
-    assert 0 < size < len(sig)
-    return sig[-size:]  # last 6 bytes (signature in base64)
-
-
-def get_msg_traces(msg: ReliableMessage) -> List:
-    traces = msg.get('traces')
-    if traces is None:
-        return []
-    assert isinstance(traces, list), f'traces error: {traces}'
-    stations = []
-    for item in traces:
-        if isinstance(item, dict):
-            sid = item.get('did')
-            if sid is None:
-                sid = item.get('ID')
-        elif isinstance(item, str):
-            sid = item
-        else:
-            Log.error('trace item error: %s', item)
-            continue
-        stations.append(sid)
-    return stations
-
-
-def get_msg_info(msg: ReliableMessage) -> str:
-    sender = msg.sender
-    receiver = msg.receiver
-    rcpt = msg.get('rcpt')
-    group = msg.group
-    # traces
-    traces = get_msg_traces(msg=msg)
-    sig = get_msg_sig(msg=msg, size=8)
-    if group is None:
-        return f'type={msg.type}, "{sig}" [{msg.time}] {sender} => {receiver} ({rcpt}), traces: {traces}'
-    else:
-        return f'type={msg.type}, "{sig}" [{msg.time}] {sender} => {receiver} ({rcpt}), group={group}, traces: {traces}'
 
 
 def template_replace(template: str, key: str, value: str) -> str:
@@ -163,9 +101,33 @@ def list_remove_where(array: List[T], predicate: Callable[[T], bool]) -> List[T]
 
 __all__ = [
 
+    'StringPairing',
+
+    'random_bytes',
+    'MemoryCache', 'ThanosCache',
+
+    'Singleton',
+    'Log', 'Logging', 'LogLevel',
+    'Runnable', 'Runner', 'Daemon',
+    'StateDelegate',
+
+    'Path', 'File', 'TextFile', 'JSONFile',
+
+    # ================================================================
+
+    'StrMap', 'MutableStrMap',
+    'AnyList', 'StrList',
+
+    'URI', 'DateTime',
+
+    'Converter',
+
+    # ----------------------------------------------------------------
+
     'MD5', 'MD5Digester',
     'SHA1', 'SHA1Digester',
     'md5', 'sha1', 'sha256', 'keccak256', 'ripemd160',
+
     'base64_encode', 'base64_decode', 'base58_encode', 'base58_decode',
     'hex_encode', 'hex_decode',
     'utf8_encode', 'utf8_decode',
@@ -175,46 +137,26 @@ __all__ = [
     'account_extensions',
     'message_extensions', 'command_extensions',
 
-    # ================================================================
-
-    'random_bytes',
-    'MemoryCache', 'ThanosCache',
-
-    'StrMap', 'MutableStrMap',
-    'AnyList', 'StrList',
-
-    'StringPairing',
-
-    'URI', 'DateTime',
-
-    'Converter',
-
-    'Runnable', 'Runner', 'Daemon',
-    'StateDelegate',
+    'is_before',
+    'get_msg_sig', 'get_msg_info',
 
     # ================================================================
 
-    'Singleton',
+    'FrequencyChecker', 'RecentTimeChecker',
 
     'SysArgvParser',
 
-    'Log', 'Logging', 'LogLevel',
     'init_logger',
 
-    'Path', 'File', 'TextFile', 'JSONFile',
     'CachePool', 'SharedCacheManager',
 
     'HttpSession', 'HttpClient',
-
-    'FrequencyChecker', 'RecentTimeChecker',
 
     'IConfig', 'MessageTransferAgent', 'Supervisor', 'NeighborLoader',
     'Config',
 
     # ================================================================
 
-    'is_before',
-    'get_msg_sig', 'get_msg_info',
     'template_replace',
 
     'get_exception_traceback',

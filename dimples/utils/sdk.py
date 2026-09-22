@@ -28,10 +28,81 @@
 # SOFTWARE.
 # ==============================================================================
 
-from typing import Optional, Union
+import hashlib
+from typing import Optional, Union, List
 
 from dimsdk import *
 from dimax import MemoryCacheExtension
+
+from small.log import Log
+
+
+"""
+    Message Digest
+    ~~~~~~~~~~~~~~
+
+    MD5, SHA1, SHA-256, Keccak256, RipeMD-160, ...
+"""
+
+
+@final
+class MD5:
+    digester: MessageDigester = None
+
+    @classmethod
+    def digest(cls, data: bytes) -> bytes:
+        # assert MD5.digester is not None, 'MD5 coder not set yet'
+        return cls.digester.digest(data=data)
+
+
+@final
+class SHA1:
+    digester: MessageDigester = None
+
+    @classmethod
+    def digest(cls, data: bytes) -> bytes:
+        # assert SHA1.digester is not None, 'SHA1 coder not set yet'
+        return cls.digester.digest(data=data)
+
+
+@final
+class MD5Digester(MessageDigester):
+
+    # Override
+    def digest(self, data: bytes) -> bytes:
+        """ MD5 digest """
+        hash_obj = hashlib.md5()
+        hash_obj.update(data)
+        return hash_obj.digest()
+
+
+@final
+class SHA1Digester(MessageDigester):
+
+    # Override
+    def digest(self, data: bytes) -> bytes:
+        """ SHA1 Digest """
+        return hashlib.sha1(data).digest()
+
+
+def md5(data: bytes) -> bytes:
+    return MD5.digest(data=data)
+
+
+def sha1(data: bytes) -> bytes:
+    return SHA1.digest(data=data)
+
+
+def sha256(data: bytes) -> bytes:
+    return SHA256.digest(data=data)
+
+
+def keccak256(data: bytes) -> bytes:
+    return KECCAK256.digest(data=data)
+
+
+def ripemd160(data: bytes) -> bytes:
+    return RIPEMD160.digest(data=data)
 
 
 """
@@ -102,7 +173,8 @@ def format_extensions() -> Union[FormatExtensions,
 
 def account_extensions() -> Union[AccountExtensions,
                                   AddressExtension, IDExtension, MetaExtension, DocumentExtension,
-                                  MemoryCacheExtension, VisaAgentExtension, EncryptedBundleExtension,
+                                  VisaAgentExtension, EncryptedBundleExtension,
+                                  MemoryCacheExtension,
                                   GeneralAccountExtension]:
     return shared_account_extensions
 
@@ -116,3 +188,63 @@ def message_extensions() -> Union[MessageExtensions,
 
 def command_extensions() -> Union[CommandExtension, GeneralCommandExtension]:
     return shared_message_extensions
+
+
+"""
+    Other Extensions
+    ~~~~~~~~~~~~~~~~
+"""
+
+
+def is_before(old_time: Optional[DateTime], new_time: Optional[DateTime]) -> bool:
+    """ check whether new time is before old time """
+    if old_time is None or new_time is None:
+        return False
+    else:
+        return new_time.before(old_time)
+    # return DocumentUtils.is_before(old_time, new_time)
+
+
+def get_msg_sig(msg: ReliableMessage, size: int = -1) -> str:
+    """ last 6 bytes (signature in base64) """
+    sig = msg.get('signature')
+    # assert isinstance(sig, str), f'signature error: {sig}'
+    sig = sig.strip()
+    if size < 0:
+        return sig
+    assert 0 < size < len(sig)
+    return sig[-size:]  # last 6 bytes (signature in base64)
+
+
+def get_msg_info(msg: ReliableMessage) -> str:
+    sender = msg.sender
+    receiver = msg.receiver
+    rcpt = msg.get('rcpt')
+    group = msg.group
+    # traces
+    traces = _get_msg_traces(msg=msg)
+    sig = get_msg_sig(msg=msg, size=8)
+    if group is None:
+        return f'type={msg.type}, "{sig}" [{msg.time}] {sender} => {receiver} ({rcpt}), traces: {traces}'
+    else:
+        return f'type={msg.type}, "{sig}" [{msg.time}] {sender} => {receiver} ({rcpt}), group={group}, traces: {traces}'
+
+
+def _get_msg_traces(msg: ReliableMessage) -> List:
+    traces = msg.get('traces')
+    if traces is None:
+        return []
+    assert isinstance(traces, list), f'traces error: {traces}'
+    stations = []
+    for item in traces:
+        if isinstance(item, dict):
+            sid = item.get('did')
+            if sid is None:
+                sid = item.get('ID')
+        elif isinstance(item, str):
+            sid = item
+        else:
+            Log.error('trace item error: %s', item)
+            continue
+        stations.append(sid)
+    return stations

@@ -215,7 +215,7 @@ class BaseAccount(Logging, ABC):
     def generate_identifier(self, network: int) -> ID:
         """ 2. generate id with meta """
         assert self.__id is None, 'ID exists: %s' % self.__id
-        self.__id = ID.generate(meta=self.__meta, network=network)
+        self.__id = self.__meta.generate_id(network=network)
         return self.__id
 
     # protected
