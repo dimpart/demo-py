@@ -32,12 +32,12 @@ from dimsdk import ID, Address, Meta
 from dimsdk import ContentType, Content
 from dimsdk import AsymmetricKey, PrivateKey, PublicKey
 from dimsdk import EncryptedBundle
+from dimsdk import DefaultVisaAgent
 from dimsdk import InstantMessage
 from dimsdk import SecureMessage, SecureMessageDelegate
 from dimsdk import MessagePackerFactory, SecureMessagePacker
-from dimsdk.msg.helpers import message_extensions
 
-from dimax.protocol import MetaType
+from dimax import MetaType
 from dimax import GroupCommand
 from dimax import ExtensionLoader
 
@@ -45,8 +45,9 @@ from dimap import AsymmetricAlgorithms
 from dimap import RSAPrivateKeyFactory, RSAPublicKeyFactory
 from dimap import PluginLoader
 
-from ...utils.digest import MD5, MD5Digester
-from ...utils.digest import SHA1, SHA1Digester
+from ...utils import account_extensions, message_extensions
+from ...utils import MD5, MD5Digester
+from ...utils import SHA1, SHA1Digester
 
 from ..protocol import AppCustomizedContent
 from ..protocol import HandshakeCommand, BaseHandshakeCommand
@@ -95,7 +96,14 @@ class CommonExtensionLoader(ExtensionLoader):
     # Override
     def load(self):
         super().load()
+        self.register_visa_agent()
         self._load_message_packer_factory()
+
+    # protected
+    def register_visa_agent(self):
+        """ fix for old 'key' field """
+        ext = account_extensions()
+        ext.visa_agent = _CompatibleVisaAgent()
 
     def _load_message_packer_factory(self):
         """ fix for 'message.key' """
@@ -226,29 +234,42 @@ class _MessagePackerFactory(MessagePackerFactory):
 class _SecureMessagePacker(SecureMessagePacker):
 
     # Override
-    async def _decode_keys(self, msg: SecureMessage, receiver: ID) -> Optional[EncryptedBundle]:
-        msg_keys = msg.encrypted_keys
-        if msg_keys is None:
-            # get from 'key'
-            base64 = msg.get('key')
-            if base64 is None:
-                # broadcast message?
-                # reuse key?
-                return None
-            msg_keys = {
-                str(receiver): base64
-            }
-        transformer = self.delegate
-        assert transformer is not None, 'secure message delegate not found'
-        # FIXME:
-        return await transformer.decode_keys(keys=msg_keys, receiver=receiver, msg=msg)
-
-    # Override
     async def decrypt_message(self, msg: SecureMessage, receiver: ID) -> Optional[InstantMessage]:
         i_msg = await super().decrypt_message(msg=msg, receiver=receiver)
         if i_msg is not None:
             i_msg.pop('key', None)
         return i_msg
+
+
+# noinspection PyMethodMayBeStatic
+class _CompatibleVisaAgent(DefaultVisaAgent):
+    """ Compatible with the old protocol: a SecureMessage may carry a single
+        'key' field instead of the new 'keys' map (e.g. messages produced by
+        old group splitting). Map the 'key' field to {receiver: base64} and
+        continue with the standard decryption flow.
+    """
+
+    # Override
+    def decode_bundle(self, s_msg: SecureMessage, receiver: ID) -> Optional[EncryptedBundle]:
+        keys = s_msg.encrypted_keys
+        if keys is None or len(keys) == 0:
+            # get from 'key'
+            base64 = s_msg.get('key')
+            if base64 is None:
+                # broadcast message?
+                # reused key?
+                return None
+            keys = {
+                str(receiver): base64,
+            }
+        terminal = receiver.terminal
+        if terminal is None or len(terminal) == 0:
+            # get full bundle
+            return EncryptedBundle.decode(encoded_keys=keys, receiver=receiver)
+        # get single bundle
+        devices = {terminal}
+        receiver = receiver.without_terminal()
+        return EncryptedBundle.decode(encoded_keys=keys, receiver=receiver, terminals=devices)
 
 
 # noinspection PyMethodMayBeStatic

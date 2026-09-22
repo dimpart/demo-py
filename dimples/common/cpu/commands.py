@@ -35,7 +35,7 @@ from dimsdk import ID, Meta, Document
 from dimsdk import ReliableMessage
 from dimsdk import Envelope, Content
 from dimsdk import BaseCommandProcessor
-from dimsdk import shared_account_extensions
+from dimsdk import account_handler
 
 from dimax import MetaCommand, DocumentCommand
 
@@ -298,7 +298,7 @@ class DocumentCommandProcessor(MetaCommandProcessor):
             # meta error
             return False
         # check document ID
-        helper = shared_account_extensions.handler
+        helper = account_handler()
         info = doc.to_map()
         did = helper.get_document_id(document=info)
         if did is None:

@@ -41,9 +41,9 @@ from dimsdk import VerifyKey
 
 from dimsdk import ID, Meta
 from dimsdk import Document
-from dimax.protocol import Visa, Bulletin
+from dimsdk import account_handler
 
-from dimax.mem.ext import account_handler
+from dimax import Visa, Bulletin
 
 from ...utils import utf8_encode
 from ...utils import list_remove_where
