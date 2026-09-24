@@ -58,6 +58,11 @@ from .queue import MessageQueue, MessageWrapper
 
 class StreamServerHub(ServerHub):
 
+    def is_connected(self, remote: SocketAddress) -> bool:
+        channel = self._get_channel(remote=remote, local=None)
+        conn = self._get_connection(remote=remote, local=None)
+        return not (channel is None and conn is None)
+
     def put_channel(self, channel: StreamChannel):
         self._set_channel(channel=channel, remote=channel.remote_address, local=None)
 
@@ -168,10 +173,19 @@ class GateKeeper(Runner, PorterDelegate, Logging):
         self.__queue = MessageQueue()
         self.__active = False
         self.__last_active = 0  # last update time
+        self.__connection_built = False
         self.__receive_timeout = DateTime.current_timestamp() + self.WAIT_RECEIVE_TIMEOUT
         self.__gate = self._create_gate(remote=remote, sock=sock)
 
     def is_connect_error(self, now: float) -> bool:
+        hub = self.gate.hub
+        if isinstance(hub, StreamServerHub):
+            if hub.is_connected(remote=self.remote_address):
+                self.__connection_built = True
+            elif self.__connection_built:
+                self.warning('connection lost, stop session: %s', self.remote_address)
+                return True
+        # check received time
         return self.__receive_timeout < now
 
     def _create_gate(self, remote: SocketAddress, sock: Optional[socket.socket]) -> CommonGate:
