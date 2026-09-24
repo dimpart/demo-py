@@ -14,7 +14,7 @@ import io
 
 from setuptools import setup, find_packages
 
-__version__ = '2.0.0'
+__version__ = '2.0.1'
 __author__ = 'Albert Moky'
 __contact__ = 'albert.moky@gmail.com'
 
@@ -59,15 +59,15 @@ setup(
         'dimsdk==2.5.0',
 
         'dimp==2.5.0',
-        'dkd==2.5.0',
+        'dkd==2.5.1',
         'mkm==2.5.0',
 
         'startrek==2.3.3',
-        'tcp==2.3.3',
+        'tcp==2.3.4',
         'udp==2.3.3',
 
         'aiou==1.2.0',
-        'smallib>=1.0.0',
+        'smallib>=1.1.1',
     ]
 )
 

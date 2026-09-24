@@ -29,10 +29,9 @@
 # ==============================================================================
 
 import socket
-import time
-import traceback
 from typing import Optional
 
+from dimsdk import DateTime
 from dimsdk import ReliableMessage
 
 from startrek.types import SocketAddress
@@ -48,6 +47,7 @@ from tcp import StreamChannel
 from tcp import ServerHub, ClientHub
 
 from ..utils import get_msg_info
+from ..utils import get_exception_traceback
 from ..utils import Runner, Log, Logging
 
 from .protocol import DeparturePacker
@@ -160,6 +160,7 @@ class GateKeeper(Runner, PorterDelegate, Logging):
     """ Keep a gate to remote address """
 
     SEND_BUFFER_SIZE = 64 * 1024  # 64 KB
+    WAIT_RECEIVE_TIMEOUT = 128.0
 
     def __init__(self, remote: SocketAddress, sock: Optional[socket.socket]):
         super().__init__(interval=Runner.INTERVAL_SLOW)
@@ -167,7 +168,11 @@ class GateKeeper(Runner, PorterDelegate, Logging):
         self.__queue = MessageQueue()
         self.__active = False
         self.__last_active = 0  # last update time
+        self.__receive_timeout = DateTime.current_timestamp() + self.WAIT_RECEIVE_TIMEOUT
         self.__gate = self._create_gate(remote=remote, sock=sock)
+
+    def is_connect_error(self, now: float) -> bool:
+        return self.__receive_timeout < now
 
     def _create_gate(self, remote: SocketAddress, sock: Optional[socket.socket]) -> CommonGate:
         if sock is None:
@@ -214,7 +219,7 @@ class GateKeeper(Runner, PorterDelegate, Logging):
 
     def set_active(self, active: bool, when: float = None) -> bool:
         if when is None or when <= 0:
-            when = time.time()
+            when = DateTime.current_timestamp()
         elif when <= self.__last_active:
             return False
         if self.__active != active:
@@ -228,17 +233,29 @@ class GateKeeper(Runner, PorterDelegate, Logging):
         hub = gate.hub
         # from tcp import Hub
         # assert isinstance(hub, Hub), f'hub error: {hub}'
+        now = DateTime.current_timestamp()
         try:
             incoming = await hub.process()
             outgoing = await gate.process()
-            if incoming or outgoing:
-                # processed income/outgo packages
+            if incoming:
+                self.__receive_timeout = now + self.WAIT_RECEIVE_TIMEOUT
+                # processed income packages
+                return True
+            elif outgoing:
+                # processed outgo packages
                 return True
         except Exception as e:
-            self.error('process error: %s', e)
-            traceback.print_exc()
+            self.error('process error: %s, %s', self.remote_address, e)
+            # traceback.print_exc()
+            tr = get_exception_traceback()
+            self.error('traceback: %s, %s', self.remote_address, tr)
             return False
-        if not self.active:
+        # check connect timeout
+        if self.is_connect_error(now=now):
+            self.warning('connect lost, stop session: %s', self.remote_address)
+            await self.stop()
+            return False
+        elif not self.active:
             # inactive, wait a while to check again
             self.__queue.purge()
             return False
@@ -257,7 +274,7 @@ class GateKeeper(Runner, PorterDelegate, Logging):
         # try to push
         ok = await gate.send_ship(ship=wrapper, remote=self.remote_address, local=None)
         if not ok:
-            self.error(msg='gate error, failed to send data')
+            self.error('gate error, failed to send data: %s', self.remote_address)
         return ok
 
     async def _porter_pack(self, payload: bytes, priority: int = 0) -> Optional[Departure]:
