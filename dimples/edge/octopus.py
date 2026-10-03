@@ -30,7 +30,7 @@
     Edges for neighbor stations
 """
 
-import threading
+from small.lock import AsyncLock
 import weakref
 from abc import ABC, abstractmethod
 from typing import Optional, List, Set
@@ -56,10 +56,10 @@ class Octopus(Runner, Logging, ABC):
         self.__host = local_host
         self.__port = local_port
         self.__inner: Optional[Terminal] = None
-        self.__inner_lock = threading.Lock()
+        self.__inner_lock = AsyncLock.create()
         self.__outers: Set[Terminal] = set()
         self.__outer_map = weakref.WeakValueDictionary()
-        self.__outer_lock = threading.Lock()
+        self.__outer_lock = AsyncLock.create()
 
     @property
     def database(self) -> SessionDBI:
@@ -67,15 +67,15 @@ class Octopus(Runner, Logging, ABC):
 
     @property
     async def inner_messenger(self) -> ClientMessenger:
-        with self.__inner_lock:
+        async with self.__inner_lock:
             terminal = self.__inner
             if terminal is None:
                 terminal = await self.create_inner_terminal(host=self.__host, port=self.__port)
                 self.__inner = terminal
         return terminal.messenger
 
-    def get_outer_messenger(self, identifier: ID) -> Optional[ClientMessenger]:
-        with self.__outer_lock:
+    async def get_outer_messenger(self, identifier: ID) -> Optional[ClientMessenger]:
+        async with self.__outer_lock:
             terminal = self.__outer_map.get(identifier)
         if terminal is not None:
             return terminal.messenger
@@ -92,14 +92,14 @@ class Octopus(Runner, Logging, ABC):
             f'Not implemented: {type(self).__module__}.{type(self).__name__}.create_outer_terminal()'
         )
 
-    def add_index(self, identifier: ID, terminal: Terminal):
-        with self.__outer_lock:
+    async def add_index(self, identifier: ID, terminal: Terminal):
+        async with self.__outer_lock:
             # self.__outers.add(terminal)
             self.__outer_map[identifier] = terminal
 
     async def connect(self, host: str, port: int = 9394):
         # create a new terminal for remote host:port
-        with self.__outer_lock:
+        async with self.__outer_lock:
             # check exist terminals
             outers = self.__outers.copy()
             for out in outers:
@@ -121,7 +121,7 @@ class Octopus(Runner, Logging, ABC):
         if inner is not None:
             await inner.stop()
         # 2. stop outer terminals
-        with self.__outer_lock:
+        async with self.__outer_lock:
             outers = set(self.__outers)
         for out in outers:
             await out.stop()
@@ -147,7 +147,7 @@ class Octopus(Runner, Logging, ABC):
         else:
             neighbors = neighbors.copy()
         # get all outer terminals
-        with self.__outer_lock:
+        async with self.__outer_lock:
             outers = set(self.__outers)
         self.debug('checking %d client(s) with %d neighbor(s)', len(outers), len(neighbors))
         for out in outers:
@@ -169,7 +169,7 @@ class Octopus(Runner, Logging, ABC):
             else:
                 # remove dead client
                 self.warning('client stopped, remove it: %s (%s:%d)', sid, host, port)
-            with self.__outer_lock:
+            async with self.__outer_lock:
                 self.__outers.discard(out)
                 if sid is not None:
                     self.__outer_map.pop(sid, None)
@@ -201,7 +201,7 @@ class Octopus(Runner, Logging, ABC):
             neighbors.add(neighbor)
             msg.pop('neighbor', None)
         else:
-            with self.__outer_lock:
+            async with self.__outer_lock:
                 neighbors = set(self.__outer_map.keys())
         #
         #  0. check recipients
@@ -226,7 +226,7 @@ class Octopus(Runner, Logging, ABC):
         msg_info = get_msg_info(msg=msg)
         failed_neighbors = []
         for target in new_recipients:
-            messenger = self.get_outer_messenger(identifier=target)
+            messenger = await self.get_outer_messenger(identifier=target)
             if messenger is None:
                 # target station not my neighbor
                 self.warning('not my neighbor: %s, "%s" %s -> %s', target, sig, msg.sender, msg.receiver)

@@ -23,7 +23,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
+from small.lock import AsyncLock
 from typing import Optional, List
 
 from aiou.mem import CachePool
@@ -49,7 +49,7 @@ class PriKeyTask(DbTask):
 
     def __init__(self, user: ID,
                  storage: PrivateKeyStorage,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool,
                          cache_expires=self.MEM_CACHE_EXPIRES,
                          cache_refresh=self.MEM_CACHE_REFRESH)
@@ -92,7 +92,7 @@ class PrivateKeyTable(PrivateKeyDBI):
         self._id_key_cache = man.get_pool(name='private_id_key')      # ID => PrivateKey
         self._msg_keys_cache = man.get_pool(name='private_msg_keys')  # ID => List[PrivateKey]
         self._dos = PrivateKeyStorage(config=config)
-        self._lock = threading.Lock()
+        self._lock = AsyncLock.create()
 
     def show_info(self):
         self._dos.show_info()
@@ -139,7 +139,7 @@ class PrivateKeyTable(PrivateKeyDBI):
         #  lock to update
         #
         now = DateTime.now()
-        with self._lock:
+        async with self._lock:
             # store into memory cache
             cache_pool.update(key=user, value=value, life_span=PriKeyTask.MEM_CACHE_EXPIRES, now=now)
             # save into local storage

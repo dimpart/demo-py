@@ -28,7 +28,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, Optional, Tuple
 
 from udp.ba import ByteArray
@@ -36,12 +36,14 @@ from udp.mtp import Header, Package
 
 from .protocol import NetMsgHead, NetMsg
 
+from ..utils import Logging
+
 
 H = TypeVar('H')
 P = TypeVar('P')
 
 
-class PackageSeeker(Generic[H, P]):
+class PackageSeeker(Logging, Generic[H, P], ABC):
 
     def __init__(self, magic_code: bytes, magic_offset: int, max_head_length: int):
         super().__init__()
@@ -122,7 +124,7 @@ class PackageSeeker(Generic[H, P]):
         if offset < 0:
             # header not found
             return -1
-        # assert offset > self.__magic_offset, 'magic code error: %s' % data
+        # assert offset > self.__magic_offset, f'magic code error: {data}'
         return offset - self.__magic_offset
 
     def seek_package(self, data: ByteArray) -> Tuple[Optional[P], int]:
@@ -143,7 +145,7 @@ class PackageSeeker(Generic[H, P]):
         elif offset > 0:
             # drop the error part
             dropped = data.slice(start=0, end=offset)
-            print('[WARNING] drop data part: %s' % dropped)
+            self.warning('drop data part: %s', dropped)
             data = data.slice(start=offset)
         # 2. check length
         data_len = data.size
@@ -177,7 +179,7 @@ class MTPPackageSeeker(PackageSeeker[Header, Package]):
         try:
             return Header.parse(data=data)
         except Exception as error:
-            print('parse MTP head error: %s, data: %s' % (error, data))
+            self.error('parse MTP head error: %s, data: %s', error, data)
 
     # Override
     def get_head_length(self, head: Header) -> int:
@@ -207,7 +209,7 @@ class MarsPackageSeeker(PackageSeeker[NetMsgHead, NetMsg]):
             data = data.get_bytes()
             return NetMsgHead.parse(data=data)
         except Exception as error:
-            print('parse Mars head error: %s, data: %s' % (error, data))
+            self.error('parse Mars head error: %s, data: %s', error, data)
 
     # Override
     def get_head_length(self, head: NetMsgHead) -> int:

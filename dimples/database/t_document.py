@@ -23,7 +23,6 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
 from typing import Optional, List
 
 from aiou.mem import CachePool
@@ -86,7 +85,7 @@ class DocTask(DbTask[ID, List[Document]]):
 
     def __init__(self, identifier: ID, new_document: Optional[Document],
                  redis: DocumentCache, storage: DocumentStorage,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool)
         self._identifier = identifier
         self._new_doc = new_document

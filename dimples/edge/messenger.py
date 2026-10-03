@@ -116,11 +116,11 @@ class OctopusMessenger(ClientMessenger, ABC):
         sid = get_remote_station(messenger=self)
         sig = get_msg_sig(msg=msg, size=8)
         if receiver == sender:
-            self.error('drop cycled msg: type=%s, "%s" from station: %s', msg.type, sig, sid)
+            self.warning('drop cycled msg: type=%s, "%s" from station: %s', msg.type, sig, sid)
             return []
         # handshake accepted, redirecting message
         sig = get_msg_sig(msg=msg, size=8)
-        self.info('deliver msg: type=%s, "%s" from station: %s', msg.type, sig, sid)
+        self.info('delivering msg: type=%s, "%s" from station: %s', msg.type, sig, sid)
         return await self._deliver_message(msg=msg)
 
     @abstractmethod
@@ -162,7 +162,7 @@ class OuterMessenger(OctopusMessenger):
     async def process_reliable_message(self, msg: ReliableMessage) -> List[ReliableMessage]:
         local_station = await self.local_station
         if msg.sender == local_station:
-            self.error('cycled message from this station: %s => %s', msg.sender, msg.receiver)
+            self.warning('cycled message from this station: %s => %s', msg.sender, msg.receiver)
             return []
         return await super().process_reliable_message(msg=msg)
 
@@ -172,7 +172,7 @@ class OuterMessenger(OctopusMessenger):
         station = self.session.station
         await update_station(station=station, database=self.octopus.database)
         octopus = self.octopus
-        octopus.add_index(identifier=station.identifier, terminal=self.terminal)
+        await octopus.add_index(identifier=station.identifier, terminal=self.terminal)
 
 
 async def update_station(station: Station, database: SessionDBI):

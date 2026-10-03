@@ -23,7 +23,6 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
 from typing import Optional
 
 from aiou.mem import CachePool
@@ -46,7 +45,7 @@ class TaiTask(DbTask[ID, Meta]):
 
     def __init__(self, identifier: ID,
                  redis: MetaCache, storage: MetaStorage,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool,
                          cache_expires=self.MEM_CACHE_EXPIRES,
                          cache_refresh=self.MEM_CACHE_REFRESH)
@@ -109,7 +108,7 @@ class MetaTable(DataCache, MetaDBI):
         task = self._new_task(identifier=identifier)
         meta = await task.load()
         if meta is None:
-            with self.lock:
+            async with self.lock:
                 self.cache.update(key=identifier, value=None, life_span=300)
         return meta
 

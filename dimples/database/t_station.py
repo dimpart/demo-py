@@ -23,7 +23,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
+from small.lock import AsyncLock
 from typing import Optional, List
 
 from aiou.mem import CachePool
@@ -45,7 +45,7 @@ from .t_base import DbTask
 class SpTask(DbTask[str, List[ProviderInfo]]):
 
     def __init__(self, redis: StationCache, storage: StationStorage,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool)
         self._redis = redis
         self._dos = storage
@@ -80,7 +80,7 @@ class SrvTask(DbTask[ID, List[StationInfo]]):
 
     def __init__(self, provider: ID,
                  redis: StationCache, storage: StationStorage,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool)
         self._provider = provider
         self._redis = redis
@@ -123,7 +123,7 @@ class StationTable(ProviderDBI, StationDBI):
         self._stations_cache = man.get_pool(name='stations')  # SP_ID => List[StationInfo]
         self._redis = StationCache(config=config)
         self._dos = StationStorage(config=config)
-        self._lock = threading.Lock()
+        self._lock = AsyncLock.create()
 
     def show_info(self):
         self._dos.show_info()
@@ -152,7 +152,7 @@ class StationTable(ProviderDBI, StationDBI):
 
     # Override
     async def add_provider(self, identifier: ID, chosen: int = 0) -> bool:
-        with self._lock:
+        async with self._lock:
             # clear memory cache to reload
             self._dim_cache.erase(key='providers')
             # update redis & local storage
@@ -162,7 +162,7 @@ class StationTable(ProviderDBI, StationDBI):
 
     # Override
     async def update_provider(self, identifier: ID, chosen: int) -> bool:
-        with self._lock:
+        async with self._lock:
             # clear memory cache to reload
             self._dim_cache.erase(key='providers')
             # update redis & local storage
@@ -172,7 +172,7 @@ class StationTable(ProviderDBI, StationDBI):
 
     # Override
     async def remove_provider(self, identifier: ID) -> bool:
-        with self._lock:
+        async with self._lock:
             # clear memory cache to reload
             self._dim_cache.erase(key='providers')
             # update redis & local storage
@@ -193,7 +193,7 @@ class StationTable(ProviderDBI, StationDBI):
     # Override
     async def add_station(self, identifier: Optional[ID], host: str, port: int,
                           provider: ID, chosen: int = 0) -> bool:
-        with self._lock:
+        async with self._lock:
             # clear memory cache to reload
             self._stations_cache.erase(key=provider)
             # update redis & local storage
@@ -206,7 +206,7 @@ class StationTable(ProviderDBI, StationDBI):
     # Override
     async def update_station(self, identifier: Optional[ID], host: str, port: int,
                              provider: ID, chosen: int = None) -> bool:
-        with self._lock:
+        async with self._lock:
             # clear memory cache to reload
             self._stations_cache.erase(key=provider)
             # update redis & local storage
@@ -218,7 +218,7 @@ class StationTable(ProviderDBI, StationDBI):
 
     # Override
     async def remove_station(self, host: str, port: int, provider: ID) -> bool:
-        with self._lock:
+        async with self._lock:
             # clear memory cache to reload
             self._stations_cache.erase(key=provider)
             # update redis & local storage
@@ -228,7 +228,7 @@ class StationTable(ProviderDBI, StationDBI):
 
     # Override
     async def remove_stations(self, provider: ID) -> bool:
-        with self._lock:
+        async with self._lock:
             # clear memory cache to reload
             self._stations_cache.erase(key=provider)
             # update redis & local storage

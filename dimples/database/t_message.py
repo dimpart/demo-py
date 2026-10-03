@@ -23,7 +23,6 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
 from typing import Optional, List
 
 from aiou.mem import CachePool
@@ -46,7 +45,7 @@ class MsgTask(DbTask[ID, List[ReliableMessage]]):
 
     def __init__(self, receiver: ID, limit: int,
                  redis: MessageCache,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool,
                          cache_expires=self.MEM_CACHE_EXPIRES,
                          cache_refresh=self.MEM_CACHE_REFRESH)
@@ -95,7 +94,7 @@ class ReliableMessageTable(DataCache, ReliableMessageDBI):
 
     # Override
     async def cache_reliable_message(self, msg: ReliableMessage, receiver: ID) -> bool:
-        with self.lock:
+        async with self.lock:
             # 1. store into redis server
             if await self._redis.save_reliable_message(msg=msg, receiver=receiver):
                 # 2. clear cache to reload
@@ -104,7 +103,7 @@ class ReliableMessageTable(DataCache, ReliableMessageDBI):
 
     # Override
     async def remove_reliable_message(self, msg: ReliableMessage, receiver: ID) -> bool:
-        with self.lock:
+        async with self.lock:
             # 1. remove from redis server
             if await self._redis.remove_reliable_message(msg=msg, receiver=receiver):
                 # 2. clear cache to reload

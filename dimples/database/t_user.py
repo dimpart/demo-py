@@ -23,7 +23,6 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
 from typing import Optional, List
 
 from aiou.mem import CachePool
@@ -43,7 +42,7 @@ class UsrTask(DbTask[ID, List[ID]]):
 
     def __init__(self, user: ID,
                  redis: UserCache, storage: UserStorage,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool)
         self._user = user
         self._redis = redis

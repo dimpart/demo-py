@@ -163,14 +163,14 @@ class AccountDatabase(Logging, AccountDBI):
                 index += 1
                 if isinstance(doc, Visa) and DocumentUtils.get_visa_terminal(document=doc) != terminal:
                     # visa terminal not matched
-                    self.info('[%d/%d] skip visa not for: %s/%s, %s', index, total, identifier, terminal, doc)
+                    self.debug('[%d/%d] skip visa not for: %s/%s, %s', index, total, identifier, terminal, doc)
                 else:
-                    self.info('[%d/%d]  got document for: %s/%s, %s', index, total, identifier, terminal, doc)
+                    self.debug('[%d/%d]  got document for: %s/%s, %s', index, total, identifier, terminal, doc)
                     array.append(doc)
-            self.info('filter %d/%d document(s) for user: %s/%s', len(array), total, identifier, terminal)
+            self.debug('filter %d/%d document(s) for user: %s/%s', len(array), total, identifier, terminal)
             documents = array
         else:
-            self.info('loaded %d document(s) for user: %s', total, identifier)
+            self.debug('loaded %d document(s) for user: %s', total, identifier)
         return documents
 
     #

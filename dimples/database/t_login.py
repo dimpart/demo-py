@@ -23,7 +23,6 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
 from typing import Optional, Tuple, List
 
 from aiou.mem import CachePool
@@ -66,7 +65,7 @@ class CmdTask(DbTask[ID, List[Tuple[LoginCommand, ReliableMessage]]]):
                  new_cmd: Optional[LoginCommand],
                  new_msg: Optional[ReliableMessage],
                  redis: LoginCache, storage: LoginStorage,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool)
         self._user = user
         self._new_cmd = new_cmd

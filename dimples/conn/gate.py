@@ -28,7 +28,6 @@
 # SOFTWARE.
 # ==============================================================================
 
-from abc import ABC
 from typing import Generic, TypeVar, Optional
 
 from startrek.types import SocketAddress
@@ -48,7 +47,7 @@ H = TypeVar('H')
 
 
 # noinspection PyAbstractClass
-class CommonGate(StarGate, Generic[H], ABC):
+class CommonGate(StarGate, Generic[H]):
 
     def __init__(self, delegate: PorterDelegate):
         super().__init__(delegate=delegate)
@@ -90,7 +89,7 @@ class CommonGate(StarGate, Generic[H], ABC):
     async def fetch_porter(self, remote: SocketAddress, local: Optional[SocketAddress]) -> Optional[Porter]:
         # get connection from hub
         hub = self.hub
-        assert isinstance(hub, Hub), 'gate hub error: %s' % hub
+        assert isinstance(hub, Hub), f'gate hub error: {hub}'
         conn = await hub.connect(remote=remote, local=local)
         if conn is None or conn.closed:
             self.warning('failed to fetch porter: %s -> %s, conn: %s', local, remote, conn)
@@ -109,7 +108,7 @@ class CommonGate(StarGate, Generic[H], ABC):
             pack = MTPHelper.create_message(body=payload, sn=sn)
             return await worker.send_package(pack=pack)
         elif isinstance(worker, MarsStreamPorter):
-            assert isinstance(ship, MarsStreamArrival), 'responding ship error: %s' % ship
+            assert isinstance(ship, MarsStreamArrival), f'responding ship error: {ship}'
             mars = MarsHelper.create_respond(head=ship.package.head, payload=payload)
             ship = MarsStreamPorter.create_departure(mars=mars)
             return await worker.send_ship(ship=ship)

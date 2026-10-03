@@ -23,7 +23,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
+from small.lock import AsyncLock
 from typing import Optional, List
 
 from aiou.mem import CachePool
@@ -45,7 +45,7 @@ class GrpTask(DbTask[ID, List[ID]]):
 
     def __init__(self, group: ID,
                  redis: GroupCache, storage: GroupStorage,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool)
         self._group = group
         self._redis = redis
@@ -124,7 +124,7 @@ class GroupTable(GroupDBI):
         self._admin_cache = man.get_pool(name='group.administrators')  # ID => List[ID]
         self._redis = GroupCache(config=config)
         self._dos = GroupStorage(config=config)
-        self._lock = threading.Lock()
+        self._lock = AsyncLock.create()
 
     def show_info(self):
         self._dos.show_info()

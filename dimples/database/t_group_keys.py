@@ -23,7 +23,6 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
 from typing import Optional, Tuple
 
 from aiou.mem import CachePool
@@ -44,7 +43,7 @@ class PwdTask(DbTask[Tuple[ID, ID], StringPairing]):
 
     def __init__(self, group: ID, sender: ID,
                  redis: GroupKeysCache, storage: GroupKeysStorage,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool)
         self._group = group
         self._sender = sender

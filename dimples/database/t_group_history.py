@@ -23,7 +23,6 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
 from typing import Optional, Tuple, List
 
 from aiou.mem import CachePool
@@ -46,7 +45,7 @@ class HisTask(DbTask[ID, List[Tuple[GroupCommand, ReliableMessage]]]):
 
     def __init__(self, group: ID,
                  redis: GroupHistoryCache, storage: GroupHistoryStorage,
-                 mutex_lock: threading.Lock, cache_pool: CachePool):
+                 mutex_lock, cache_pool: CachePool):
         super().__init__(mutex_lock=mutex_lock, cache_pool=cache_pool)
         self._group = group
         self._redis = redis

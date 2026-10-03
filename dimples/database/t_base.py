@@ -23,7 +23,7 @@
 # SOFTWARE.
 # ==============================================================================
 
-import threading
+from small.lock import AsyncLock
 import time
 from abc import ABC, abstractmethod
 from typing import Generic
@@ -42,14 +42,14 @@ class DataCache(Logging, Generic[K, V], ABC):
         super().__init__()
         man = SharedCacheManager()
         self._cache_pool = man.get_pool(name=pool_name)
-        self._mutex_lock = threading.Lock()
+        self._mutex_lock = AsyncLock.create()
 
     @property  # protected
     def cache(self) -> CachePool[K, V]:
         return self._cache_pool
 
     @property  # protected
-    def lock(self) -> threading.Lock:
+    def lock(self):
         return self._mutex_lock
 
 
@@ -58,7 +58,7 @@ class DbTask(Logging, Generic[K, V], ABC):
     MEM_CACHE_EXPIRES = 300  # seconds
     MEM_CACHE_REFRESH = 32   # seconds
 
-    def __init__(self, mutex_lock: threading.Lock, cache_pool: CachePool,
+    def __init__(self, mutex_lock, cache_pool: CachePool,
                  cache_expires: float = None, cache_refresh: float = None):
         super().__init__()
         self._lock = mutex_lock
@@ -78,7 +78,7 @@ class DbTask(Logging, Generic[K, V], ABC):
             self._cache_refresh = cache_refresh
 
     @property  # protected
-    def lock(self) -> threading.Lock:
+    def lock(self):
         return self._lock
 
     @property  # protected
@@ -117,7 +117,7 @@ class DbTask(Logging, Generic[K, V], ABC):
 
     async def save(self, value: V) -> bool:
         """ Task Save """
-        with self.lock:
+        async with self.lock:
             # save into local storage
             ok = await self._write_data(value)
             if ok:
@@ -148,7 +148,7 @@ class DbTask(Logging, Generic[K, V], ABC):
         #
         #  2. lock for querying
         #
-        with self.lock:
+        async with self.lock:
             # locked, check again to make sure the cache not exists.
             # (maybe the cache was updated by other threads while waiting the lock)
             value, holder = cache_pool.fetch(key=key, now=now)
