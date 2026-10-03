@@ -35,7 +35,7 @@ from typing import List
 from dimsdk import ReliableMessage
 from dimsdk import Content
 
-from dimsdk.cpu import BaseCommandProcessor
+from dimsdk import BaseCommandProcessor
 
 from ...utils import Logging
 from ...common import ReportCommand
@@ -47,21 +47,23 @@ class ReportCommandProcessor(BaseCommandProcessor, Logging):
     @property
     def session(self) -> Session:
         messenger = self.messenger
-        assert isinstance(messenger, CommonMessenger), 'messenger error: %s' % messenger
+        assert isinstance(messenger, CommonMessenger), f'messenger error: {messenger}'
         return messenger.session
 
     # Override
     async def process_content(self, content: Content, r_msg: ReliableMessage) -> List[Content]:
-        assert isinstance(content, ReportCommand), 'report command error: %s' % content
+        assert isinstance(content, ReportCommand), f'report command error: {content}'
         # check session sender
         session = self.session
         sess_id = session.identifier
         sender = r_msg.sender
         if sess_id is None:
-            self.error(msg='session not login, drop report command: %s => %s' % (sender, content))
+            self.error('session not login, drop report command: %s => %s', sender, content)
             return []
+        else:
+            self.info('process "report" command: %s => %s', sender, content)
         # FIXME: send via bridge?
-        assert sender.is_same_as(other=sess_id), 'report sender error: %s not %s' % (sender, sess_id)
+        assert sender.is_same_as(other=sess_id), f'report sender error: {sender} not {sess_id}'
         # check report title
         title = content.title
         if title == ReportCommand.ONLINE:

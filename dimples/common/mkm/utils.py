@@ -262,7 +262,7 @@ class DocumentUtils:
     def dump_documents(cls, documents: List[Document]) -> StrMap:
         """ Serialize documents """
         # sort and remove duplicated item
-        Log.info('Dump %d document(s)', len(documents))
+        Log.debug('Dump %d document(s)', len(documents))
         array = Document.revert(documents=documents)
         return {
             'documents': array,
@@ -283,7 +283,7 @@ class DocumentUtils:
             else:
                 Log.error('document error: %s', item)
         # done
-        Log.info('Pump %d/%d document(s) from: %s', len(documents), len(array), info)
+        Log.debug('Pump %d/%d document(s) from: %s', len(documents), len(array), info)
         return documents
 
     @classmethod

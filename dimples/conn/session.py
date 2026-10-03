@@ -30,10 +30,9 @@
 
 import socket
 import weakref
-from abc import ABC
 from typing import Optional, Tuple
 
-from startrek.types import SocketAddress
+from startrek import SocketAddress
 from startrek import Porter, Departure
 
 from dimsdk import ID, Content
@@ -46,7 +45,7 @@ from .gatekeeper import GateKeeper
 
 
 # noinspection PyAbstractClass
-class BaseSession(GateKeeper, Session, ABC):
+class BaseSession(GateKeeper, Session):
 
     def __init__(self, remote: SocketAddress, sock: Optional[socket.socket], database: SessionDBI):
         super().__init__(remote=remote, sock=sock)

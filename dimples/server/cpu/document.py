@@ -34,13 +34,12 @@ from typing import Optional, List
 from dimsdk import EntityType, ID
 from dimsdk import ReliableMessage
 from dimsdk import Content
-from dimax.protocol import ForwardContent, DocumentCommand
-
-from dimsdk.cpu import BaseCommandProcessor as SuperCommandProcessor
+from dimax import ForwardContent, DocumentCommand
 
 from ...utils import Log
 from ...common import CommonFacebook, CommonMessenger
 from ...common import Session, SessionDBI
+from ...common import DocumentCommandProcessor as SuperCommandProcessor
 
 
 class DocumentCommandProcessor(SuperCommandProcessor):

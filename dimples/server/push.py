@@ -34,7 +34,8 @@
 import threading
 import time
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict
+from typing import Optional, List
+from typing import MutableMapping
 
 from dimsdk import ID, ReliableMessage
 
@@ -59,7 +60,7 @@ class PushQueue(Logging):
             # check overflow
             count = len(self.__messages)
             if count > 65535:
-                self.warning(msg='waiting queue in PushCenter is too long: %d' % count)
+                self.warning('waiting queue in PushCenter is too long: %d', count)
                 if count > 100000:
                     # drop half tasks waiting too long
                     self.__messages = self.__messages[-50000:]
@@ -92,7 +93,7 @@ class BadgeKeeper:
 
     def __init__(self):
         super().__init__()
-        self.__badges: Dict[ID, int] = {}
+        self.__badges: MutableMapping[ID, int] = {}
         self.__lock = threading.Lock()
 
     def increase_badge(self, identifier: ID) -> int:
@@ -167,7 +168,7 @@ class PushCenter(Runner, Logging):
         # 2. get message processor
         service = self.__service
         if service is None:
-            self.error(msg='push service not found')
+            self.error('push service not found')
             return False
         # 3. process
         return await service.process(messages=messages, badge_keeper=self.badge_keeper)

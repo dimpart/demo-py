@@ -99,7 +99,7 @@ class CommandMessageUtils:
     @classmethod
     def dump_command_messages(cls, records: List[Tuple[Command, ReliableMessage]]) -> Mapping:
         """ Serialize command messages """
-        Log.info('Dump %d command message(s)', len(records))
+        Log.debug('Dump %d command message(s)', len(records))
         # revert command messages
         array = []
         for cmd, msg in records:
@@ -130,7 +130,7 @@ class CommandMessageUtils:
                 rec = (cmd, msg)
                 records.append(rec)
         # done
-        Log.info('Pump %d command message(s)', len(records))
+        Log.debug('Pump %d command message(s)', len(records))
         return records
 
 
