@@ -69,6 +69,18 @@ class FlexiblePorter(StarPorter, DeparturePacker, Logging):
 
     # Override
     async def process_received(self, data: bytes):
+        # Tarsier speed-tests every station with a raw 4-byte 'PING' before (or instead
+        # of) sending real traffic, and shows the station red until it gets 'PONG'.
+        # None of the protocol sniffers below recognizes those 4 bytes, so answer the
+        # probe here, before sniffing (same as PlainPorter does in the Java stack).
+        probe = b'PING'
+        if data[:len(probe)] == probe:
+            conn = self.connection
+            if conn is not None:
+                await conn.send_data(b'PONG')
+            data = data[len(probe):]
+            if not data:
+                return
         docker = self.__porter
         if docker is None:
             # check data for packer
